@@ -1,9 +1,12 @@
 ; This is a test asm file
 ; for BJT CPU.
 
+
 org 0x000
+; rhgi8_ equ 0x102+resetcounter
+
 resetvector:
-                lda resetcounter
+                lda resetcounter ; 0x1100
                 inc
                 sta resetcounter
                 sub resetcounter2

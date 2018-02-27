@@ -60,6 +60,9 @@ bool parse_global() {
 bool parse_db() {
 	int t = yylex();
 	switch (t) {
+	case T_Dollar:
+		memory[address++] = address;
+		break;
 	case T_IntConstant:
 		memory[address++] = yylval.integerConstant;
 		chkAddress(address);
@@ -94,35 +97,47 @@ bool parse_identifier() {
 	}
 	return true;
 }
+
 bool parse_Op4_4(int mnemonic) {
 	int v = 0;
 	int opc = 0;
 	setRelocType(RT_OP4_4);
 	switch (mnemonic) {
-		case T_Inc: opc = 12; break;
+		//#undef TOK
+		#define TOK(x, xop) case x: opc=xop; break;
+		TOK(T_mvi, 0)
 	}
-	memory[address++] = opc << 4 | (v  & 0xf);
+	memory[address++] = opc;
+	memory[address++] = v & 0xf;
+
 	chkAddress(address);
 	return true;
 }
+
+
 bool parse_Op4_12(int mnemonic) {
 	int t = yylex();
 	int v = 0;
 	int opc = 0;
 	setRelocType(RT_OP4_12);
 	switch (mnemonic) {
-	    case T_Mfi: opc = 0; break;
-		case T_Lda: opc = 1; break;
-		case T_Sta: opc = 2; break;
-		case T_Jmp: opc = 3; break;
-		case T_Jz:  opc = 4; break;
-		case T_Jnz: opc = 5; break;
-		case T_Js:  opc = 6; break;
-		case T_Jns: opc = 7; break;
-		case T_Jc:  opc = 8; break;
-		case T_Jnc: opc = 9; break;
-		case T_Add: opc = 10; break;
-		case T_Sub: opc = 11; break;
+		//#undef TOK
+		#define TOK(x, xop) case x: opc=xop; break;
+		TOK(T_sta, 1)
+		TOK(T_lda, 2)
+		TOK(T_ad0, 3)
+		TOK(T_ad1, 4)
+		TOK(T_adc, 5)
+		TOK(T_nand, 6)
+		TOK(T_nor, 7)
+		TOK(T_rrm, 8)
+		TOK(T_jmp, 9)
+		TOK(T_jc, 10)
+		TOK(T_jnc, 11)
+		TOK(T_jz, 12)
+		TOK(T_jnz, 13)
+		TOK(T_jm, 14)
+		TOK(T_jp, 15)
 	}
 	switch (t) {
 		case T_Identifier: v = getSymbol(yylval.identifier); break;
@@ -132,8 +147,11 @@ bool parse_Op4_12(int mnemonic) {
 			return false;
 			break;
 	}
-	memory[address++] = opc << 4 | ((v >> 8) & 0xf);
-	memory[address++] = v& 0xff;
+	memory[address++] = opc;
+	memory[address++] = v >> 8 & 0xf;
+	memory[address++] = v >> 4 & 0xf;
+	memory[address++] = v & 0xf;
+
 	chkAddress(address);
 	return true;
 }
@@ -169,10 +187,12 @@ void relocation() {
 		}
 	}
 }
-
+#undef TOK
+#define TOK(x,opc) case x:
 int parseFile(FILE* f) {
 	int t = 0; // token
 	int inside = 1;
+
 	while (!feof(stdin) & inside) {
 		t = yylex();
 		switch (t) {
@@ -183,19 +203,26 @@ int parseFile(FILE* f) {
 		case T_DataByte: parse_db(); break;
 		case T_Identifier: parse_identifier(); break;
 		case T_IntConstant: parse_db(); break;
-		case T_Mfi:
-		case T_Lda:
-		case T_Sta:
-		case T_Jmp:
-		case T_Jz:
-		case T_Jnz:
-		case T_Js:
-		case T_Jns:
-		case T_Jc:
-		case T_Jnc:
-		case T_Add:
-		case T_Sub: parse_Op4_12(t); break;
-		case T_Inc: parse_Op4_4(t); break;
+		TOK(T_mvi, 0)
+			parse_Op4_4(t); break;
+
+		TOK(T_sta, 1)
+		TOK(T_lda, 2)
+		TOK(T_ad0, 3)
+		TOK(T_ad1, 4)
+		TOK(T_adc, 5)
+		TOK(T_nand, 6)
+		TOK(T_nor, 7)
+		TOK(T_rrm, 8)
+		TOK(T_jmp, 9)
+		TOK(T_jc, 10)
+		TOK(T_jnc, 11)
+		TOK(T_jz, 12)
+		TOK(T_jnz, 13)
+		TOK(T_jm, 14)
+		TOK(T_jp, 15)
+			parse_Op4_12(t); break;
+		
 		case T_End: inside = 0; break;
 		default:
 			Failure("syntax?");
@@ -204,6 +231,24 @@ int parseFile(FILE* f) {
 	}
 	return t;
 }
+/*
+TOK(T_mvi, 0)
+TOK(T_sta, 1)
+TOK(T_lda, 2)
+TOK(T_ad0, 3)
+TOK(T_ad1, 4)
+TOK(T_adc, 5)
+TOK(T_nand,6)
+TOK(T_nor, 7)
+TOK(T_rrm, 8)
+TOK(T_jmp, 9)
+TOK(T_jc, 10)
+TOK(T_jnc,11)
+TOK(T_jz, 12)
+TOK(T_jnz,13)
+TOK(T_jm, 14)
+TOK(T_jp, 15)
+*/
 int parseFnmae(const char* fname) {
 	FILE* f;
 	f = fopen(fname, "r");

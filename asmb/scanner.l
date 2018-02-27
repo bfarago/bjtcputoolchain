@@ -83,19 +83,23 @@ static void Do_User_Action();
 	}
 "section" return T_Section;
 "global" return T_Global;
-"mfi"	return T_Mfi;
-"lda"	return T_Lda;
-"sta"	return T_Sta;
-"add"	return T_Add;
-"sub"	return T_Sub;
-"inc"	return T_Inc;
-"jmp"	return T_Jmp;
-"jz"	return T_Jz;
-"jnz"	return T_Jnz;
-"js"	return T_Js;
-"jns"	return T_Jns;
-"jc"	return T_Js;
-"jnc"	return T_Jnc;
+
+"sta"	return T_sta;
+"lda"	return T_lda;
+"mvi"	return T_mvi;
+
+"ad0"	return T_ad0;
+"ad1"	return T_ad1;
+"adc"	return T_adc;
+"rrm"	return T_rrm;
+"jmp"	return T_jmp;
+"jz"	return T_jz;
+"jnz"	return T_jnz;
+"jm"	return T_jm;
+"jp"	return T_jp;
+"jc"	return T_js;
+"jnc"	return T_jnc;
+
 "db"	return T_DataByte;
 "equ"	return T_Equ;
 "org"	return T_Org;
