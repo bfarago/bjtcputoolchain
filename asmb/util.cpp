@@ -11,9 +11,11 @@ static const int UTIL_BUFFERSIZE = 2048;
 
 int address = 0;
 int maxaddress = 0;
+relocType_en actualRelocType = RT_OP4_12;
 
 static vector<const char*> reloc;
 static vector<int> relocAddress;
+static vector<relocType_en> relocType;
 
 void Failure(const char *format, ...) {
   va_list args;
@@ -60,18 +62,18 @@ void Debug(const char *key, const char *format, ...) {
 }
 
 void ParseCommandLine(int argc, char *argv[]) {
-  if (argc == 1)
+  if (argc < 3)
     return;
   
-  if (strcmp(argv[1], "-d") != 0) { // first arg is not -d
+  if (strcmp(argv[2], "-d") != 0) { // first arg is not -d
     printf("Incorrect Use:   ");
     for (int i = 1; i < argc; i++) printf("%s ", argv[i]);
     printf("\n");
-    printf("Correct Usage:   -d <debug-key-1> <debug-key-2> ... \n");
+    printf("Correct Usage:  fname.asm -d <debug-key-1> <debug-key-2> ... \n");
     exit(2);
   }
 
-  for (int i = 2; i < argc; i++)
+  for (int i = 3; i < argc; i++)
     SetDebugForKey(argv[i], true);
 }
 
@@ -86,16 +88,18 @@ int searchSymbol(const char *key) {
 
 	return -1;
 }
-void addReloc(const char* name, int addr) {
+void addReloc(const char* name, int addr, relocType_en rt) {
 	reloc.push_back(strdup(name));
 	relocAddress.push_back(addr);
+	relocType.push_back(rt);
 }
 int getRelocs() {
 	return reloc.size();
 }
-int getReloc(int index, const char**name, int* adr) {
+int getReloc(int index, const char**name, int* adr, relocType_en* rt) {
 	*name = reloc[index];
 	*adr = relocAddress[index];
+	*rt = relocType[index];
 	return 1;
 }
 void setSymbol(const char* name, int value) {
@@ -107,10 +111,13 @@ void setSymbol(const char* name, int value) {
 		Failure("Symbol already declared");
 	}
 }
+void setRelocType(relocType_en rt) {
+	actualRelocType = rt;
+}
 int getSymbol(const char* name) {
 	int index = searchSymbol(name);
 	if (index < 0) {
-		addReloc(name, address);
+		addReloc(name, address, actualRelocType);
 		return -1;
 	}
 	return symbolValues[index];

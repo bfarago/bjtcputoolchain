@@ -97,6 +97,7 @@ bool parse_identifier() {
 bool parse_Op4_4(int mnemonic) {
 	int v = 0;
 	int opc = 0;
+	setRelocType(RT_OP4_4);
 	switch (mnemonic) {
 		case T_Inc: opc = 12; break;
 	}
@@ -108,6 +109,7 @@ bool parse_Op4_12(int mnemonic) {
 	int t = yylex();
 	int v = 0;
 	int opc = 0;
+	setRelocType(RT_OP4_12);
 	switch (mnemonic) {
 	    case T_Mfi: opc = 0; break;
 		case T_Lda: opc = 1; break;
@@ -140,71 +142,105 @@ void relocation() {
 	for (int i = 0; i < n; i++) {
 		const char* name;
 		int addr;
-		getReloc(i, &name, &addr);
+		int relocType;
+		getReloc(i, &name, &addr, &relocType);
 		int ix= searchSymbol(name);
 		if (ix >= 0) {
 			int v = getSymbol(name);
-			memory[addr] &= 0xf0;
-			memory[addr] |= (v>>8)&0xf;
-			memory[addr +1] = v  & 0xff;
-			printf("\n%s relocated [%x]=%x", name, addr, v);
+			switch (relocType) {
+			case RT_OP4_12:
+				memory[addr] &= 0xf0;
+				memory[addr] |= (v >> 8) & 0xf;
+				memory[addr + 1] = v & 0xff;
+				Debug("rel", "%s relocated %x:[op:%x %02x]", name, addr, (v>>8) & 0xf, v&0xff);
+				break;
+			case RT_OP4_4:
+				memory[addr] &= 0xf0;
+				memory[addr] |= v & 0xf;
+				Debug("rel", "%s relocated %x:[op:%x]", name, addr, v&0xf);
+				break;
+			}
+			
+			
 		}
 		else {
 			//not found, external
-			printf("\nextern %s relocate %x", name, addr);
+			Debug("ext", "extern %s relocate %x", name, addr);
 		}
 	}
+}
+
+int parseFile(FILE* f) {
+	int t = 0; // token
+	int inside = 1;
+	while (!feof(stdin) & inside) {
+		t = yylex();
+		switch (t) {
+		case T_Org: parse_org(); break;
+		case T_Section: parse_section(); break;
+		case T_Global: parse_global(); break;
+		case T_Include: Failure("not implemented."); break;
+		case T_DataByte: parse_db(); break;
+		case T_Identifier: parse_identifier(); break;
+		case T_IntConstant: parse_db(); break;
+		case T_Mfi:
+		case T_Lda:
+		case T_Sta:
+		case T_Jmp:
+		case T_Jz:
+		case T_Jnz:
+		case T_Js:
+		case T_Jns:
+		case T_Jc:
+		case T_Jnc:
+		case T_Add:
+		case T_Sub: parse_Op4_12(t); break;
+		case T_Inc: parse_Op4_4(t); break;
+		case T_End: inside = 0; break;
+		default:
+			Failure("syntax?");
+			break;
+		}
+	}
+	return t;
+}
+int parseFnmae(const char* fname) {
+	FILE* f;
+	f = fopen(fname, "r");
+	if (!f) {
+		Failure("Include file not found");
+	}
+	parseFile(f);
+	fclose(f);
 }
 extern FILE* yyin;
 int main(int argc, char** argv)
 {
 	printf("asm.bjtcpu v1.0");
 	FILE* fin;
+	ParseCommandLine(argc, argv);
 	if (argc > 1) {
 		fin = fopen(argv[1], "r");
+		if (!fin) {
+			Failure("File not found");
+			return -1;
+		}
 		yyin= fin;
 	}
 	SetDebugForKey("lex", true);
-	int t = 0;
-	int inside = 1;
-	while(!feof(stdin) & inside){
-		t = yylex();
-		switch(t) {
-			case T_Org: parse_org(); break;
-			case T_Section: parse_section(); break;
-			case T_Global: parse_global(); break;
-			case T_Include: Failure("not implemented."); break;
-			case T_DataByte: parse_db(); break;
-			case T_Identifier: parse_identifier(); break;
-			case T_IntConstant: parse_db(); break;
-			case T_Mfi:
-			case T_Lda:
-			case T_Sta:
-			case T_Jmp:
-			case T_Jz: 
-			case T_Jnz:
-			case T_Js: 
-			case T_Jns:
-			case T_Jc: 
-			case T_Jnc:
-			case T_Add:
-			case T_Sub: parse_Op4_12(t); break;
-			case T_Inc: parse_Op4_4(t); break;
-				
-			
-			case T_End: inside = 0; break;
-			default:
-				Failure("syntax?");
-				break;
-		}
-	}
+	SetDebugForKey("rel", true);
+	SetDebugForKey("ext", true);
+	parseFile(yyin);
 	relocation();
 	FILE* f=fopen("a.out", "w+");
+	if (!f) {
+		Failure("Unable to create output file");
+		return -2;
+	}
 	fwrite(memory, 1, maxaddress, f);
 	fclose(f);
 	if (argc > 1) {
 		fclose(fin);
 	}
-//	yyparse();
 	return 0;
 }

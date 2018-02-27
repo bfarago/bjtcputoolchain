@@ -11,6 +11,12 @@ extern "C" {
 
 extern int address;
 extern int maxaddress;
+typedef enum {
+	RT_OP4_12,
+	RT_OP4_4,
+	RT_MAX
+}relocType_en;
+extern relocType_en actualRelocType;
 	
 /**
  * Function: Failure()
@@ -81,8 +87,9 @@ void ParseCommandLine(int argc, char *argv[]);
 int searchSymbol(const char *key);
 void setSymbol(const char* name, int value);
 int getSymbol(const char* name);
-int getReloc(int index, const char**name, int* adr);
+int getReloc(int index, const char**name, int* adr, relocType_en* rt);
 int getRelocs();
+void setRelocType(relocType_en rt);
 int yywrap();
 
 #ifdef __cplusplus
