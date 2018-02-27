@@ -87,7 +87,7 @@ int searchSymbol(const char *key) {
 	return -1;
 }
 void addReloc(const char* name, int addr) {
-	reloc.push_back(name);
+	reloc.push_back(strdup(name));
 	relocAddress.push_back(addr);
 }
 int getRelocs() {

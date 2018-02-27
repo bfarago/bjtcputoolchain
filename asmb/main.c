@@ -144,13 +144,14 @@ void relocation() {
 		int ix= searchSymbol(name);
 		if (ix >= 0) {
 			int v = getSymbol(name);
-			memory[address] &= 0xf0;
-			memory[address] |= (v>>8)&0xf;
-			memory[address+1] = v  & 0xff;
+			memory[addr] &= 0xf0;
+			memory[addr] |= (v>>8)&0xf;
+			memory[addr +1] = v  & 0xff;
+			printf("\n%s relocated [%x]=%x", name, addr, v);
 		}
 		else {
 			//not found, external
-			printf("extern %s relocate %x\n", name, addr);
+			printf("\nextern %s relocate %x", name, addr);
 		}
 	}
 }
