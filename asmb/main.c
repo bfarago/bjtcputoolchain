@@ -15,7 +15,7 @@ void setAddress(int a) {
 void chkAddress(int a) {
 	if (a > maxaddress) maxaddress = a;
 }
-bool parse_org() {
+int parse_org() {
 	int t = yylex();
 	switch(t) {
 	case T_IntConstant:
@@ -25,10 +25,10 @@ bool parse_org() {
 		Failure("syntax error: org 0x1234");
 		break;
 	}
-	return true;
+	return 0;
 }
 
-bool parse_section() {
+int parse_section() {
 	int t = yylex();
 	switch (t) {
 	case T_Identifier:
@@ -42,10 +42,10 @@ bool parse_section() {
 		return false;
 		break;
 	}
-	return true;
+	return 0;
 }
 
-bool parse_global() {
+int parse_global() {
 	int t = yylex();
 	switch (t) {
 	case T_Identifier:
@@ -55,39 +55,64 @@ bool parse_global() {
 		Failure("syntax error: global identifier");
 		break;
 	}
-	return true;
+	return 0;
 }
-bool parse_db() {
+int parse_nibles() {
+	int v = yylval.integerConstant;
 	int t = yylex();
-	switch (t) {
-	case T_Dollar:
-		memory[address++] = address;
-		break;
-	case T_IntConstant:
-		memory[address++] = yylval.integerConstant;
-		chkAddress(address);
-		break;
-	default:
-		Failure("syntax error: db 0xff");
-		break;
+	bool inside = 1;
+	while (inside) {
+		if (!t) t = yylex();
+		switch (t) {
+		case ',':
+			t = 0;
+			break;
+		case T_IntConstant:
+			t = 0;
+			v = yylval.integerConstant;
+			memory[address++] = v;
+			chkAddress(address);
+			break;
+		default:
+			inside = false;
+			break;
+		}
 	}
-	return true;
+	return 0;
 }
-bool parse_identifier() {
+int parse_db() {
+	int t = yylex();
+	GType_s grm;
+	t = parse_exp(t, &grm);
+	if (grm.t != S_Exp) {
+		Debug("grm", "Expression not found: db expression");
+	}
+	else {
+		memory[address++]= grm.s.integerConstant;
+		chkAddress(address);
+	}
+	return t;
+}
+int parse_identifier() {
 	char* name = strdup(yylval.identifier);
+	
 	int t = yylex();
 	switch (t) {
 	case ':':
+		t = 0;
 		setSymbol(name, address);
+		Debug("pse", "%s: label %s", __FUNCTION__, name);
 		break;
 	case T_Equ:
+		Debug("pse", "%s: %s equ", __FUNCTION__, name);
 		t = yylex();
-		switch (t) {
-			case T_IntConstant:
-				setSymbol(name, yylval.integerConstant);
-				break;
-			default:
-				break;
+		GType_s grm;
+		t = parse_exp(t, &grm);
+		if (grm.t != S_Exp) {
+			Debug("grm", "Expression not found: mvi a,expression");
+		}
+		else {
+			setSymbol(name, grm.s.integerConstant);
 		}
 		break;
 	default:
@@ -95,27 +120,34 @@ bool parse_identifier() {
 		return false;
 		break;
 	}
-	return true;
+	return t;
 }
 
-bool parse_Op4_4(int mnemonic) {
+int parse_Op4_4(int mnemonic) {
 	int v = 0;
 	int opc = 0;
 	setRelocType(RT_OP4_4);
 	switch (mnemonic) {
-		//#undef TOK
+		#undef TOK
 		#define TOK(x, xop) case x: opc=xop; break;
 		TOK(T_mvi, 0)
 	}
+	int t = yylex();
+	GType_s grm;
+	t = parse_exp(t, &grm);
+	if (grm.t != S_Exp) {
+		Debug("grm", "Expression not found: mvi a,expression");
+	}
+	v = grm.s.integerConstant;
 	memory[address++] = opc;
 	memory[address++] = v & 0xf;
 
 	chkAddress(address);
-	return true;
+	return t;
 }
 
 
-bool parse_Op4_12(int mnemonic) {
+int parse_Op4_12(int mnemonic) {
 	int t = yylex();
 	int v = 0;
 	int opc = 0;
@@ -139,21 +171,19 @@ bool parse_Op4_12(int mnemonic) {
 		TOK(T_jm, 14)
 		TOK(T_jp, 15)
 	}
-	switch (t) {
-		case T_Identifier: v = getSymbol(yylval.identifier); break;
-		case T_IntConstant: v = yylval.integerConstant; break;
-		default:
-			Failure("syntax error: lda 0x12 or sta 0x12");
-			return false;
-			break;
+	GType_s grm;
+	t = parse_exp(t, &grm);
+	if (grm.t != S_Exp) {
+		Debug("grm", "Expression not found: mvi a,expression");
 	}
+	v = grm.s.integerConstant;
 	memory[address++] = opc;
 	memory[address++] = v >> 8 & 0xf;
 	memory[address++] = v >> 4 & 0xf;
 	memory[address++] = v & 0xf;
 
 	chkAddress(address);
-	return true;
+	return t;
 }
 void relocation() {
 	int n = getRelocs();
@@ -167,15 +197,16 @@ void relocation() {
 			int v = getSymbol(name);
 			switch (relocType) {
 			case RT_OP4_12:
-				memory[addr] &= 0xf0;
-				memory[addr] |= (v >> 8) & 0xf;
-				memory[addr + 1] = v & 0xff;
-				Debug("rel", "%s relocated %x:[op:%x %02x]", name, addr, (v>>8) & 0xf, v&0xff);
+				//memory[addr] &= 0xf0;
+				memory[addr+1] = (v >> 8) & 0xf;
+				memory[addr+2] = (v >> 4) & 0xf;
+				memory[addr+3] = v & 0xf;
+				Debug("rel", "%s relocated %x:[op%03x]", name, addr, v&0xfff);
 				break;
 			case RT_OP4_4:
-				memory[addr] &= 0xf0;
-				memory[addr] |= v & 0xf;
-				Debug("rel", "%s relocated %x:[op:%x]", name, addr, v&0xf);
+				//memory[addr] &= 0xf0;
+				memory[addr+1] = v & 0xf;
+				Debug("rel", "%s relocated %x:[op%x]", name, addr, v&0xf);
 				break;
 			}
 			
@@ -194,17 +225,19 @@ int parseFile(FILE* f) {
 	int inside = 1;
 
 	while (!feof(stdin) & inside) {
-		t = yylex();
+		if (!t) t = yylex();
+		if (t>=T_Void) Debug("grm", "endterm: '%s'\n", gTokenNames[t- T_Void]);
 		switch (t) {
-		case T_Org: parse_org(); break;
-		case T_Section: parse_section(); break;
-		case T_Global: parse_global(); break;
+		case T_NewLine: t = 0; break;
+		case T_Org: t=parse_org(); break;
+		case T_Section: t = parse_section(); break;
+		case T_Global: t = parse_global(); break;
 		case T_Include: Failure("not implemented."); break;
-		case T_DataByte: parse_db(); break;
-		case T_Identifier: parse_identifier(); break;
-		case T_IntConstant: parse_db(); break;
+		case T_DataByte: t = parse_db(); break;
+		case T_Identifier: t = parse_identifier(); break;
+		case T_IntConstant: t = parse_nibles(); break;
 		TOK(T_mvi, 0)
-			parse_Op4_4(t); break;
+			t=parse_Op4_4(t); break;
 
 		TOK(T_sta, 1)
 		TOK(T_lda, 2)
@@ -221,15 +254,103 @@ int parseFile(FILE* f) {
 		TOK(T_jnz, 13)
 		TOK(T_jm, 14)
 		TOK(T_jp, 15)
-			parse_Op4_12(t); break;
+			t = parse_Op4_12(t); break;
 		
 		case T_End: inside = 0; break;
 		default:
 			Failure("syntax?");
+			t = 0;
 			break;
 		}
 	}
 	return t;
+}
+
+int parseFnmae(const char* fname) {
+	FILE* f;
+	f = fopen(fname, "r");
+	if (!f) {
+		Failure("Include file not found");
+	}
+	int ret=parseFile(f);
+	fclose(f);
+	return ret;
+}
+extern FILE* yyin;
+int main(int argc, char** argv)
+{
+	printf("asm.bjtcpu v1.0");
+	FILE* fin;
+	ParseCommandLine(argc, argv);
+	if (argc > 1) {
+		fin = fopen(argv[1], "r");
+		if (!fin) {
+			Failure("File not found");
+			return -1;
+		}
+		yyin= fin;
+	}
+	SetDebugForKey("lex", true);
+	SetDebugForKey("rel", true);
+	SetDebugForKey("ext", true);
+	SetDebugForKey("grm", true);
+	SetDebugForKey("pse", true);
+	parseFile(yyin);
+	if (argc > 1) {
+		fclose(fin);
+	}
+	relocation();
+	FILE* f=fopen("a.out", "w+");
+	if (!f) {
+		Failure("Unable to create output file");
+		return -2;
+	}
+	fwrite(memory, 1, maxaddress, f);
+	fclose(f);
+	f = fopen("a.lst", "w+");
+	fprintf(f, ";Generated list file\n");
+	for (int i = 0; i < maxaddress; i++) {
+		int m = memory[i];
+		switch (m) {
+			#undef TOK
+			#define TOK(x,opc) case opc:
+			TOK(T_mvi, 0)
+				fprintf(f, "%03x  %x %x      %s 0x%x\n",
+					i, 
+					m, memory[i + 1],
+					gTokenNames[T_mvi-T_Void + m], memory[i + 1]);
+				i++; // skip data
+				break;
+			TOK(T_sta, 1)
+			TOK(T_lda, 2)
+			TOK(T_ad0, 3)
+			TOK(T_ad1, 4)
+			TOK(T_adc, 5)
+			TOK(T_nand, 6)
+			TOK(T_nor, 7)
+			TOK(T_rrm, 8)
+			TOK(T_jmp, 9)
+			TOK(T_jc, 10)
+			TOK(T_jnc, 11)
+			TOK(T_jz, 12)
+			TOK(T_jnz, 13)
+			TOK(T_jm, 14)
+			TOK(T_jp, 15)
+				fprintf(f, "%03x  %x %x %x %x  %s 0x%x%x%x\n",
+					i,
+					m, memory[i + 1], memory[i + 2], memory[i + 3],
+					gTokenNames[T_mvi-T_Void +m], memory[i+1], memory[i + 2], memory[i + 3]);
+				i += 3;
+				break;
+		default:
+			fprintf(f, "; wrong binary content: %02x\n",m);
+			break;
+		}
+		
+	}
+	fprintf(f, "end\n");
+	fclose(f);
+	return 0;
 }
 /*
 TOK(T_mvi, 0)
@@ -249,43 +370,3 @@ TOK(T_jnz,13)
 TOK(T_jm, 14)
 TOK(T_jp, 15)
 */
-int parseFnmae(const char* fname) {
-	FILE* f;
-	f = fopen(fname, "r");
-	if (!f) {
-		Failure("Include file not found");
-	}
-	parseFile(f);
-	fclose(f);
-}
-extern FILE* yyin;
-int main(int argc, char** argv)
-{
-	printf("asm.bjtcpu v1.0");
-	FILE* fin;
-	ParseCommandLine(argc, argv);
-	if (argc > 1) {
-		fin = fopen(argv[1], "r");
-		if (!fin) {
-			Failure("File not found");
-			return -1;
-		}
-		yyin= fin;
-	}
-	SetDebugForKey("lex", true);
-	SetDebugForKey("rel", true);
-	SetDebugForKey("ext", true);
-	parseFile(yyin);
-	relocation();
-	FILE* f=fopen("a.out", "w+");
-	if (!f) {
-		Failure("Unable to create output file");
-		return -2;
-	}
-	fwrite(memory, 1, maxaddress, f);
-	fclose(f);
-	if (argc > 1) {
-		fclose(fin);
-	}
-	return 0;
-}

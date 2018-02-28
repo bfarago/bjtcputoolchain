@@ -2,6 +2,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <vector>
+
 using std::vector;
 
 static vector<const char*> debugKeys;
@@ -16,6 +17,93 @@ relocType_en actualRelocType = RT_OP4_12;
 static vector<const char*> reloc;
 static vector<int> relocAddress;
 static vector<relocType_en> relocType;
+
+
+static vector<GType_s> gStack;
+void stackPush(int t, YYSTYPE s) {
+	GType_s p ;
+	p.t = t;
+	p.s = s;
+	gStack.push_back(p);
+
+}
+void stackClear() {
+	gStack.clear();
+}
+int ruleExp[] = 
+{
+	T_IntConstant, '+', T_IntConstant, T_Void,
+	T_IntConstant, T_Void
+};
+
+int parse_exp(int t, GType_s* res) {
+	int r = 0;
+	int lval = 0;
+	int op = 0;
+	int top = gStack.size();
+	Debug("pse", __FUNCTION__);
+	while (0 == r) {
+		switch (t) {
+		case '/':
+		case '*':
+		case '-':
+		case '+':
+			stackPush(t, yylval);
+			break;
+		case T_Identifier:
+			t = T_IntConstant; //rewrire
+			yylval.integerConstant = getSymbol(yylval.identifier);
+			stackPush(t, yylval);
+			break;
+		case T_IntConstant:
+			stackPush(t, yylval);
+			break;
+		case T_Dollar:
+			t = T_IntConstant; //rewrire
+			yylval.integerConstant = address;
+			stackPush(t, yylval);
+		default:
+			r = t;
+			break;
+		}
+		if (!r) t = yylex();
+	}
+	int len = gStack.size();
+	int sp = 0;
+	int rule = 0;
+	for (int i = 0; i < sizeof(ruleExp)/sizeof(int); i++) {
+		if (T_Void == ruleExp[i]) break;
+		if (i < len) {
+			GType_s& s = gStack[top + sp];
+			if (s.t == ruleExp[i]) {
+				//accept next
+				sp++;
+				continue;
+			}
+		}
+		//search next rule
+		sp = 0;
+		while (T_Void != ruleExp[i]) i++;
+		i++;
+		rule = i;
+		
+	}
+	switch (rule) {
+	case 0: // exp= exp + exp
+		res->s.integerConstant = gStack[top+0].s.integerConstant + gStack[top+2].s.integerConstant;
+		res->t = S_Exp;
+		break;
+	case 4: // exp = i
+		res->s.integerConstant = gStack[top+0].s.integerConstant;
+		res->t = S_Exp;
+		break;
+	default:
+		res->t = T_Void;
+		break;
+	}
+	stackClear();
+	return r;
+}
 
 void Failure(const char *format, ...) {
   va_list args;

@@ -8,16 +8,29 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
+#include "scanner.h"
 extern int address;
 extern int maxaddress;
+
+/*Typedef: relocType_en
+*Grammar relocation enum.
+*/
 typedef enum {
 	RT_OP4_12,
 	RT_OP4_4,
 	RT_MAX
 }relocType_en;
 extern relocType_en actualRelocType;
-	
+
+/*Typedef: GType
+*Grammar minimal storage.
+*/
+typedef struct {
+	int t;
+	YYSTYPE s;
+} GType_s;
+void stackPush(int t, YYSTYPE s);
+int parse_exp(int t, GType_s* res);
 /**
  * Function: Failure()
  * Usage: Failure("Out of memory!");

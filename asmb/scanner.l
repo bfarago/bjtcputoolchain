@@ -86,7 +86,7 @@ static void Do_User_Action();
 
 "sta"	return T_sta;
 "lda"	return T_lda;
-"mvi"	return T_mvi;
+"mvi a,"	return T_mvi;
 
 "ad0"	return T_ad0;
 "ad1"	return T_ad1;
@@ -97,7 +97,7 @@ static void Do_User_Action();
 "jnz"	return T_jnz;
 "jm"	return T_jm;
 "jp"	return T_jp;
-"jc"	return T_js;
+"jc"	return T_jc;
 "jnc"	return T_jnc;
 
 "db"	return T_DataByte;
@@ -115,7 +115,24 @@ static void Do_User_Action();
 		return T_IntConstant;
 }
 
+[0-9a-z]+h {
+		yylval.integerConstant = strtol(yytext, NULL, 16);
+		return T_IntConstant;
+}
+
+
+[0-9]+ {
+		yylval.integerConstant = strtol(yytext, NULL, 10);
+		return T_IntConstant;
+}
+[0-1]+b {
+		yylval.integerConstant = strtol(yytext, NULL, 2);
+		return T_IntConstant;
+}
+[\n] return T_NewLine;
 [\t\n] ;
+
+. ;
 
 %%
 /* The closing %% above marks the end of the Rules section and the beginning
