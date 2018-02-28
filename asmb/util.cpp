@@ -33,6 +33,7 @@ void stackClear() {
 int ruleExp[] = 
 {
 	T_IntConstant, '+', T_IntConstant, T_Void,
+	T_IntConstant, '-', T_IntConstant, T_Void,
 	T_IntConstant, T_Void
 };
 
@@ -93,7 +94,11 @@ int parse_exp(int t, GType_s* res) {
 		res->s.integerConstant = gStack[top+0].s.integerConstant + gStack[top+2].s.integerConstant;
 		res->t = S_Exp;
 		break;
-	case 4: // exp = i
+	case 4: // exp= exp - exp
+		res->s.integerConstant = gStack[top + 0].s.integerConstant - gStack[top + 2].s.integerConstant;
+		res->t = S_Exp;
+		break;
+	case 8: // exp = i
 		res->s.integerConstant = gStack[top+0].s.integerConstant;
 		res->t = S_Exp;
 		break;
@@ -146,7 +151,7 @@ void Debug(const char *key, const char *format, ...) {
   va_start(args, format);
   vsnprintf(buf, UTIL_BUFFERSIZE, format, args);
   va_end(args);
-  printf("+++ (%s): %s%s", key, buf, buf[strlen(buf)-1] != '\n'? "\n" : "");
+  printf("+++ (%s)%i: %s%s", key, yylineno, buf, buf[strlen(buf)-1] != '\n'? "\n" : "");
 }
 
 void ParseCommandLine(int argc, char *argv[]) {
@@ -206,7 +211,7 @@ int getSymbol(const char* name) {
 	int index = searchSymbol(name);
 	if (index < 0) {
 		addReloc(name, address, actualRelocType);
-		return -1;
+		return 0; //this will be added to resolved value at pass2, relocation.
 	}
 	return symbolValues[index];
 }

@@ -134,6 +134,7 @@ int yylex();              // Defined in the generated lex.yy.c file
 
 void InitScanner();                 // Defined in scanner.l user subroutines
 
+extern int yylineno;
 #ifdef __cplusplus
 }
 #endif

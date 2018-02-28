@@ -155,7 +155,7 @@
   <ItemGroup>
     <CustomBuild Include="scanner.l">
       <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">g:\prg\gnu\bin\flex.exe -d -Sflex.skl %(Identity)</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">C:\prg\flex\bin\flex.exe -i -d -Sflex.skl %(Identity)</Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Lexical analyzer generator</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">lex.yy.c</Outputs>
     </CustomBuild>

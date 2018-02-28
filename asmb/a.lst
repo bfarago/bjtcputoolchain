@@ -1,34 +1,47 @@
 ;Generated list file
-000  0 f      T_mvi 0xf
-002  1 f f f  T_sta 0xfff
-006  9 0 4 8  T_jmp 0x048
-00a  9 0 3 8  T_jmp 0x038
-00e  0 3      T_mvi 0x3
-010  1 c 0 1  T_sta 0xc01
-014  2 0 6 a  T_lda 0x06a
-018  1 c 0 2  T_sta 0xc02
-01c  2 0 6 a  T_lda 0x06a
-020  1 c 0 2  T_sta 0xc02
-024  2 c 0 3  T_lda 0xc03
-028  1 c 0 2  T_sta 0xc02
-02c  2 c 0 4  T_lda 0xc04
-030  1 c 0 2  T_sta 0xc02
-034  9 0 0 a  T_jmp 0x00a
-038  0 0      T_mvi 0x0
-03a  1 c 0 1  T_sta 0xc01
-03e  0 c      T_mvi 0xc
-040  1 c 0 2  T_sta 0xc02
-044  9 0 0 e  T_jmp 0x00e
-048  3 f f f  T_ad0 0xfff
-04c  1 f f d  T_sta 0xffd
-050  0 f      T_mvi 0xf
-052  3 f f f  T_ad0 0xfff
-056  d 0 5 2  T_jnz 0x052
-05a  2 f f d  T_lda 0xffd
-05e  d 0 4 8  T_jnz 0x048
-062  9 0 0 a  T_jmp 0x00a
-066  9 0 6 6  T_jmp 0x066
-06a  1 2 3 4  T_sta 0x234
+                                   ;; This is a test asm file
+                                   ;; for BJT CPU.
+                                   ;perif   equ 0xc00
+                                   ;offs1	equ 3
+                                   ;h_uart  equ perif+0
+                                   ;l_uart  equ perif+1
+                                   ;in0     equ 2+perif
+                                   ;in1     equ perif+offs1
+                                   ;m1_addr EQU 4095
+                                   ;m1      Equ 15
+                                   ;
+000  0 f      T_mvi 0xf            ;		mvi a,m1
+002  1 f f f  T_sta 0xfff          ;		sta m1_addr
+006  9 0 4 8  T_jmp 0x048          ;		jmp delay		;call delay
+00a  9 0 3 8  T_jmp 0x038          ;start:  jmp clear		;call clear
+00e  0 3      T_mvi 0x3            ;retclr: mvi a,3
+010  1 c 0 0  T_sta 0xc00          ;        sta h_uart
+014  2 0 6 a  T_lda 0x06a          ;        ldA db_er
+018  1 c 0 1  T_sta 0xc01          ;        STa l_uart
+01c  2 0 6 b  T_lda 0x06b          ;        lda db_er+1
+020  1 c 0 1  T_sta 0xc01          ;        sta l_uart
+024  2 c 0 2  T_lda 0xc02          ;        lda in0
+028  1 c 0 1  T_sta 0xc01          ;        sta l_uart
+02c  2 c 0 3  T_lda 0xc03          ;        lda in1
+030  1 c 0 1  T_sta 0xc01          ;        sta l_uart
+034  9 0 0 a  T_jmp 0x00a          ;        jmp start
+                                   ;
+038  0 0      T_mvi 0x0            ;clear:  mvi a,0             ;clear rutin
+03a  1 c 0 0  T_sta 0xc00          ;        sta h_uart
+03e  0 c      T_mvi 0xc            ;        mvi a,12
+040  1 c 0 1  T_sta 0xc01          ;        sta l_uart
+044  9 0 0 e  T_jmp 0x00e          ;        jmp retclr			;ret
+                                   ;		
+048  3 f f f  T_ad0 0xfff          ;delay:  ad0 m1_addr         ;delay rutin
+04c  1 f f d  T_sta 0xffd          ;        sta 4093
+050  0 f      T_mvi 0xf            ;        mvi a,15
+052  3 f f f  T_ad0 0xfff          ;loop3:  ad0 m1_addr
+056  d 0 5 2  T_jnz 0x052          ;        jnz loop3
+05a  2 f f d  T_lda 0xffd          ;        lda 4093
+05e  d 0 4 8  T_jnz 0x048          ;        jnz delay
+062  9 0 0 a  T_jmp 0x00a          ;        jmp start			;ret
+066  9 0 6 6  T_jmp 0x066          ;halt:   jmp halt
+06a  1 2 3 4  T_sta 0x234          ;
 06e  5 6 7 8  T_adc 0x678
-072  9 0 0 0  T_jmp 0x000
+072  9 a 0 0  T_jmp 0xa00
 end

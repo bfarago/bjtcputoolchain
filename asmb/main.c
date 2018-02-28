@@ -7,6 +7,8 @@
 
 char section[32];
 char memory[MAXMEMORY];
+int lines[MAXMEMORY];
+
 
 void setAddress(int a) {
 	address = a;
@@ -14,6 +16,11 @@ void setAddress(int a) {
 }
 void chkAddress(int a) {
 	if (a > maxaddress) maxaddress = a;
+}
+void addMemory(int data) {
+	lines[address] = yylineno;
+	memory[address++] = data & 0xf;
+	chkAddress(address);
 }
 int parse_org() {
 	int t = yylex();
@@ -70,7 +77,7 @@ int parse_nibles() {
 		case T_IntConstant:
 			t = 0;
 			v = yylval.integerConstant;
-			memory[address++] = v;
+			addMemory(v);
 			chkAddress(address);
 			break;
 		default:
@@ -88,8 +95,7 @@ int parse_db() {
 		Debug("grm", "Expression not found: db expression");
 	}
 	else {
-		memory[address++]= grm.s.integerConstant;
-		chkAddress(address);
+		addMemory(grm.s.integerConstant);
 	}
 	return t;
 }
@@ -139,10 +145,8 @@ int parse_Op4_4(int mnemonic) {
 		Debug("grm", "Expression not found: mvi a,expression");
 	}
 	v = grm.s.integerConstant;
-	memory[address++] = opc;
-	memory[address++] = v & 0xf;
-
-	chkAddress(address);
+	addMemory(opc);
+	addMemory(v);
 	return t;
 }
 
@@ -177,10 +181,10 @@ int parse_Op4_12(int mnemonic) {
 		Debug("grm", "Expression not found: mvi a,expression");
 	}
 	v = grm.s.integerConstant;
-	memory[address++] = opc;
-	memory[address++] = v >> 8 & 0xf;
-	memory[address++] = v >> 4 & 0xf;
-	memory[address++] = v & 0xf;
+	addMemory(opc);
+	addMemory(v >> 8);
+	addMemory(v >> 4);
+	addMemory(v);
 
 	chkAddress(address);
 	return t;
@@ -197,15 +201,13 @@ void relocation() {
 			int v = getSymbol(name);
 			switch (relocType) {
 			case RT_OP4_12:
-				//memory[addr] &= 0xf0;
-				memory[addr+1] = (v >> 8) & 0xf;
-				memory[addr+2] = (v >> 4) & 0xf;
-				memory[addr+3] = v & 0xf;
+				memory[addr+1] += (v >> 8) & 0xf;
+				memory[addr+2] += (v >> 4) & 0xf;
+				memory[addr+3] += v & 0xf;
 				Debug("rel", "%s relocated %x:[op%03x]", name, addr, v&0xfff);
 				break;
 			case RT_OP4_4:
-				//memory[addr] &= 0xf0;
-				memory[addr+1] = v & 0xf;
+				memory[addr+1] += v & 0xf;
 				Debug("rel", "%s relocated %x:[op%x]", name, addr, v&0xf);
 				break;
 			}
@@ -223,7 +225,7 @@ void relocation() {
 int parseFile(FILE* f) {
 	int t = 0; // token
 	int inside = 1;
-
+	yylineno = 0;
 	while (!feof(stdin) & inside) {
 		if (!t) t = yylex();
 		if (t>=T_Void) Debug("grm", "endterm: '%s'\n", gTokenNames[t- T_Void]);
@@ -255,7 +257,7 @@ int parseFile(FILE* f) {
 		TOK(T_jm, 14)
 		TOK(T_jp, 15)
 			t = parse_Op4_12(t); break;
-		
+
 		case T_End: inside = 0; break;
 		default:
 			Failure("syntax?");
@@ -272,10 +274,11 @@ int parseFnmae(const char* fname) {
 	if (!f) {
 		Failure("Include file not found");
 	}
-	int ret=parseFile(f);
+	int ret = parseFile(f);
 	fclose(f);
 	return ret;
 }
+
 extern FILE* yyin;
 int main(int argc, char** argv)
 {
@@ -288,7 +291,7 @@ int main(int argc, char** argv)
 			Failure("File not found");
 			return -1;
 		}
-		yyin= fin;
+		yyin = fin;
 	}
 	SetDebugForKey("lex", true);
 	SetDebugForKey("rel", true);
@@ -300,7 +303,7 @@ int main(int argc, char** argv)
 		fclose(fin);
 	}
 	relocation();
-	FILE* f=fopen("a.out", "w+");
+	FILE* f = fopen("a.out", "wb+");
 	if (!f) {
 		Failure("Unable to create output file");
 		return -2;
@@ -309,44 +312,76 @@ int main(int argc, char** argv)
 	fclose(f);
 	f = fopen("a.lst", "w+");
 	fprintf(f, ";Generated list file\n");
+	if (argc > 1) {
+		fin = fopen(argv[1], "r");
+	}
+	int fin_line = 0;
+	int cols = 0;
+#define BUFLEN 512
+	char buflst[BUFLEN];
+	char bufcom[BUFLEN];
 	for (int i = 0; i < maxaddress; i++) {
 		int m = memory[i];
 		switch (m) {
-			#undef TOK
-			#define TOK(x,opc) case opc:
+#undef TOK
+#define TOK(x,opc) case opc:
 			TOK(T_mvi, 0)
-				fprintf(f, "%03x  %x %x      %s 0x%x\n",
-					i, 
+				cols += snprintf(buflst + cols, BUFLEN - cols, "%03x  %x %x      %s 0x%x",
+					i,
 					m, memory[i + 1],
-					gTokenNames[T_mvi-T_Void + m], memory[i + 1]);
-				i++; // skip data
-				break;
+					gTokenNames[T_mvi - T_Void + m], memory[i + 1]);
+			i++; // skip data
+			break;
 			TOK(T_sta, 1)
-			TOK(T_lda, 2)
-			TOK(T_ad0, 3)
-			TOK(T_ad1, 4)
-			TOK(T_adc, 5)
-			TOK(T_nand, 6)
-			TOK(T_nor, 7)
-			TOK(T_rrm, 8)
-			TOK(T_jmp, 9)
-			TOK(T_jc, 10)
-			TOK(T_jnc, 11)
-			TOK(T_jz, 12)
-			TOK(T_jnz, 13)
-			TOK(T_jm, 14)
-			TOK(T_jp, 15)
-				fprintf(f, "%03x  %x %x %x %x  %s 0x%x%x%x\n",
+				TOK(T_lda, 2)
+				TOK(T_ad0, 3)
+				TOK(T_ad1, 4)
+				TOK(T_adc, 5)
+				TOK(T_nand, 6)
+				TOK(T_nor, 7)
+				TOK(T_rrm, 8)
+				TOK(T_jmp, 9)
+				TOK(T_jc, 10)
+				TOK(T_jnc, 11)
+				TOK(T_jz, 12)
+				TOK(T_jnz, 13)
+				TOK(T_jm, 14)
+				TOK(T_jp, 15)
+				cols += snprintf(buflst + cols, BUFLEN - cols, "%03x  %x %x %x %x  %s 0x%x%x%x",
 					i,
 					m, memory[i + 1], memory[i + 2], memory[i + 3],
-					gTokenNames[T_mvi-T_Void +m], memory[i+1], memory[i + 2], memory[i + 3]);
-				i += 3;
-				break;
+					gTokenNames[T_mvi - T_Void + m], memory[i + 1], memory[i + 2], memory[i + 3]);
+			i += 3;
+			break;
 		default:
-			fprintf(f, "; wrong binary content: %02x\n",m);
+			cols += snprintf(buflst + cols, BUFLEN - cols, "; wrong binary content: %02x", m);
 			break;
 		}
-		
+		while (fin_line< lines[i]){
+			if (!feof(fin)) {
+				int colscom = 0;
+				if (fin_line == lines[i]-1) {
+					strncpy(bufcom, buflst, BUFLEN);
+					colscom = cols;
+					cols = 0;
+				}
+				while (colscom<35) {
+					bufcom[colscom++] = ' ';
+				}
+				bufcom[colscom++] = ';';
+				fgets(bufcom+colscom, BUFLEN- colscom, fin);
+				if (strlen(bufcom)) {
+					fprintf(f, "%s", bufcom);
+					colscom = 0;
+				}
+			}
+			fin_line++;
+		}
+		if (cols){
+			buflst[cols] = 0;
+			fprintf(f, "%s\n", buflst);
+			cols = 0;
+		}
 	}
 	fprintf(f, "end\n");
 	fclose(f);

@@ -49,6 +49,8 @@ static void Do_User_Action();
 
 %}
 
+%option yylineno
+
  /* The section before the first %% is the Definitions section of the lex
   * input file. Here is where you set options for the scanner, define lex
   * states, and can set up definitions to give names to regular expressions
@@ -61,9 +63,12 @@ static void Do_User_Action();
  /* All patterns and actions should be placed between the start and stop
   * %% markers which delimit the Rules section. 
   */
-[;][^\n]*[\n] ;
+[;][^\n]*[\n] {
+		//yylloc.first_line++;
+		return T_NewLine;
+	}
 
-[-()<>=+*/;{}.:] {
+[-()<>=+*/{}.:] {
 	 return *yytext;
 	}
 
@@ -72,7 +77,7 @@ static void Do_User_Action();
 		return T_Include;
 	}
 
-\"[^"\n]*["\n] {
+\"[^"]*["] {
 		yylval.stringConstant = strdup(yytext+1);
 		if (yylval.stringConstant[yyleng-2] != '"')
 			Debug("lex","improperly terminated string");
@@ -129,8 +134,11 @@ static void Do_User_Action();
 		yylval.integerConstant = strtol(yytext, NULL, 2);
 		return T_IntConstant;
 }
-[\n] return T_NewLine;
-[\t\n] ;
+[\n]	{
+		// yylloc.first_line++;
+		return T_NewLine;
+	}
+[\t ] ;
 
 . ;
 
