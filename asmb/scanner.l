@@ -96,6 +96,8 @@ static void Do_User_Action();
 "ad0"	return T_ad0;
 "ad1"	return T_ad1;
 "adc"	return T_adc;
+"nand"	return T_nand;
+"nor"	return T_nor;
 "rrm"	return T_rrm;
 "jmp"	return T_jmp;
 "jz"	return T_jz;
@@ -122,7 +124,7 @@ static void Do_User_Action();
 		return T_IntConstant;
 }
 
-[0-9a-z]+h {
+[0-9a-z]+[h] {
 		yylval.integerConstant = strtol(yytext, NULL, 16);
 		return T_IntConstant;
 }

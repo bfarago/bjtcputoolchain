@@ -122,6 +122,12 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
     </Link>
+    <CustomBuildStep>
+      <Command>copy ..\Release\asmb.exe ..\bin\</Command>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Outputs>..\bin\asmb.exe</Outputs>
+    </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
