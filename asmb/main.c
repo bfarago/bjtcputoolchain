@@ -2,12 +2,21 @@
 #include "util.h"
 #include "scanner.h"
 #include "loc.h"
+#include <string.h>
+#define MAXSECTIONNAME (32)
+#define MAXMEMORY (1<<12)
+typedef enum {
+	MT_undef,
+	MT_code,
+	MT_data,
+	MT_max
+} memoryType;
+char section[MAXSECTIONNAME];
+memoryType sectionType=MT_code;
 
-#define MAXMEMORY (16*1024)
-
-char section[32];
 char memory[MAXMEMORY];
 int lines[MAXMEMORY];
+memoryType memoryTypes[MAXMEMORY];
 
 
 void setAddress(int a) {
@@ -19,7 +28,9 @@ void chkAddress(int a) {
 }
 void addMemory(int data) {
 	lines[address] = yylineno;
+	memoryTypes[address] = sectionType;
 	memory[address++] = data & 0xf;
+	
 	chkAddress(address);
 }
 int parse_org() {
@@ -39,15 +50,20 @@ int parse_section() {
 	int t = yylex();
 	switch (t) {
 	case T_Identifier:
-		strncpy(section, yylval.identifier);
+		strncpy(section, yylval.identifier, MAXSECTIONNAME);
 		break;
 	case T_StringConstant:
-		strncpy(section, yylval.stringConstant);
+		strncpy(section, yylval.stringConstant, MAXSECTIONNAME);
 		break;
 	default:
 		Failure("syntax error: section .code");
 		return false;
 		break;
+	}
+	if (0 != strstr(section, "code")) {
+		sectionType = MT_code;
+	} else {
+		sectionType = MT_data;
 	}
 	return 0;
 }
@@ -65,7 +81,7 @@ int parse_global() {
 	return 0;
 }
 int parse_nibles() {
-	int v = yylval.integerConstant;
+	addMemory(yylval.integerConstant);
 	int t = yylex();
 	bool inside = 1;
 	while (inside) {
@@ -76,16 +92,14 @@ int parse_nibles() {
 			break;
 		case T_IntConstant:
 			t = 0;
-			v = yylval.integerConstant;
-			addMemory(v);
-			chkAddress(address);
+			addMemory(yylval.integerConstant);
 			break;
 		default:
 			inside = false;
 			break;
 		}
 	}
-	return 0;
+	return t;
 }
 int parse_db() {
 	int t = yylex();
@@ -211,10 +225,7 @@ void relocation() {
 				Debug("rel", "%s relocated %x:[op%x]", name, addr, v&0xf);
 				break;
 			}
-			
-			
-		}
-		else {
+		} else {
 			//not found, external
 			Debug("ext", "extern %s relocate %x", name, addr);
 		}
@@ -225,7 +236,7 @@ void relocation() {
 int parseFile(FILE* f) {
 	int t = 0; // token
 	int inside = 1;
-	yylineno = 0;
+	yylineno = 1;
 	while (!feof(stdin) & inside) {
 		if (!t) t = yylex();
 		if (t>=T_Void) Debug("grm", "endterm: '%s'\n", gTokenNames[t- T_Void]);
@@ -315,52 +326,57 @@ int main(int argc, char** argv)
 	if (argc > 1) {
 		fin = fopen(argv[1], "r");
 	}
-	int fin_line = 0;
+	int fin_line = 2;
 	int cols = 0;
-#define BUFLEN 512
+	#define BUFLEN 512
 	char buflst[BUFLEN];
 	char bufcom[BUFLEN];
 	for (int i = 0; i < maxaddress; i++) {
 		int m = memory[i];
-		switch (m) {
+		if (MT_data == memoryTypes[i]) {
+			cols += snprintf(buflst + cols, BUFLEN - cols, "%03x  %x", i, m);
+		} else {
+			switch (m) {
 #undef TOK
 #define TOK(x,opc) case opc:
-			TOK(T_mvi, 0)
-				cols += snprintf(buflst + cols, BUFLEN - cols, "%03x  %x %x      %s 0x%x",
-					i,
-					m, memory[i + 1],
-					gTokenNames[T_mvi - T_Void + m], memory[i + 1]);
-			i++; // skip data
-			break;
-			TOK(T_sta, 1)
-				TOK(T_lda, 2)
-				TOK(T_ad0, 3)
-				TOK(T_ad1, 4)
-				TOK(T_adc, 5)
-				TOK(T_nand, 6)
-				TOK(T_nor, 7)
-				TOK(T_rrm, 8)
-				TOK(T_jmp, 9)
-				TOK(T_jc, 10)
-				TOK(T_jnc, 11)
-				TOK(T_jz, 12)
-				TOK(T_jnz, 13)
-				TOK(T_jm, 14)
-				TOK(T_jp, 15)
-				cols += snprintf(buflst + cols, BUFLEN - cols, "%03x  %x %x %x %x  %s 0x%x%x%x",
-					i,
-					m, memory[i + 1], memory[i + 2], memory[i + 3],
-					gTokenNames[T_mvi - T_Void + m], memory[i + 1], memory[i + 2], memory[i + 3]);
-			i += 3;
-			break;
-		default:
-			cols += snprintf(buflst + cols, BUFLEN - cols, "; wrong binary content: %02x", m);
-			break;
+				TOK(T_mvi, 0)
+					cols += snprintf(buflst + cols, BUFLEN - cols, "%03x  %x %x      %s 0x%x",
+						i,
+						m, memory[i + 1],
+						gTokenNames[T_mvi - T_Void + m], memory[i + 1]);
+				i++; // skip data
+				break;
+				TOK(T_sta, 1)
+					TOK(T_lda, 2)
+					TOK(T_ad0, 3)
+					TOK(T_ad1, 4)
+					TOK(T_adc, 5)
+					TOK(T_nand, 6)
+					TOK(T_nor, 7)
+					TOK(T_rrm, 8)
+					TOK(T_jmp, 9)
+					TOK(T_jc, 10)
+					TOK(T_jnc, 11)
+					TOK(T_jz, 12)
+					TOK(T_jnz, 13)
+					TOK(T_jm, 14)
+					TOK(T_jp, 15)
+					cols += snprintf(buflst + cols, BUFLEN - cols, "%03x  %x %x %x %x  %s 0x%x%x%x",
+						i,
+						m, memory[i + 1], memory[i + 2], memory[i + 3],
+						gTokenNames[T_mvi - T_Void + m], memory[i + 1], memory[i + 2], memory[i + 3]);
+				i += 3;
+				break;
+			default:
+				cols += snprintf(buflst + cols, BUFLEN - cols, "; wrong binary content: %02x", m);
+				break;
+			}
 		}
-		while (fin_line< lines[i]){
+		while (fin_line<= lines[i]){
+			
 			if (!feof(fin)) {
 				int colscom = 0;
-				if (fin_line == lines[i]-1) {
+				if (fin_line == lines[i]) {
 					strncpy(bufcom, buflst, BUFLEN);
 					colscom = cols;
 					cols = 0;
@@ -387,21 +403,3 @@ int main(int argc, char** argv)
 	fclose(f);
 	return 0;
 }
-/*
-TOK(T_mvi, 0)
-TOK(T_sta, 1)
-TOK(T_lda, 2)
-TOK(T_ad0, 3)
-TOK(T_ad1, 4)
-TOK(T_adc, 5)
-TOK(T_nand,6)
-TOK(T_nor, 7)
-TOK(T_rrm, 8)
-TOK(T_jmp, 9)
-TOK(T_jc, 10)
-TOK(T_jnc,11)
-TOK(T_jz, 12)
-TOK(T_jnz,13)
-TOK(T_jm, 14)
-TOK(T_jp, 15)
-*/

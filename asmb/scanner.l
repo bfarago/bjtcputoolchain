@@ -110,7 +110,9 @@ static void Do_User_Action();
 "org"	return T_Org;
 "end"	return T_End;
 [$]		return T_Dollar;
-
+[@]		return T_At;
+">>"	return T_Ror;
+"<<"	return T_Rol;
 [a-z_\.]+[a-z_\.0-9]* {
 		strncpy(yylval.identifier, yytext, MaxIdentLen);
 		return T_Identifier;
@@ -130,7 +132,7 @@ static void Do_User_Action();
 		yylval.integerConstant = strtol(yytext, NULL, 10);
 		return T_IntConstant;
 }
-[0-1]+b {
+[0-1]+"b" {
 		yylval.integerConstant = strtol(yytext, NULL, 2);
 		return T_IntConstant;
 }

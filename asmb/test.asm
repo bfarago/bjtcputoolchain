@@ -9,6 +9,7 @@ in1     equ perif+offs1
 m1_addr EQU 4095
 m1      Equ 15
 
+section .code
 		mvi a,m1
 		sta m1_addr
 		jmp delay		;call delay
@@ -41,6 +42,14 @@ loop3:  ad0 m1_addr
         jmp start			;ret
 halt:   jmp halt
 
+section .data
 db_er:  0,1,2,3,4,5,6,7,8,9
-db_len: db db_er-$
+db_len: db $-db_er
+long_len equ $
+long1:	db long_len>>8
+		db long_len>>4
+		db long_len
+long2:	db long_len@2
+		db long_len@1
+		db long_len@0
         end

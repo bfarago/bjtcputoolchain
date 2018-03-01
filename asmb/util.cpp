@@ -34,6 +34,11 @@ int ruleExp[] =
 {
 	T_IntConstant, '+', T_IntConstant, T_Void,
 	T_IntConstant, '-', T_IntConstant, T_Void,
+	T_IntConstant, '*', T_IntConstant, T_Void,
+	T_IntConstant, '/', T_IntConstant, T_Void,
+	T_IntConstant, T_Ror, T_IntConstant, T_Void,
+	T_IntConstant, T_Rol, T_IntConstant, T_Void,
+	T_IntConstant, T_At, T_IntConstant, T_Void,
 	T_IntConstant, T_Void
 };
 
@@ -49,6 +54,9 @@ int parse_exp(int t, GType_s* res) {
 		case '*':
 		case '-':
 		case '+':
+		case T_At:
+		case T_Ror:
+		case T_Rol:
 			stackPush(t, yylval);
 			break;
 		case T_Identifier:
@@ -63,6 +71,7 @@ int parse_exp(int t, GType_s* res) {
 			t = T_IntConstant; //rewrire
 			yylval.integerConstant = address;
 			stackPush(t, yylval);
+			break;
 		default:
 			r = t;
 			break;
@@ -74,7 +83,7 @@ int parse_exp(int t, GType_s* res) {
 	int rule = 0;
 	for (int i = 0; i < sizeof(ruleExp)/sizeof(int); i++) {
 		if (T_Void == ruleExp[i]) break;
-		if (i < len) {
+		if ( (i-rule) < len) {
 			GType_s& s = gStack[top + sp];
 			if (s.t == ruleExp[i]) {
 				//accept next
@@ -85,22 +94,34 @@ int parse_exp(int t, GType_s* res) {
 		//search next rule
 		sp = 0;
 		while (T_Void != ruleExp[i]) i++;
-		i++;
-		rule = i;
+		rule = i+1;
 		
 	}
+	res->t = S_Exp;
 	switch (rule) {
 	case 0: // exp= exp + exp
 		res->s.integerConstant = gStack[top+0].s.integerConstant + gStack[top+2].s.integerConstant;
-		res->t = S_Exp;
 		break;
 	case 4: // exp= exp - exp
 		res->s.integerConstant = gStack[top + 0].s.integerConstant - gStack[top + 2].s.integerConstant;
-		res->t = S_Exp;
 		break;
-	case 8: // exp = i
+	case 8: // exp= exp * exp
+		res->s.integerConstant = gStack[top + 0].s.integerConstant * gStack[top + 2].s.integerConstant;
+		break;
+	case 12: // exp= exp / exp
+		res->s.integerConstant = gStack[top + 0].s.integerConstant / gStack[top + 2].s.integerConstant;
+		break;
+	case 16: // exp= exp >> exp
+		res->s.integerConstant = gStack[top + 0].s.integerConstant >> gStack[top + 2].s.integerConstant;
+		break;
+	case 20: // exp= exp << exp
+		res->s.integerConstant = gStack[top + 0].s.integerConstant << gStack[top + 2].s.integerConstant;
+		break;
+	case 24: // exp= exp @ exp
+		res->s.integerConstant = gStack[top + 0].s.integerConstant >> (4* gStack[top + 2].s.integerConstant);
+		break;
+	case 28: // exp = i
 		res->s.integerConstant = gStack[top+0].s.integerConstant;
-		res->t = S_Exp;
 		break;
 	default:
 		res->t = T_Void;

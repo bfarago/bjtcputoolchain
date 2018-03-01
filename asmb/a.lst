@@ -10,6 +10,7 @@
                                    ;m1_addr EQU 4095
                                    ;m1      Equ 15
                                    ;
+                                   ;section .code
 000  0 f      T_mvi 0xf            ;		mvi a,m1
 002  1 f f f  T_sta 0xfff          ;		sta m1_addr
 006  9 0 4 8  T_jmp 0x048          ;		jmp delay		;call delay
@@ -41,7 +42,24 @@
 05e  d 0 4 8  T_jnz 0x048          ;        jnz delay
 062  9 0 0 a  T_jmp 0x00a          ;        jmp start			;ret
 066  9 0 6 6  T_jmp 0x066          ;halt:   jmp halt
-06a  1 2 3 4  T_sta 0x234          ;
-06e  5 6 7 8  T_adc 0x678
-072  9 a 0 0  T_jmp 0xa00
+                                   ;
+06a  0                             ;section .data
+06b  1
+06c  2
+06d  3
+06e  4
+06f  5
+070  6
+071  7
+072  8
+073  9
+                                   ;db_er:  0,1,2,3,4,5,6,7,8,9
+074  a                             ;db_len: db $-db_er
+                                   ;long_len equ $
+075  0                             ;long1:	db long_len>>8
+076  7                             ;		db long_len>>4
+077  5                             ;		db long_len
+078  0                             ;long2:	db long_len@2
+079  7                             ;		db long_len@1
+07a  5                             ;		db long_len@0
 end
