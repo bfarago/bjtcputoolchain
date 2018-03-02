@@ -7,8 +7,8 @@
 
 
 @rem set bin=..\Debug
-@rem set bin=..\bin
-set bin=..\Release
+set bin=..\bin
+@rem set bin=..\Release
 set asmb=%bin%\asmb.exe
 set emub=%bin%\emub.exe
 set switch=
