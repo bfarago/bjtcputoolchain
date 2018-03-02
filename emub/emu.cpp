@@ -1,6 +1,10 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <conio.h>  
+#ifdef WIN32
+#include <conio.h>
+#else
+#define fread_s(b,s,a,n,f) fread(b,a,n,f)
+#endif
 #include <ctype.h>  
 #define MAXMEMORY (1<<12)
 char memory[MAXMEMORY];
@@ -167,13 +171,17 @@ int main(int ac, char** av) {
 	int maxsteplen = -1;
 	if (ac > 1) {
 		fi = fopen(av[1], "rb");
-		if (!fi) return -3;
+		if (!fi) {
+			printf("Unable to open file?\n");
+			return -3;
+		}
 		fseek(fi, 0, SEEK_END);
 		fi_size=ftell(fi);
 		fseek(fi, 0, SEEK_SET);
 		int rs=fread_s(memory, MAXMEMORY, 1, fi_size, fi);
 		fclose(fi);
 		if (rs != fi_size) {
+			printf("Unable to read file?\n");
 			return -2;
 		}
 	} else {
@@ -199,9 +207,13 @@ int main(int ac, char** av) {
 					ch = 'Q';
 				}
 			} else {
+        #ifdef WIN32
 				ch = _getch();
 				ch = toupper(ch);
 				if ('R' == ch) { run = 500; }
+        #else
+        maxsteplen= 50;
+        #endif
 			}
 		}
 	} while (ch != 'Q');
