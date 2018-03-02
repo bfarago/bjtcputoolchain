@@ -2,7 +2,7 @@
  * ----------------
  * Lex input file to generate the scanner for the compiler.
  */
-
+%x incl
 %{
 
 /* The text within this first region delimited by %{ and %} is assumed to
@@ -47,6 +47,10 @@ struct yyltype yylloc; // manually dclared for pp1, later Yacc provides
 static void Do_User_Action(); 
 #define YY_USER_ACTION Do_User_Action();
 
+#define MAX_INCLUDE_DEPTH 10
+YY_BUFFER_STATE include_stack[MAX_INCLUDE_DEPTH];
+int include_stack_ptr = 0;
+
 %}
 
 %option yylineno
@@ -71,13 +75,37 @@ static void Do_User_Action();
 [-()<>=+*/{}.:] {
 	 return *yytext;
 	}
+include             BEGIN(incl);
+<incl>[ \t]*      /* eat the whitespace */
+<incl>["][^"]*["]   { /* got the include file name */
+		yylval.stringConstant = strdup(yytext+1);
+		if (yylval.stringConstant[yyleng-2] != '"')
+			Debug("lex","improperly terminated string");
+		else
+			yylval.stringConstant[yyleng-2] = 0;
+		Debug("lex", "found INCLUDE", yylval.stringConstant);
+		if ( include_stack_ptr >= MAX_INCLUDE_DEPTH )
+            {
+            Failure("Includes nested too deeply" );
+            exit( 1 );
+            }
 
-"include" {
-		Debug("lex", "found INCLUDE");
-		return T_Include;
+        include_stack[include_stack_ptr++] =
+            YY_CURRENT_BUFFER;
+
+        yyin = fopen( yylval.stringConstant, "r" );
+
+        if ( ! yyin )
+            Failure( "File not found");
+
+        yy_switch_to_buffer(
+            yy_create_buffer( yyin, YY_BUF_SIZE ) );
+
+        BEGIN(INITIAL);
+		//return T_Include;
 	}
 
-\"[^"]*["] {
+["][^"]*["] {
 		yylval.stringConstant = strdup(yytext+1);
 		if (yylval.stringConstant[yyleng-2] != '"')
 			Debug("lex","improperly terminated string");
@@ -143,6 +171,20 @@ static void Do_User_Action();
 		return T_NewLine;
 	}
 [\t ] ;
+
+<<EOF>> {
+	if ( --include_stack_ptr < 0 )
+            {
+            yyterminate();
+            }
+
+        else
+            {
+            yy_delete_buffer( YY_CURRENT_BUFFER );
+            yy_switch_to_buffer(
+                 include_stack[include_stack_ptr] );
+            }
+	}
 
 . ;
 

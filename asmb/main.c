@@ -30,7 +30,6 @@ void addMemory(int data) {
 	lines[address] = yylineno;
 	memoryTypes[address] = sectionType;
 	memory[address++] = data & 0xf;
-	
 	chkAddress(address);
 }
 int parse_org() {
@@ -199,10 +198,9 @@ int parse_Op4_12(int mnemonic) {
 	addMemory(v >> 8);
 	addMemory(v >> 4);
 	addMemory(v);
-
-	chkAddress(address);
 	return t;
 }
+
 void relocation() {
 	int n = getRelocs();
 	for (int i = 0; i < n; i++) {
@@ -233,11 +231,16 @@ void relocation() {
 }
 #undef TOK
 #define TOK(x,opc) case x:
+extern FILE* yyin;
 int parseFile(FILE* f) {
 	int t = 0; // token
 	int inside = 1;
+	int save_lineno = yylineno;
+	FILE* save_yyin = yyin;
+	yyin = f;
 	yylineno = 1;
-	while (!feof(stdin) & inside) {
+	while (inside) {
+		//if (feof(yyin)) break;
 		if (!t) t = yylex();
 		if (t>=T_Void) Debug("grm", "endterm: '%s'\n", gTokenNames[t- T_Void]);
 		switch (t) {
@@ -245,7 +248,7 @@ int parseFile(FILE* f) {
 		case T_Org: t=parse_org(); break;
 		case T_Section: t = parse_section(); break;
 		case T_Global: t = parse_global(); break;
-		case T_Include: Failure("not implemented."); break;
+//		case T_Include: t = parse_include(); break;
 		case T_DataByte: t = parse_db(); break;
 		case T_Identifier: t = parse_identifier(); break;
 		case T_IntConstant: t = parse_nibles(); break;
@@ -269,13 +272,21 @@ int parseFile(FILE* f) {
 		TOK(T_jp, 15)
 			t = parse_Op4_12(t); break;
 
-		case T_End: inside = 0; break;
+		case T_End:
+			//inside = 0;
+			t = 0;
+			break;
+		case 0:
+			inside = 0;
+			break;
 		default:
 			Failure("syntax?");
 			t = 0;
 			break;
 		}
 	}
+	yylineno = save_lineno;
+	yyin = save_yyin;
 	return t;
 }
 
@@ -290,11 +301,11 @@ int parseFnmae(const char* fname) {
 	return ret;
 }
 
-extern FILE* yyin;
+
 int main(int argc, char** argv)
 {
 	printf("asm.bjtcpu v1.0");
-	FILE* fin;
+	FILE* fin=stdin;
 	ParseCommandLine(argc, argv);
 	if (argc > 1) {
 		fin = fopen(argv[1], "r");

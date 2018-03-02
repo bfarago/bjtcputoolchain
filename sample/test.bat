@@ -20,6 +20,7 @@ if %1.==clean. goto exit
 call :compile test1
 call :compile test2
 call :compile test3
+call :compile test
 
 del a.*
 goto exit
