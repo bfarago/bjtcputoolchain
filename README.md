@@ -1,5 +1,8 @@
 # bjtcputoolchain
-Toolchain for a BJT cpu
+Toolchain for a BJT cpu.
+This project was formed on that goal, to have a toolchain for a really existed, hand-made built Bipolar junction Transistors based CPU.
+See this short vieo: [Bipolar cpu running at 61Hz](https://www.youtube.com/watch?v=iL6OvX4frJs) 
+The processor made out of BC182 (~450 piece), 1N4148 and resistors. The data path is 4-bit, address space is 12-bit. Known max speed is more than 1MHz. There are 3 flags: Sign, Carry and Zero
 
 ASSEMBLER
 ---------
@@ -23,3 +26,13 @@ EMULATOR
 --------
 It read a binary output file (got from asmb), and simulates the CPU internals, and bus signals.
 
+Usage:
+------
+  emub.exe filename.out [steps]
+  
+  steps is optional, specifies the number of steps of the simulation. One step is a complete (fetch-decode-load-store) cycle. Output is textual,
+  and contains bus address, data, status signals, then cpu internals: Program counter register, Instruction register, Work register, Alu register,
+  and flags: carry, zero, sign. Then periferial status nibbles.
+  
+  The cpu have specific address space for periferials. Accessing on this range will trigger hard-coded behaviours, so periferial responses will be implemented as well.
+  
