@@ -6,9 +6,13 @@
 @rem  test clean  : clean folder, remove results
 
 
-@rem set asmb=..\Debug\asmb.exe
-set asmb=..\bin\asmb.exe
+@rem set bin=..\Debug
+@rem set bin=..\bin
+set bin=..\Release
+set asmb=%bin%\asmb.exe
+set emub=%bin%\emub.exe
 set switch=
+
 echo **TEST**
 echo clean previous compile output
 del /Q *.out 2>nul
@@ -23,6 +27,8 @@ call :compile test3
 call :compile test
 
 del a.*
+@rem if %1.==run. goto :run
+
 goto exit
 
 :compile
@@ -31,6 +37,9 @@ echo compile %name%.asm
 %asmb% %name%.asm %switch% 1>%name%_grammmar.log 2>%name%_lexer.log
 copy /B a.out %name%.out >nul
 copy /A a.lst %name%.lst >nul
+echo run simulation of %name%.asm
+%emub% %name%.out 500 >%name%_emu.log
 exit /B
+
 
 :exit
