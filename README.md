@@ -22,17 +22,23 @@ Usage:
   
   See test.bat in sample director.
 
-EMULATOR
+SIMULATOR
 --------
 It read a binary output file (got from asmb), and simulates the CPU internals, and bus signals.
 
 Usage:
 ------
-  emub.exe filename.out [steps]
+  simb.exe filename.out [steps]
   
   steps is optional, specifies the number of steps of the simulation. One step is a complete (fetch-decode-load-store) cycle. Output is textual,
   and contains bus address, data, status signals, then cpu internals: Program counter register, Instruction register, Work register, Alu register,
   and flags: carry, zero, sign. Then periferial status nibbles.
   
   The cpu have specific address space for periferials. Accessing on this range will trigger hard-coded behaviours, so periferial responses will be implemented as well.
-  
+ 
+EMULATOR
+--------
+Planned...  The goal is to be able to download the binary to real hw, and able to trace, debug the system.
+1) as an fpga based device
+ 
+2) as a microcontroller based device.

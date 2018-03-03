@@ -22,7 +22,7 @@
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{22BAC8A1-BF7B-4FEE-8AAC-1EC5E48ECE86}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>emub</RootNamespace>
+    <RootNamespace>simb</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -98,10 +98,10 @@
       <SubSystem>Console</SubSystem>
     </Link>
     <CustomBuildStep>
-      <Command>copy ..\Release\emub.exe ..\bin\</Command>
+      <Command>copy ..\Release\simb.exe ..\bin\</Command>
     </CustomBuildStep>
     <CustomBuildStep>
-      <Outputs> ..\bin\emub.exe</Outputs>
+      <Outputs> ..\bin\simb.exe</Outputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -145,7 +145,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="emu.cpp" />
+    <ClCompile Include="simb.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -10,7 +10,7 @@
 set bin=..\bin
 @rem set bin=..\Release
 set asmb=%bin%\asmb.exe
-set emub=%bin%\emub.exe
+set simb=%bin%\simb.exe
 set switch=
 
 echo **TEST**
@@ -38,7 +38,7 @@ echo compile %name%.asm
 copy /B a.out %name%.out >nul
 copy /A a.lst %name%.lst >nul
 echo run simulation of %name%.asm
-%emub% %name%.out 500 >%name%_emu.log
+%simb% %name%.out 500 >%name%_sim.log
 exit /B
 
 
