@@ -1,10 +1,42 @@
 #include <stdlib.h>
 #include <stdio.h>
+
 #ifdef WIN32
 #include <conio.h>
 #else
+#include <termios.h>
 #define fread_s(b,s,a,n,f) fread(b,a,n,f)
+static struct termios old, new;
+/* Initialize new terminal i/o settings */
+void initTermios(int echo)
+{
+	tcgetattr(0, &old); /* grab old terminal i/o settings */
+	new = old; /* make new settings same as old settings */
+	new.c_lflag &= ~ICANON; /* disable buffered i/o */
+	new.c_lflag &= echo ? ECHO : ~ECHO; /* set echo mode */
+	tcsetattr(0, TCSANOW, &new); /* use these new terminal i/o settings now */
+}
+
+/* Restore old terminal i/o settings */
+void resetTermios(void){ tcsetattr(0, TCSANOW, &old);}
+
+/* Read 1 character - echo defines echo mode */
+char getch_(int echo) { 
+	char ch;
+	initTermios(echo);
+	ch = getchar();
+	resetTermios();
+	return ch;
+}
+
+/* Read 1 character without echo */
+char getch(void){ return getch_(0);}
+
+/* Read 1 character with echo */
+char getche(void){ return getch_(1);}
+
 #endif
+
 #include <ctype.h>  
 #define MAXMEMORY (1<<12)
 char memory[MAXMEMORY];
@@ -43,6 +75,11 @@ void dumpmem(int addr) {
 	printf("%x", memory[addr] & 0xf);
 }
 
+#undef TOK
+#define TOK(x, opc) #x
+static const char *gMnemonics[16] = 
+{ "mvi a,","sta","lda","ad0","ad1","adc","nand","nor","rrm","jmp","jc","jnc","jz","jnz","jm","jp"};
+
 void dump() {
 	printf("0x%03x %x %c | ", bus.address, bus.data, "XRW"[bus.dir]);
 	printf("%c 0x%03x ", cpu.state, cpu.pc);
@@ -64,6 +101,10 @@ void dump() {
 	dumpmem(4093);
 	dumpmem(4094);
 	dumpmem(4095);
+	printf(" | ");
+	if ('D'==cpu.state)
+	if (cpu.op>=0) printf("%s %x", gMnemonics[cpu.op], cpu.data);
+
 	printf("\n");
 }
 char perif_Read(int addr) {
@@ -137,7 +178,7 @@ void fetch() {
 	dump();
 	if ((cpu.op > 1) && (cpu.op < 9)) cpu.state = 'L';
 	switch (cpu.op) {
-		//#undef TOK
+		#undef TOK
 		#define TOK(x, xop) case xop:
 		TOK(T_mvi, 0) cpu.alu = cpu.data; cpu.carry = 0;  break;
 		TOK(T_sta, 1) cpu_busWrite(cpu.data, cpu.alu); break;
@@ -170,7 +211,12 @@ int main(int ac, char** av) {
 	int run = 1;
 	int maxsteplen = -1;
 	if (ac > 1) {
+#ifdef WIN32
+		//errno_t err; err=
+		fopen_s(&fi, av[1], "rb");
+#else
 		fi = fopen(av[1], "rb");
+#endif
 		if (!fi) {
 			printf("Unable to open file?\n");
 			return -3;
@@ -194,9 +240,9 @@ int main(int ac, char** av) {
 	}
 	int i = 0;
 	int ch;
-	
+	//dumpheader();
 	do{
-		//if (!(i++%5)) dumpheader();
+		if (!(i++%5)) dumpheader();
 		fetch();
 		if (run) {
 			run--;
@@ -207,13 +253,13 @@ int main(int ac, char** av) {
 					ch = 'Q';
 				}
 			} else {
-        #ifdef WIN32
+//#ifdef WIN32
 				ch = _getch();
 				ch = toupper(ch);
 				if ('R' == ch) { run = 500; }
-        #else
-        maxsteplen= 50;
-        #endif
+//#else
+//maxsteplen= 50;
+//#endif
 			}
 		}
 	} while (ch != 'Q');

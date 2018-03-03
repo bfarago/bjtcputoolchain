@@ -1,5 +1,6 @@
 ; This is a test asm file
 ; for BJT CPU.
+include "testinc.asm"
 perif   equ 0xc00
 offs1	equ 3
 h_uart  equ perif+0
