@@ -301,6 +301,9 @@ int parseFnmae(const char* fname) {
 	return ret;
 }
 
+static const char *gMnemonics[16] =
+{ "mvi a,","sta","lda","ad0","ad1","adc","nand","nor","rrm","jmp","jc","jnc","jz","jnz","jm","jp" };
+
 
 int main(int argc, char** argv)
 {
@@ -354,7 +357,7 @@ int main(int argc, char** argv)
 					cols += snprintf(buflst + cols, BUFLEN - cols, "%03x  %x %x      %s 0x%x",
 						i,
 						m, memory[i + 1],
-						gTokenNames[T_mvi - T_Void + m], memory[i + 1]);
+						gMnemonics[m], memory[i + 1]);
 				i++; // skip data
 				break;
 				TOK(T_sta, 1)
@@ -375,7 +378,7 @@ int main(int argc, char** argv)
 					cols += snprintf(buflst + cols, BUFLEN - cols, "%03x  %x %x %x %x  %s 0x%x%x%x",
 						i,
 						m, memory[i + 1], memory[i + 2], memory[i + 3],
-						gTokenNames[T_mvi - T_Void + m], memory[i + 1], memory[i + 2], memory[i + 3]);
+						gMnemonics[m], memory[i + 1], memory[i + 2], memory[i + 3]);
 				i += 3;
 				break;
 			default:

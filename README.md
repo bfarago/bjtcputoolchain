@@ -25,6 +25,7 @@ Usage:
 SIMULATOR
 --------
 It read a binary output file (got from asmb), and simulates the CPU internals, and bus signals.
+[See more infos...](doc/simulator.md)
 
 Usage:
 ------
