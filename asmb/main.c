@@ -335,6 +335,21 @@ int main(int argc, char** argv)
 	}
 	fwrite(memory, 1, maxaddress, f);
 	fclose(f);
+
+	f = fopen("a.coe", "w+");
+	if (!f) {
+		Failure("Unable to create coe output file");
+		return -2;
+	}
+	fprintf(f, "memory_initialization_radix=16;\n");
+	fprintf(f, "memory_initialization_vector=");
+	for (int i = 0; i < maxaddress; i++) {
+		if (i) fprintf(f, ",");
+		fprintf(f,"%02x", memory[i]);
+	}
+	fprintf(f, ";\n");
+	fclose(f);
+
 	f = fopen("a.lst", "w+");
 	fprintf(f, ";Generated list file\n");
 	if (argc > 1) {

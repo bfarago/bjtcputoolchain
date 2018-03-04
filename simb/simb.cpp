@@ -188,7 +188,7 @@ void fetch() {
 		TOK(T_adc, 5) cpu.alu += cpu_busRead(cpu.data)+cpu.carry; cpu.carry = 0; break;
 		TOK(T_nand, 6) cpu.alu = ~ (cpu.alu & cpu_busRead(cpu.data)); break;
 		TOK(T_nor, 7) cpu.alu = ~(cpu.alu | cpu_busRead(cpu.data));	break;
-		TOK(T_rrm, 8)cpu.alu = cpu.alu >> cpu_busRead(cpu.data);break;
+		TOK(T_rrm, 8)cpu.alu = cpu_busRead(cpu.data)>>1;break;
 
 		TOK(T_jmp, 9)cpu.pcnext = cpu.data;	break;
 		TOK(T_jc, 10) if (cpu.carry) cpu.pcnext = cpu.data;	break;

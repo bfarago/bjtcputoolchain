@@ -37,6 +37,7 @@ echo compile %name%.asm
 %asmb% %name%.asm %switch% 1>%name%_grammmar.log 2>%name%_lexer.log
 copy /B a.out %name%.out >nul
 copy /A a.lst %name%.lst >nul
+copy /A a.coe %name%.coe >nul
 echo run simulation of %name%.asm
 %simb% %name%.out 500 >%name%_sim.log
 exit /B
