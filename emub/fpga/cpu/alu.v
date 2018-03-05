@@ -18,7 +18,7 @@
 // 
 //////////////////////////////////////////////////////////////////////////////////
 `include "common.v"
-`timescale 1ns / 1ps
+
 module m_alu(
 //input
 	i_reset, i_clock, i_stop,
@@ -58,18 +58,25 @@ assign o_sign= alu_data[`CPU_DATA_MSB]; //most significant bit on cpu data
 assign alu_carry= alu_data[`ALU_DATA_MSB]; //most significant bit on alu data
 assign o_carry= alu_carry;
 assign o_data= i_re ? alu_data[`CPU_DATA_MSB:0] : `CPU_DATA_WIDTH'bX;
- 
-always@(negedge i_clock)
+
+reg reset_state;
+
+always@(negedge i_clock or posedge reset_state)
 begin
-    if(	`ALU_Nop == state) state= i_cmd;
+    if (reset_state)
+     state<= `ALU_Nop;
+    else
+    if(	`ALU_Nop == state)
+     state<= i_cmd;
 end
+
 
 always@(posedge i_clock)
 begin
 	if(i_reset)
 		begin
 			$display("Alu reset");
-			state= `ALU_Nop;
+			reset_state <=1;
           	alu_data={`ALU_DATA_WIDTH{1'b0}}; // alu_carry=1'b0; also
 		end
 
@@ -89,18 +96,18 @@ begin
 		begin
           $display("Alu clear");
           alu_data={`ALU_DATA_WIDTH{1'b0}}; // alu_carry=1'b0;
-		  state=`ALU_Nop;
+		  reset_state <=1;
 		end		
 	`ALU_Load:	
 		begin
           $display("Alu load");
 		alu_data={1'b0, i_data}; //		alu_carry=0;
-		state=`ALU_Nop;
+		reset_state <=1;
 		end
 	`ALU_Store:	
 		begin
           $display("Alu store");
-		state=`ALU_Nop;
+		reset_state <=1;
 		end
 	`ALU_Add:	
 		begin
@@ -108,14 +115,14 @@ begin
           alu_data[`ALU_DATA_MSB]<=1'b0;  //clear carry
           alu_data=alu_data + {1'b0,i_data} ; 
           alu_data=alu_data + {4'b0,i_operand_b} ; // +1 or +carry
-		  state=`ALU_Nop;
+		 reset_state <=1;
 		end
 	`ALU_ShiftRight:	
 		begin
           $display("Alu shiftRight");
 		//alu_data=alu_data>>i_data; //todo: clarify how to
 		alu_data=i_data>>1; //todo: clarify how to
-		state=`ALU_Nop;
+		reset_state <=1;
 		end
 	`ALU_LogicNOR:	
 		begin
@@ -124,7 +131,7 @@ begin
 		alu_data[1]=~(alu_data[1]||i_data[1]);
 		alu_data[2]=~(alu_data[2]||i_data[2]);
 		alu_data[3]=~(alu_data[3]||i_data[3]);
-		state=`ALU_Nop;
+		reset_state <=1;
 		end
 	`ALU_LogicNAND:	
 		begin
@@ -133,7 +140,7 @@ begin
 		alu_data[1]=~(alu_data[1]&&i_data[1]);
 		alu_data[2]=~(alu_data[2]&&i_data[2]);
 		alu_data[3]=~(alu_data[3]&&i_data[3]);
-		state=`ALU_Nop;
+		reset_state <=1;
 		end		
 	endcase
 	end

@@ -18,6 +18,7 @@
 // 
 //////////////////////////////////////////////////////////////////////////////////
 `include "common.v"
+
 module m_cpu(
 //input
 	i_reset, i_clock, i_stop,
@@ -29,8 +30,8 @@ input	i_stop;
 input [`CPU_DATA_MSB:0] i_data;
 output reg [`CPU_ADDRESS_MSB:0] o_addr;
 output reg [`CPU_DATA_MSB:0] o_data;
-output reg o_re;
-output reg o_we;
+output wire o_re;
+output wire o_we;
 
 reg [`CPU_STATE_MSB:0] state;
 reg [`CPU_ADDRESS_MSB:0] pc;
@@ -51,16 +52,16 @@ wire decode_jump;
 
 
 assign decode_jump = (opcode>=9) ? 1 : 0;
+assign o_we = (state==`CPUSTATE_STORE) && i_clock;
+assign o_re = (state <`CPUSTATE_DECODE) && i_clock;
+
 //assign o_addr = mem_address;
 
 always@(negedge i_clock)
 begin
-	o_re=0;
-	o_we=0;
 	we_alu=0;
-	//we_carry_alu=0;
 	operand_b_alu=0;
-	alu_cmd=`ALU_Nop;
+	alu_cmd<=`ALU_Nop;
 end
 
 always@(posedge i_clock)
@@ -79,7 +80,6 @@ begin
 	`CPUSTATE_FETCH0:
 		begin
 		mem_address=pc;
-		o_re=1;
 		opcode = i_data;
 		state=`CPUSTATE_FETCH1;
 		end
@@ -87,7 +87,6 @@ begin
 		begin
 		mem_address=pc+1;
 		pc_next=pc+2;
-		o_re=1;
 		//load first nibble, clear the most significant bits.
 		immediate<= {`CPU_IMMEDIATE_WIDTH-`CPU_DATA_WIDTH'b0, i_data};
 		if (opcode<1) state=`CPUSTATE_DECODE;
@@ -96,7 +95,6 @@ begin
 	`CPUSTATE_FETCH2:
 		begin
 		mem_address=pc+2;
-		o_re=1;
 		//keep first nibble, load second nibble, clear the place of the third nibble
 		immediate<= {`CPU_DATA_WIDTH'b0, i_data, immediate[`CPU_DATA_MSB:0]};
 		state=`CPUSTATE_FETCH3;
@@ -105,7 +103,6 @@ begin
 		begin
 		mem_address=pc+3;
 		pc_next=pc+4;
-		o_re=1;
 		// load third nibble
 		immediate<= { i_data, immediate[`CPU_DATA_MSB+`CPU_DATA_WIDTH:0]};
 		state=`CPUSTATE_DECODE;
@@ -118,7 +115,7 @@ begin
 						w_data_alu= immediate;
 						//we_carry_alu=1;
 						we_alu=1;
-						alu_cmd=`ALU_Load;
+						alu_cmd<=`ALU_Load;
 						state=`CPUSTATE_FETCH0;
 					end
 				`OP_sta:
@@ -126,48 +123,46 @@ begin
 						o_addr=immediate;
 						re_alu=1;
 						o_data=r_data_alu;
-						o_we=1;
-						alu_cmd=`ALU_Store;
+						alu_cmd<=`ALU_Store;
 						state=`CPUSTATE_STORE;
 					end
 				`OP_lda:
 					begin
 						o_addr=immediate;
-						o_re=1;
-						alu_cmd=`ALU_Load;
+						alu_cmd<=`ALU_Load;
 						state=`CPUSTATE_LOAD;
 					end
 				`OP_ad0:
 					begin
 					operand_b_alu=0;
-					alu_cmd=`ALU_Add;
+					alu_cmd<=`ALU_Add;
 					state=`CPUSTATE_JUMP;
 					end
 				`OP_ad1:
 					begin
 					operand_b_alu=1;
-					alu_cmd=`ALU_Add;
+					alu_cmd<=`ALU_Add;
 					state=`CPUSTATE_JUMP;
 					end
 				`OP_adc:
 					begin
 					operand_b_alu=carry;
-					alu_cmd=`ALU_Add;
+					alu_cmd<=`ALU_Add;
 					state=`CPUSTATE_JUMP;
 					end
 				`OP_nand:
 					begin
-					alu_cmd=`ALU_LogicNAND;
+					alu_cmd<=`ALU_LogicNAND;
 					state=`CPUSTATE_JUMP;
 					end
 				`OP_nor:
 					begin
-					alu_cmd=`ALU_LogicNOR;
+					alu_cmd<=`ALU_LogicNOR;
 					state=`CPUSTATE_JUMP;
 					end
 				`OP_rrm:
 					begin
-					alu_cmd=`ALU_ShiftRight;
+					alu_cmd<=`ALU_ShiftRight;
 					state=`CPUSTATE_JUMP;
 					end	
 				`OP_jmp:
@@ -237,7 +232,6 @@ m_alu ALU0 (
 	.i_reset(i_reset), .i_clock(i_clock), .i_stop(i_stop),
 	.i_we(we_alu), .i_re(re_alu),
 	.i_data(w_data_alu),
-	//.i_wcarry(we_carry_alu),
 	.i_operand_b(operand_b_alu),
 	.o_data(r_data_alu),
 	.o_carry(carry),

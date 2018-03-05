@@ -1,16 +1,16 @@
 `timescale 1ns / 1ps
 //////////////////////////////////////////////////////////////////////////////////
-// Company: MYND-ideal kft 
-// Engineer: Barna Farago
+// Company: 
+// Engineer: 
 // 
 // Create Date: 04.03.2018 15:06:24
-// Design Name: Xilinx Sys wrapper
+// Design Name: 
 // Module Name: sys
-// Project Name: emub
-// Target Devices: ARTIX/7 35T
-// Tool Versions: Vivado v2017.4 (64-bit)
+// Project Name: 
+// Target Devices: 
+// Tool Versions: 
 // Description: 
-// connects to dual port bram
+// 
 // Dependencies: 
 // 
 // Revision:
