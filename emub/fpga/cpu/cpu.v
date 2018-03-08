@@ -23,6 +23,9 @@ module m_cpu(
 //input
 	i_reset, i_clock, i_stop,
 	o_addr, o_data, i_data, o_re, o_we
+`ifdef DEBUG
+    ,state
+`endif	
 	);
 input	i_reset;
 input	i_clock;
@@ -32,6 +35,9 @@ output reg [`CPU_ADDRESS_MSB:0] o_addr;
 output reg [`CPU_DATA_MSB:0] o_data;
 output wire o_re;
 output wire o_we;
+`ifdef DEBUG
+ output state;
+`endif	
 
 reg [`CPU_STATE_MSB:0] state;
 reg [`CPU_ADDRESS_MSB:0] pc;
@@ -62,6 +68,7 @@ begin
 	we_alu=0;
 	operand_b_alu=0;
 	alu_cmd<=`ALU_Nop;
+	o_addr = mem_address;
 end
 
 always@(posedge i_clock)
@@ -73,9 +80,11 @@ begin
 			state= `CPUSTATE_JUMP; //jump to
 			operand_b_alu=0;
 		end
+	else
 	if (i_stop)
 		$display("CPU stopped");
 	else
+	begin
 	case (state)
 	`CPUSTATE_FETCH0:
 		begin
@@ -120,7 +129,8 @@ begin
 					end
 				`OP_sta:
 					begin
-						o_addr=immediate;
+						//o_addr=immediate;
+						mem_address=immediate;
 						re_alu=1;
 						o_data=r_data_alu;
 						alu_cmd<=`ALU_Store;
@@ -128,7 +138,7 @@ begin
 					end
 				`OP_lda:
 					begin
-						o_addr=immediate;
+						mem_address=immediate; //o_addr=immediate;
 						alu_cmd<=`ALU_Load;
 						state=`CPUSTATE_LOAD;
 					end
@@ -200,7 +210,6 @@ begin
 					if (!sign) pc_next=immediate;
 					state=`CPUSTATE_JUMP;
 					end	
-
 			endcase
 		end
 	`CPUSTATE_LOAD:
@@ -224,8 +233,8 @@ begin
 		pc=pc_next;
 		state=`CPUSTATE_FETCH0; //restart cpu cycle
 		end
-	
-	endcase 
+	endcase
+	end 
 end
 
 m_alu ALU0 (

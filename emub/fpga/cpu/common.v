@@ -1,5 +1,5 @@
 // Common defines
-
+`define DEBUG 1
 `define ALU_DATA_WIDTH 5    // carry+cpu_data
 `define ALU_STATE_WIDTH 3
 `define CPU_STATE_WIDTH 3

@@ -350,6 +350,32 @@ int main(int argc, char** argv)
 	fprintf(f, ";\n");
 	fclose(f);
 
+	f = fopen("a.v", "w+");
+	if (!f) {
+		Failure("Unable to create .v output file");
+		return -2;
+	}
+	fprintf(f, "module rom_content(\n");
+	fprintf(f, " i_clk, i_read, i_counter, o_data\n");
+	fprintf(f, ")\n");
+	fprintf(f, "input wire i_clk;\n");
+	fprintf(f, "input wire i_read;\n");
+	fprintf(f, "input reg [8:0] i_counter;\n");
+	fprintf(f, "output reg [31:0] o_data;\n");
+	fprintf(f, "always@(posedge i_clk)\n");
+	fprintf(f, " case(init_counter)\n");
+	for (int i = 0; i < maxaddress; i++) {
+		if (0==(i & 7)) fprintf(f, "  9'h%02x: o_data= 32'h", i/8);
+		fprintf(f, "%x", memory[i] & 0xf);
+		if (7==(i & 7)) fprintf(f, "; \n");
+	}
+	for (int i = (maxaddress+1) & 7; i >= 0; i--) {
+		fprintf(f, "0");
+	}
+	fprintf(f, ";\n endcase\n");
+	fprintf(f, "endmodule\n");
+	fclose(f);
+
 	f = fopen("a.lst", "w+");
 	fprintf(f, ";Generated list file\n");
 	if (argc > 1) {
