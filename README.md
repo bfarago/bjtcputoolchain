@@ -41,5 +41,6 @@ EMULATOR
 --------
 Planned...  The goal is to be able to download the binary to real hw, and able to trace, debug the system.
 1) as an fpga based device
+![fpga model](doc/se1.png?raw=true "emulator")
  
 2) as a microcontroller based device.
