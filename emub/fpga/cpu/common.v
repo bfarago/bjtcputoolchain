@@ -1,5 +1,6 @@
 // Common defines
 `define DEBUG 1
+`define REVERSENIBBLEORDER  // rom and ram contains reversed order: dword:= byte3:nibble7,nibble6 ... byte0:nibble1,nibble0 (MSB..LSB)
 `define ALU_DATA_WIDTH 5    // carry+cpu_data
 `define ALU_STATE_WIDTH 3
 `define CPU_STATE_WIDTH 3
@@ -7,6 +8,7 @@
 `define CPU_OPCODE_WIDTH 4
 `define CPU_ADDRESS_WIDTH 12
 `define CPU_IMMEDIATE_WIDTH 12
+`define CPU_IMMEDIATE_Rest4 8
 
 `define ALU_DATA_MSB (`ALU_DATA_WIDTH-1)
 `define ALU_STATE_MSB (`ALU_STATE_WIDTH-1)
@@ -32,14 +34,14 @@
 `define ALU_LogicNAND	7
 
 //CPU states
-`define CPUSTATE_FETCH0	0
-`define CPUSTATE_FETCH1	1
-`define CPUSTATE_FETCH2	2
-`define CPUSTATE_FETCH3	3
-`define CPUSTATE_LOAD	4
-`define CPUSTATE_DECODE	5
-`define CPUSTATE_STORE	6
-`define CPUSTATE_JUMP	7
+`define CPUSTATE_FETCH0	(`CPU_STATE_WIDTH'd0)
+`define CPUSTATE_FETCH1	(`CPU_STATE_WIDTH'd1)
+`define CPUSTATE_FETCH2	(`CPU_STATE_WIDTH'd2)
+`define CPUSTATE_FETCH3	(`CPU_STATE_WIDTH'd3)
+`define CPUSTATE_LOAD	(`CPU_STATE_WIDTH'd4)
+`define CPUSTATE_DECODE	(`CPU_STATE_WIDTH'd5)
+`define CPUSTATE_STORE	(`CPU_STATE_WIDTH'd6)
+`define CPUSTATE_JUMP	(`CPU_STATE_WIDTH'd7)
 
 //CPU opcodes
 `define OP_mvia	0
