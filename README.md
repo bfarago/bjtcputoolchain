@@ -36,6 +36,7 @@ Usage:
   and flags: carry, zero, sign. Then periferial status nibbles.
   
   The cpu have specific address space for periferials. Accessing on this range will trigger hard-coded behaviours, so periferial responses will be implemented as well.
+![simulator](doc/ss1.png?raw=true "simulator")
  
 EMULATOR
 --------
