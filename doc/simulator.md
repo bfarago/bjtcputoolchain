@@ -34,6 +34,6 @@ ALU
 
 AlU: Aritmethical and Logical Unit register
 
-Flag: ALU flags: C:Carry, M:Minus, Z:Zero
+Flag: ALU flags: C:Carry, M:Minus, P:Plus, Z:Zero
 
 Perif: Specific part of the memory , which is used as periferial ports.
