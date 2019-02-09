@@ -18,9 +18,11 @@ Usage:
   
   or type file.asm |asmb.exe
   
-  writes a binary file:  a.out and a.lst
+  writes a binary files:  a.out and a.lst a.coe a.v
   
-  See test.bat in sample director.
+  help: asmb -h
+  
+  See test.bat in sample directory. Run tests with "test" command, or "test clean" will remove the output files, whenever you run it.
 
 SIMULATOR
 --------
