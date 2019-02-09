@@ -5,6 +5,14 @@
 #include <stdio.h>
 #include <stdbool.h>
 
+//Eliminate warning in VisualStudio
+#define UTIL_STRDUP(x) _strdup(x)
+
+typedef enum {
+	E_OK,
+	E_NOT_OK
+}Std_ReturnType;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -89,19 +97,31 @@ void SetDebugForKey(const char *key, bool val);
 
 bool IsDebugOn(const char *key);
 
+/**Command line parser sets this config
+*/
+typedef struct {
+	const char* name_o; //means {name_o}.* files will be generated
+	const char* fname_in;
+	const char* fname_out_bin;
+	const char* fname_out_lst;
+	const char* fname_out_coe;
+	const char* fname_out_verilog;
+}asmb_config_t;
+
+
 /**
  * Function: ParseCommandLine
  * Turn on the debugging flags from the command line.  Verifies that
  * first argument is -d, and then interpret all the arguments that follow
  * as being flags to turn on.
  */
-
-void ParseCommandLine(int argc, char *argv[]);
+Std_ReturnType ParseCommandLine(int argc, char *argv[], asmb_config_t* cfg);
 int searchSymbol(const char *key);
 void setSymbol(const char* name, int value);
 int getSymbol(const char* name);
 int getReloc(int index, const char**name, int* adr, relocType_en* rt);
-int getRelocs();
+size_t getRelocs();
+
 void setRelocType(relocType_en rt);
 int yywrap();
 

@@ -78,7 +78,7 @@ int include_stack_ptr = 0;
 include             BEGIN(incl);
 <incl>[ \t]*      /* eat the whitespace */
 <incl>["][^"]*["]   { /* got the include file name */
-		yylval.stringConstant = strdup(yytext+1);
+		yylval.stringConstant = UTIL_STRDUP(yytext+1);
 		if (yylval.stringConstant[yyleng-2] != '"')
 			Debug("lex","improperly terminated string");
 		else
@@ -106,7 +106,7 @@ include             BEGIN(incl);
 	}
 
 ["][^"]*["] {
-		yylval.stringConstant = strdup(yytext+1);
+		yylval.stringConstant = UTIL_STRDUP(yytext+1);
 		if (yylval.stringConstant[yyleng-2] != '"')
 			Debug("lex","improperly terminated string");
 		else

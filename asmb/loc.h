@@ -1,3 +1,10 @@
+/** @file loc.h
+*
+* @brief Lexer Location storage and helper module.
+*
+* @par
+* COPYRIGHT NOTICE: (c) 2018 Barna Farago.  All rights reserved.
+*/
 #ifndef YYLTYPE
 
 /* Typedef: yyltype
@@ -12,6 +19,9 @@ typedef struct yyltype
     char *text;                    // you can also ignore this field
 } yyltype;
 
+/* All of this module depends on that condition, if YYLTYPE is not yet definied in the lexer/grammar.
+* Therefore, we use the same define to cheeck if all above is needed.
+*/
 #define YYLTYPE yyltype
 
 
@@ -36,7 +46,10 @@ inline yyltype Join(yyltype first, yyltype last)
   return combined;
 }
 
-/* Same as above, except operates on pointers as a convenience  */
+
+/* Function: Joinp
+ * Same as above Join, except operates on pointers as a convenience 
+ */
 inline yyltype Joinp(yyltype *firstPtr, yyltype *lastPtr)
 {
   return Join(*firstPtr, *lastPtr);

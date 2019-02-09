@@ -18,6 +18,8 @@ echo clean previous compile output
 del /Q *.out 2>nul
 del /Q *.lst 2>nul
 del /Q *.log 2>nul
+del /Q *.coe 2>nul
+del /Q *.v 2>nul
 
 if %1.==clean. goto exit
 
@@ -38,6 +40,7 @@ echo compile %name%.asm
 copy /B a.out %name%.out >nul
 copy /A a.lst %name%.lst >nul
 copy /A a.coe %name%.coe >nul
+copy /A a.v %name%.v >nul
 echo run simulation of %name%.asm
 %simb% %name%.out 500 >%name%_sim.log
 exit /B

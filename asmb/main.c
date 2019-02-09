@@ -1,37 +1,64 @@
+
+#define _CRT_SECURE_NO_WARNINGS
+
 #include <stdio.h>
 #include "util.h"
 #include "scanner.h"
 #include "loc.h"
 #include <string.h>
+
+//acceptable length of a section name
 #define MAXSECTIONNAME (32)
+
+//Output bin and addressable max memory size
 #define MAXMEMORY (1<<12)
+
+//Textual buffer length
+#define BUFLEN 512
+
+//Memoryposition classification
 typedef enum {
 	MT_undef,
 	MT_code,
 	MT_data,
 	MT_max
 } memoryType;
+
+
+
+
+//Actual section type
+memoryType sectionType = MT_code;
+//Actual section name
 char section[MAXSECTIONNAME];
-memoryType sectionType=MT_code;
 
-char memory[MAXMEMORY];
-int lines[MAXMEMORY];
+//Holds memory type for all the location (to be easier)
 memoryType memoryTypes[MAXMEMORY];
+//holds memory content
+char memory[MAXMEMORY];
+//holds the input source line numbers
+int lines[MAXMEMORY];
 
-
+//actual address setter, keep the max value for later use
 void setAddress(int a) {
 	address = a;
 	if (a > maxaddress) maxaddress = a;
 }
+
+//checks the earlier maximum for addresses
 void chkAddress(int a) {
 	if (a > maxaddress) maxaddress = a;
 }
+
+//to add code or data to the memory
 void addMemory(int data) {
 	lines[address] = yylineno;
 	memoryTypes[address] = sectionType;
 	memory[address++] = data & 0xf;
 	chkAddress(address);
 }
+
+//grammar of the org syntax
 int parse_org() {
 	int t = yylex();
 	switch(t) {
@@ -45,6 +72,7 @@ int parse_org() {
 	return 0;
 }
 
+//grammer for the section syntax
 int parse_section() {
 	int t = yylex();
 	switch (t) {
@@ -67,6 +95,7 @@ int parse_section() {
 	return 0;
 }
 
+//grammar for the global syntax
 int parse_global() {
 	int t = yylex();
 	switch (t) {
@@ -79,6 +108,8 @@ int parse_global() {
 	}
 	return 0;
 }
+
+//grammar for nibble, or nibble list syntax
 int parse_nibles() {
 	addMemory(yylval.integerConstant);
 	int t = yylex();
@@ -100,6 +131,8 @@ int parse_nibles() {
 	}
 	return t;
 }
+
+//grammar for db syntax
 int parse_db() {
 	int t = yylex();
 	GType_s grm;
@@ -112,8 +145,10 @@ int parse_db() {
 	}
 	return t;
 }
+
+//grammar for identifiers
 int parse_identifier() {
-	char* name = strdup(yylval.identifier);
+	char* name = UTIL_STRDUP(yylval.identifier);
 	
 	int t = yylex();
 	switch (t) {
@@ -142,6 +177,7 @@ int parse_identifier() {
 	return t;
 }
 
+//grammar of the OP 4, 4 mnemonic(s) actually there is one: mvi a, <nibble>
 int parse_Op4_4(int mnemonic) {
 	int v = 0;
 	int opc = 0;
@@ -163,7 +199,7 @@ int parse_Op4_4(int mnemonic) {
 	return t;
 }
 
-
+//grammar of the OP 4, 12 mnemonics
 int parse_Op4_12(int mnemonic) {
 	int t = yylex();
 	int v = 0;
@@ -202,11 +238,11 @@ int parse_Op4_12(int mnemonic) {
 }
 
 void relocation() {
-	int n = getRelocs();
+	size_t n = getRelocs();
 	for (int i = 0; i < n; i++) {
 		const char* name;
 		int addr;
-		int relocType;
+		relocType_en relocType;
 		getReloc(i, &name, &addr, &relocType);
 		int ix= searchSymbol(name);
 		if (ix >= 0) {
@@ -290,6 +326,7 @@ int parseFile(FILE* f) {
 	return t;
 }
 
+//parse a new file (include)
 int parseFnmae(const char* fname) {
 	FILE* f;
 	f = fopen(fname, "r");
@@ -301,160 +338,187 @@ int parseFnmae(const char* fname) {
 	return ret;
 }
 
+//name of mnemonics
 static const char *gMnemonics[16] =
 { "mvi a,","sta","lda","ad0","ad1","adc","nand","nor","rrm","jmp","jc","jnc","jz","jnz","jm","jp" };
 
-
+#include "Version.h"
+//entry point of the asmb
 int main(int argc, char** argv)
 {
-	printf("asm.bjtcpu v1.0");
-	FILE* fin=stdin;
-	ParseCommandLine(argc, argv);
-	if (argc > 1) {
-		fin = fopen(argv[1], "r");
+	FILE* fin;
+	FILE* f; //used for outputs
+	printf("%s %s\n", VersionName, VersionNumber);
+	InitScanner();
+
+	// Setup configurations (filename, switches, etc)
+	asmb_config_t asmb_config;
+	asmb_config.fname_in = NULL;
+	ParseCommandLine(argc, argv, &asmb_config);
+	if (asmb_config.fname_in) {
+		fin = fopen(asmb_config.fname_in, "r"); // input file specified, open it
 		if (!fin) {
-			Failure("File not found");
+			Failure("File not found: %s", asmb_config.fname_in);
 			return -1;
 		}
-		yyin = fin;
+		else {
+			yyin = fin;
+		}
+	}else{
+		// pipe was used, there was no input filename specified
+		fin= stdin;
 	}
-	SetDebugForKey("lex", true);
-	SetDebugForKey("rel", true);
-	SetDebugForKey("ext", true);
-	SetDebugForKey("grm", true);
-	SetDebugForKey("pse", true);
+
+	// Start parsing, Pass#1
 	parseFile(yyin);
-	if (argc > 1) {
+
+	// End of Pass#1, close input file, if there was opened one
+	if (asmb_config.fname_in) {
 		fclose(fin);
 	}
+
+	// Start Relocation, Pass#2
 	relocation();
-	FILE* f = fopen("a.out", "wb+");
-	if (!f) {
-		Failure("Unable to create output file");
-		return -2;
-	}
-	fwrite(memory, 1, maxaddress, f);
-	fclose(f);
 
-	f = fopen("a.coe", "w+");
-	if (!f) {
-		Failure("Unable to create coe output file");
-		return -2;
+	// Write out Memory dump (compiled binary)
+	if (asmb_config.fname_out_bin) {
+		f = fopen(asmb_config.fname_out_bin, "wb+");
+		if (!f) {
+			Failure("Unable to create output file:%s", asmb_config.fname_out_bin);
+			return -2;
+		}
+		fwrite(memory, 1, maxaddress, f);
+		fclose(f);
 	}
-	fprintf(f, "memory_initialization_radix=16;\n");
-	fprintf(f, "memory_initialization_vector=");
-	for (int i = 0; i < maxaddress; i++) {
-		if (i) fprintf(f, ",");
-		fprintf(f,"%02x", memory[i]);
+	
+	// Write out FPGA coe output (you can import as ROM init values)
+	if (asmb_config.fname_out_coe) {
+		f = fopen(asmb_config.fname_out_coe, "w+");
+		if (!f) {
+			Failure("Unable to create coe output file:%s", asmb_config.fname_out_coe);
+			return -2;
+		}
+		fprintf(f, "memory_initialization_radix=16;\n");
+		fprintf(f, "memory_initialization_vector=");
+		for (int i = 0; i < maxaddress; i++) {
+			if (i) fprintf(f, ",");
+			fprintf(f, "%02x", memory[i]);
+		}
+		fprintf(f, ";\n");
+		fclose(f);
 	}
-	fprintf(f, ";\n");
-	fclose(f);
 
-	f = fopen("a.v", "w+");
-	if (!f) {
-		Failure("Unable to create .v output file");
-		return -2;
+	// Write out FPGA  verilog output (generates a ROM memory module)
+	if (asmb_config.fname_out_verilog) {
+		f = fopen(asmb_config.fname_out_verilog, "w+");
+		if (!f) {
+			Failure("Unable to create .v output file:%s", asmb_config.fname_out_verilog);
+			return -2;
+		}
+		fprintf(f, "module rom_content(\n");
+		fprintf(f, " i_clk, i_read, i_counter, o_data\n");
+		fprintf(f, ")\n");
+		fprintf(f, "input wire i_clk;\n");
+		fprintf(f, "input wire i_read;\n");
+		fprintf(f, "input reg [8:0] i_counter;\n");
+		fprintf(f, "output reg [31:0] o_data;\n");
+		fprintf(f, "always@(posedge i_clk)\n");
+		fprintf(f, " case(init_counter)\n");
+		for (int i = 0; i < maxaddress; i++) {
+			if (0 == (i & 7)) fprintf(f, "  9'h%02x: o_data= 32'h", i / 8);
+			fprintf(f, "%x", memory[i] & 0xf);
+			if (7 == (i & 7)) fprintf(f, "; \n");
+		}
+		for (int i = (maxaddress + 1) & 7; i >= 0; i--) {
+			fprintf(f, "0");
+		}
+		fprintf(f, ";\n endcase\n");
+		fprintf(f, "endmodule\n");
+		fclose(f);
 	}
-	fprintf(f, "module rom_content(\n");
-	fprintf(f, " i_clk, i_read, i_counter, o_data\n");
-	fprintf(f, ")\n");
-	fprintf(f, "input wire i_clk;\n");
-	fprintf(f, "input wire i_read;\n");
-	fprintf(f, "input reg [8:0] i_counter;\n");
-	fprintf(f, "output reg [31:0] o_data;\n");
-	fprintf(f, "always@(posedge i_clk)\n");
-	fprintf(f, " case(init_counter)\n");
-	for (int i = 0; i < maxaddress; i++) {
-		if (0==(i & 7)) fprintf(f, "  9'h%02x: o_data= 32'h", i/8);
-		fprintf(f, "%x", memory[i] & 0xf);
-		if (7==(i & 7)) fprintf(f, "; \n");
-	}
-	for (int i = (maxaddress+1) & 7; i >= 0; i--) {
-		fprintf(f, "0");
-	}
-	fprintf(f, ";\n endcase\n");
-	fprintf(f, "endmodule\n");
-	fclose(f);
 
-	f = fopen("a.lst", "w+");
-	fprintf(f, ";Generated list file\n");
-	if (argc > 1) {
-		fin = fopen(argv[1], "r");
-	}
-	int fin_line = 2;
-	int cols = 0;
-	#define BUFLEN 512
-	char buflst[BUFLEN];
-	char bufcom[BUFLEN];
-	for (int i = 0; i < maxaddress; i++) {
-		int m = memory[i];
-		if (MT_data == memoryTypes[i]) {
-			cols += snprintf(buflst + cols, BUFLEN - cols, "%03x  %x", i, m);
-		} else {
-			switch (m) {
+	// Write out list file
+	if (asmb_config.fname_out_lst) {
+		f = fopen(asmb_config.fname_out_lst, "w+");
+		fprintf(f, ";Generated list file\n");
+		if (argc > 1) {
+			fin = fopen(argv[1], "r");
+		}
+		int fin_line = 2;
+		int cols = 0;
+		char buflst[BUFLEN];
+		char bufcom[BUFLEN];
+		for (int i = 0; i < maxaddress; i++) {
+			int m = memory[i];
+			if (MT_data == memoryTypes[i]) {
+				cols += snprintf(buflst + cols, BUFLEN - cols, "%03x  %x", i, m);
+			}
+			else {
+				switch (m) {
 #undef TOK
 #define TOK(x,opc) case opc:
-				TOK(T_mvi, 0)
-					cols += snprintf(buflst + cols, BUFLEN - cols, "%03x  %x %x      %s 0x%x",
-						i,
-						m, memory[i + 1],
-						gMnemonics[m], memory[i + 1]);
-				i++; // skip data
-				break;
-				TOK(T_sta, 1)
-					TOK(T_lda, 2)
-					TOK(T_ad0, 3)
-					TOK(T_ad1, 4)
-					TOK(T_adc, 5)
-					TOK(T_nand, 6)
-					TOK(T_nor, 7)
-					TOK(T_rrm, 8)
-					TOK(T_jmp, 9)
-					TOK(T_jc, 10)
-					TOK(T_jnc, 11)
-					TOK(T_jz, 12)
-					TOK(T_jnz, 13)
-					TOK(T_jm, 14)
-					TOK(T_jp, 15)
-					cols += snprintf(buflst + cols, BUFLEN - cols, "%03x  %x %x %x %x  %s 0x%x%x%x",
-						i,
-						m, memory[i + 1], memory[i + 2], memory[i + 3],
-						gMnemonics[m], memory[i + 1], memory[i + 2], memory[i + 3]);
-				i += 3;
-				break;
-			default:
-				cols += snprintf(buflst + cols, BUFLEN - cols, "; wrong binary content: %02x", m);
-				break;
-			}
-		}
-		while (fin_line<= lines[i]){
-			
-			if (!feof(fin)) {
-				int colscom = 0;
-				if (fin_line == lines[i]) {
-					strncpy(bufcom, buflst, BUFLEN);
-					colscom = cols;
-					cols = 0;
-				}
-				while (colscom<35) {
-					bufcom[colscom++] = ' ';
-				}
-				bufcom[colscom++] = ';';
-				fgets(bufcom+colscom, BUFLEN- colscom, fin);
-				if (strlen(bufcom)) {
-					fprintf(f, "%s", bufcom);
-					colscom = 0;
+					TOK(T_mvi, 0)
+						cols += snprintf(buflst + cols, BUFLEN - cols, "%03x  %x %x      %s 0x%x",
+							i,
+							m, memory[i + 1],
+							gMnemonics[m], memory[i + 1]);
+					i++; // skip data
+					break;
+					TOK(T_sta, 1)
+						TOK(T_lda, 2)
+						TOK(T_ad0, 3)
+						TOK(T_ad1, 4)
+						TOK(T_adc, 5)
+						TOK(T_nand, 6)
+						TOK(T_nor, 7)
+						TOK(T_rrm, 8)
+						TOK(T_jmp, 9)
+						TOK(T_jc, 10)
+						TOK(T_jnc, 11)
+						TOK(T_jz, 12)
+						TOK(T_jnz, 13)
+						TOK(T_jm, 14)
+						TOK(T_jp, 15)
+						cols += snprintf(buflst + cols, BUFLEN - cols, "%03x  %x %x %x %x  %s 0x%x%x%x",
+							i,
+							m, memory[i + 1], memory[i + 2], memory[i + 3],
+							gMnemonics[m], memory[i + 1], memory[i + 2], memory[i + 3]);
+					i += 3;
+					break;
+				default:
+					cols += snprintf(buflst + cols, BUFLEN - cols, "; wrong binary content: %02x", m);
+					break;
 				}
 			}
-			fin_line++;
+			while (fin_line <= lines[i]) {
+
+				if (!feof(fin)) {
+					int colscom = 0;
+					if (fin_line == lines[i]) {
+						strncpy(bufcom, buflst, BUFLEN);
+						colscom = cols;
+						cols = 0;
+					}
+					while (colscom < 35) {
+						bufcom[colscom++] = ' ';
+					}
+					bufcom[colscom++] = ';';
+					fgets(bufcom + colscom, BUFLEN - colscom, fin);
+					if (strlen(bufcom)) {
+						fprintf(f, "%s", bufcom);
+						colscom = 0;
+					}
+				}
+				fin_line++;
+			}
+			if (cols) {
+				buflst[cols] = 0;
+				fprintf(f, "%s\n", buflst);
+				cols = 0;
+			}
 		}
-		if (cols){
-			buflst[cols] = 0;
-			fprintf(f, "%s\n", buflst);
-			cols = 0;
-		}
+		fprintf(f, "end\n");
+		fclose(f);
 	}
-	fprintf(f, "end\n");
-	fclose(f);
 	return 0;
 }

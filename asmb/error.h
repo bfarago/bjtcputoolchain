@@ -1,3 +1,10 @@
+/** @file error.h
+*
+* @brief Error Reporter module
+*
+* @par
+* COPYRIGHT NOTICE: (c) 2018 Barna Farago.  All rights reserved.
+*/
 #ifndef _ERROR_H_
 #define _ERROR_H_
 

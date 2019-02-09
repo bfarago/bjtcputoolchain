@@ -149,7 +149,9 @@
     <ClCompile Include="error.cpp" />
     <ClCompile Include="lex.yy.c" />
     <ClCompile Include="main.c" />
+    <ClCompile Include="scanner.c" />
     <ClCompile Include="util.cpp" />
+    <ClCompile Include="version.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="error.h" />
@@ -157,6 +159,7 @@
     <ClInclude Include="scanner.h" />
     <ClInclude Include="unistd.h" />
     <ClInclude Include="util.h" />
+    <ClInclude Include="Version.h" />
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="scanner.l">

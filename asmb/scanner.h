@@ -1,13 +1,21 @@
+/** @file loc.h
+*
+* @brief Lexer/Scanner interface module.
+*
+* @par
+* COPYRIGHT NOTICE: (c) 2018 Barna Farago.  All rights reserved.
+*/
 #ifndef _SCANNER_H
 #define _SCANNER_H
 
 #include <stdio.h>
+#include <stdbool.h>
 #include "loc.h"
 
-#define MaxIdentLen 31    // Maximum length for identifiers
-#include <stdbool.h>
+#define MaxIdentLen (31)    //!< Maximum length for identifiers
 
 /*
+EXAMPLE:
 sta addr; m(addr)<-a
 lda addr; a<-m(addr)
 mvi a, n; a<-n
@@ -19,17 +27,20 @@ nand addr; a<-~(a & m(addr))
 nor addr; a<-~(a | m(addr))
 rrm addr; a<-m(addr) >> 1
 
-jmp addr; ugrás
-jc addr; ha Cy = 1
-jnc addr; ha Cy = 0
-jz addr; ha Z = 1
-jnz addr; ha Z = 0
-jm addr; ha S = 1
-jp addr; ha S = 0
+jmp addr; un conditional jump. Ugrás
+jc addr; if Cy = 1
+jnc addr; if Cy = 0
+jz addr; if Z = 1
+jnz addr; if Z = 0
+jm addr; if S = 1
+jp addr; if S = 0
 */
-//#define false 0
-//#define true 1
-  
+
+#ifdef _BEFORE_C99_AGES_
+#define false 0
+#define true 1
+#endif
+
 /* Typedef: TokenType enum
  * This enumeration defines the constants for the different token types.
  * The scanner should return these values for the associated key words
@@ -65,43 +76,15 @@ typedef enum {
 	S_Exp,
     T_NumTokenTypes
 } TokenType;
-
-
 #undef TOK
-#define TOK(x, opc) #x
 
-/* These are a list of printable names for each token value defined
+/* Global variable gTokenNames: 
+ * These are a list of printable names for each token value defined
  * above.  The strings should match in position to the types. They
  * are used in our main program to verify output from your scanner.
  */
-
-static const char *gTokenNames[T_NumTokenTypes] = {
-  "T_Void", "T_NewLine",
-  "T_LessEqual", "T_GreaterEqual", "T_Equal", "T_NotEqual", "T_And", "T_Or",
-  "T_While", "T_For", "T_If", "T_Else",
-  "T_Identifier", "T_StringConstant", "T_IntConstant", "T_BoolConstant",
-  "T_Section", "T_Global", "T_DataByte", "T_Equ", "T_Dollar",
-  "T_Comment", "T_Org", "T_At", "T_Rol", "T_Ror",
-  TOK(T_mvi, 0),
-  TOK(T_sta, 1),
-  TOK(T_lda, 2),
-  TOK(T_ad0, 3),
-  TOK(T_ad1, 4),
-  TOK(T_adc, 5),
-  TOK(T_nand,6),
-  TOK(T_nor, 7),
-  TOK(T_rrm, 8),
-  TOK(T_jmp, 9),
-  TOK(T_jc, 10),
-  TOK(T_jnc,11),
-  TOK(T_jz, 12),
-  TOK(T_jnz,13),
-  TOK(T_jm, 14),
-  TOK(T_jp, 15),
-  "T_End",
-  "Exp"
-};
-
+extern const char *gTokenNames[T_NumTokenTypes];
+extern int yy_flex_debug;
  
 /* Typedef: YYSTYPE
  * Defines the union type that is used by the scanner to store
@@ -124,17 +107,20 @@ typedef union {
  */
 extern YYSTYPE yylval;
 
-extern char *yytext;      // Text of lexeme just scanned
+extern char *yytext;      //!< Text of lexeme just scanned
 
+/** Following declarations can be used from c and c++ as well.
+ */
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-int yylex();              // Defined in the generated lex.yy.c file
+int yylex();              //!< Defined in the generated lex.yy.c file
 
-void InitScanner();                 // Defined in scanner.l user subroutines
+void InitScanner();       //!< Defined in scanner.l user subroutines
 
-extern int yylineno;
+extern int yylineno;	  //!< Defined in the generated lex.yy.c file
+
 #ifdef __cplusplus
 }
 #endif

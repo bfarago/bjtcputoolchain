@@ -5,6 +5,7 @@
 
 using std::vector;
 
+
 static vector<const char*> debugKeys;
 static vector<const char*> symbols;
 static vector<int> symbolValues;
@@ -46,7 +47,7 @@ int parse_exp(int t, GType_s* res) {
 	int r = 0;
 	int lval = 0;
 	int op = 0;
-	int top = gStack.size();
+	size_t top = gStack.size();
 	Debug("pse", __FUNCTION__);
 	while (0 == r) {
 		switch (t) {
@@ -78,7 +79,7 @@ int parse_exp(int t, GType_s* res) {
 		}
 		if (!r) t = yylex();
 	}
-	int len = gStack.size();
+	size_t len = gStack.size();
 	int sp = 0;
 	int rule = 0;
 	for (int i = 0; i < sizeof(ruleExp)/sizeof(int); i++) {
@@ -175,20 +176,98 @@ void Debug(const char *key, const char *format, ...) {
   printf("+++ (%s)%i: %s%s", key, yylineno, buf, buf[strlen(buf)-1] != '\n'? "\n" : "");
 }
 
-void ParseCommandLine(int argc, char *argv[]) {
-  if (argc < 3)
-    return;
-  
+void printHelp() {
+	printf("See detailed help: http://github.com/bfarago/bjtcputoolchain");
+	printf("\n");
+	printf("asmb [-h] [-v] input.asm\n");
+	printf(" -h : This help.\n");
+	printf(" -v : Verbose lexer and grammar. Very noisy...\n");
+	printf(" -i FileName.asm : input specification. This is the default switch, not needed...\n");
+	printf(" -o FileName : not implemented ! This will be the output filename without suffices.\n");
+	printf("\n");
+}
+
+
+Std_ReturnType ParseCommandLine(int argc, char *argv[], asmb_config_t* cfg) {
+	char actualSwitch = 'i';
+/*  
+//replaced by -v now
   if (strcmp(argv[2], "-d") != 0) { // first arg is not -d
+	if (argc < 3) return E_NOT_OK;
     printf("Incorrect Use:   ");
     for (int i = 1; i < argc; i++) printf("%s ", argv[i]);
     printf("\n");
     printf("Correct Usage:  fname.asm -d <debug-key-1> <debug-key-2> ... \n");
-    exit(2);
+    exit(2); //Stop the whole program
   }
-
   for (int i = 3; i < argc; i++)
-    SetDebugForKey(argv[i], true);
+	SetDebugForKey(argv[i], true);
+ */
+
+	/*
+	// Ok, I am working on this part now, actually -o switch doing nothing...
+	cfg->fname_out_bin = 0;
+	cfg->fname_out_coe = 0;
+	cfg->fname_out_verilog = 0;
+	cfg->fname_out_lst = 0;
+	*/
+	cfg->fname_out_bin = "a.out";
+	cfg->fname_out_coe = "a.coe";
+	cfg->fname_out_verilog = "a.v";
+	cfg->fname_out_lst = "a.lst";
+
+	yy_flex_debug = 0;
+  if (argc > 1) {
+	  for (int i = 1; i < argc; i++) {
+		  if (argv[i][0] == '-') {
+			  switch (argv[i][1]) {
+			  case 'h':
+			  case 'H':
+				  printHelp();
+				  exit(0); //need to exit here, because of the parsing will starts on standard input later.
+				  break;
+			  case 'o':
+				  actualSwitch = 'o';
+				  break;
+			  case 'i':
+				  actualSwitch = 'i';
+				  //cfg->fname_in = &argv[i][1]; //optional: -ifilename.asm
+				  break;
+			  case 'v':
+				  SetDebugForKey("lex", true);
+				  SetDebugForKey("rel", true);
+				  SetDebugForKey("ext", true);
+				  SetDebugForKey("grm", true);
+				  SetDebugForKey("pse", true);
+				  yy_flex_debug = 1;
+				  break;
+			  case 'd':
+				  // TODO: debug switches ?
+				  break;
+			  default:
+				  printf("Error: Wrong command line argument specified : '%c'.\n", argv[i][1]);
+				  printHelp();
+				  exit(-1);
+				  break;
+			  }
+		  }
+		  else {
+				//other than switch char ( ^{\-.+} ), assume this is the input filename
+			  switch (actualSwitch) {
+				case 'i':cfg->fname_in = argv[i]; break;
+				case 'o':
+				{
+					cfg->name_o = argv[i];
+				}
+				break;
+			  }
+				
+		  }
+
+	  }
+
+  }
+  return E_OK;
 }
 
 int yywrap() {
@@ -203,11 +282,11 @@ int searchSymbol(const char *key) {
 	return -1;
 }
 void addReloc(const char* name, int addr, relocType_en rt) {
-	reloc.push_back(strdup(name));
+	reloc.push_back(UTIL_STRDUP(name));
 	relocAddress.push_back(addr);
 	relocType.push_back(rt);
 }
-int getRelocs() {
+size_t getRelocs() {
 	return reloc.size();
 }
 int getReloc(int index, const char**name, int* adr, relocType_en* rt) {

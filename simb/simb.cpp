@@ -3,7 +3,8 @@
 
 #ifdef WIN32
 #include <conio.h>
-#else
+#define FOPEN(f, n, m) fopen_s(&(fi), (n), (m))
+#else /////////////////////////////////////////////////
 #include <termios.h>
 #define fread_s(b,s,a,n,f) fread(b,a,n,f)
 static struct termios old, new;
@@ -35,11 +36,12 @@ char getch(void){ return getch_(0);}
 /* Read 1 character with echo */
 char getche(void){ return getch_(1);}
 
-#endif
+#define FOPEN(f, n, m) f=fopen((n),(m))
+#endif /////////////////////////////////////////////////
 
 #include <ctype.h>  
 #define MAXMEMORY (1<<12)
-char memory[MAXMEMORY];
+
 typedef enum {
 	bd_Tristate,
 	bd_Read,
@@ -67,6 +69,8 @@ typedef struct {
 
 bus_t bus;
 cpu_t cpu;
+char memory[MAXMEMORY];
+
 void dumpheader() {
 	printf("Addr  D S | S PC    I Wrk | Alu Flag | Perif");
 	printf("\n");
@@ -77,6 +81,7 @@ void dumpmem(int addr) {
 
 #undef TOK
 #define TOK(x, opc) #x
+
 static const char *gMnemonics[16] = 
 { "mvi a,","sta","lda","ad0","ad1","adc","nand","nor","rrm","jmp","jc","jnc","jz","jnz","jm","jp"};
 
@@ -101,12 +106,14 @@ void dump() {
 	dumpmem(4093);
 	dumpmem(4094);
 	dumpmem(4095);
+
 	printf(" | ");
 	if ('D'==cpu.state)
 	if (cpu.op>=0) printf("%s %x", gMnemonics[cpu.op], cpu.data);
 
 	printf("\n");
 }
+
 char perif_Read(int addr) {
 	char r = 0xf;
 	switch (addr) {
@@ -121,6 +128,7 @@ char perif_Read(int addr) {
 	}
 	return r;
 }
+
 void perif_Write(int addr, char data) {
 	switch (addr) {
 	case 0xc00: break;
@@ -133,6 +141,7 @@ void perif_Write(int addr, char data) {
 	case 0xd03: break;
 	}
 }
+
 char cpu_busRead(int addr) {
 	cpu.addr = addr;
 	bus.address = addr;
@@ -146,6 +155,7 @@ char cpu_busRead(int addr) {
 	}
 	return bus.data;
 }
+
 void cpu_busWrite(int addr, char data) {
 	cpu.addr = addr;
 	bus.address = addr;
@@ -160,6 +170,7 @@ void cpu_busWrite(int addr, char data) {
 		memory[addr] = bus.data;
 	}
 }
+
 void fetch() {
 	cpu.ilen = 2;
 	cpu.state = 'F';
@@ -211,12 +222,7 @@ int main(int ac, char** av) {
 	int run = 1;
 	int maxsteplen = -1;
 	if (ac > 1) {
-#ifdef WIN32
-		//errno_t err; err=
-		fopen_s(&fi, av[1], "rb");
-#else
-		fi = fopen(av[1], "rb");
-#endif
+		FOPEN(fi, av[1], "rb");
 		if (!fi) {
 			printf("Unable to open file?\n");
 			return -3;
@@ -253,13 +259,9 @@ int main(int ac, char** av) {
 					ch = 'Q';
 				}
 			} else {
-//#ifdef WIN32
 				ch = _getch();
 				ch = toupper(ch);
 				if ('R' == ch) { run = 500; }
-//#else
-//maxsteplen= 50;
-//#endif
 			}
 		}
 	} while (ch != 'Q');
