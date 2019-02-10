@@ -7,19 +7,20 @@
 #else /////////////////////////////////////////////////
 #include <termios.h>
 #define fread_s(b,s,a,n,f) fread(b,a,n,f)
-static struct termios old, new;
+#define _getch getch
+static struct termios told, tnew;
 /* Initialize new terminal i/o settings */
 void initTermios(int echo)
 {
-	tcgetattr(0, &old); /* grab old terminal i/o settings */
-	new = old; /* make new settings same as old settings */
-	new.c_lflag &= ~ICANON; /* disable buffered i/o */
-	new.c_lflag &= echo ? ECHO : ~ECHO; /* set echo mode */
-	tcsetattr(0, TCSANOW, &new); /* use these new terminal i/o settings now */
+	tcgetattr(0, &told); /* grab old terminal i/o settings */
+	tnew = told; /* make new settings same as old settings */
+	tnew.c_lflag &= ~ICANON; /* disable buffered i/o */
+	tnew.c_lflag &= echo ? ECHO : ~ECHO; /* set echo mode */
+	tcsetattr(0, TCSANOW, &tnew); /* use these new terminal i/o settings now */
 }
 
 /* Restore old terminal i/o settings */
-void resetTermios(void){ tcsetattr(0, TCSANOW, &old);}
+void resetTermios(void){ tcsetattr(0, TCSANOW, &told);}
 
 /* Read 1 character - echo defines echo mode */
 char getch_(int echo) { 
@@ -88,7 +89,7 @@ static const char *gMnemonics[16] =
 void dump() {
 	printf("0x%03x %x %c | ", bus.address, bus.data, "XRW"[bus.dir]);
 	printf("%c 0x%03x ", cpu.state, cpu.pc);
-	if (cpu.op>=0)printf("%x", cpu.op);
+	if (cpu.op>=0) printf("%x", cpu.op);
 	else printf("x");
 	if (cpu.data >= 0) {
 		printf(" %03x", cpu.data);
@@ -174,7 +175,7 @@ void cpu_busWrite(int addr, char data) {
 void fetch() {
 	cpu.ilen = 2;
 	cpu.state = 'F';
-	cpu.op = -1;
+	//cpu.op = -1;
 	cpu.data = -1;
 	cpu.op = cpu_busRead(cpu.pc);
 	cpu.data = cpu_busRead(cpu.pc + 1);

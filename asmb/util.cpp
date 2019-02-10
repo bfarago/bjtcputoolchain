@@ -45,8 +45,8 @@ int ruleExp[] =
 
 int parse_exp(int t, GType_s* res) {
 	int r = 0;
-	int lval = 0;
-	int op = 0;
+	//int lval = 0;
+	//int op = 0;
 	size_t top = gStack.size();
 	Debug("pse", __FUNCTION__);
 	while (0 == r) {
@@ -81,8 +81,8 @@ int parse_exp(int t, GType_s* res) {
 	}
 	size_t len = gStack.size();
 	int sp = 0;
-	int rule = 0;
-	for (int i = 0; i < sizeof(ruleExp)/sizeof(int); i++) {
+	size_t rule = 0;
+	for (size_t i = 0; i < sizeof(ruleExp)/sizeof(int); i++) {
 		if (T_Void == ruleExp[i]) break;
 		if ( (i-rule) < len) {
 			GType_s& s = gStack[top + sp];
