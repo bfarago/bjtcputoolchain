@@ -10,6 +10,7 @@
 #define UTIL_STRDUP(x) _strdup(x)
 #else
 #define UTIL_STRDUP(x) strdup(x)
+#define _fileno fileno
 #endif
 
 typedef enum {

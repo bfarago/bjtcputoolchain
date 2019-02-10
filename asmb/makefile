@@ -5,18 +5,22 @@ CC=gcc
 INCLUDE=-I.
 DEFS=-DDEBUG
 CFLAGS= $(DEBUG) $(DEFS) -Wformat=2 -Wall -Wextra -Winline $(INCLUDE) -pipe -fPIC
-LIBS=-lc++
+LIBS=-lstdc++
 
-SRC= error.cpp  lex.yy.c  main.c  scanner.c  util.cpp  version.c  loc.c
+SRC= lex.yy.c  main.c  scanner.c  version.c  loc.c 
+SRCPP= error.cpp  util.cpp 
 
-OBJ= $(SRC:.c=.o)
+OBJ= $(SRC:.c=.o) $(SRCPP:.cpp=.o)
 
-all:	simpletest
+all:	asmb
 
-simpletest:	$(OBJ)
-		$(CC) -o simpletest $(LIBS) $(OBJ)
+asmb:	$(OBJ)
+		$(CC) -o asmb $(LIBS) $(OBJ)
 
 .c.o:
+		$(CC) -c $(CFLAGS) $< -o $@
+
+.cpp.o:
 		$(CC) -c $(CFLAGS) $< -o $@
 
 .PHONY: clean
