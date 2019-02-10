@@ -238,8 +238,9 @@ int parse_Op4_12(int mnemonic) {
 }
 
 void relocation() {
-	size_t n = getRelocs();
-	for (int i = 0; i < n; i++) {
+    size_t i;	
+    size_t n = getRelocs();
+	for (i = 0; i < n; i++) {
 		const char* name;
 		int addr;
 		relocType_en relocType;
@@ -257,6 +258,8 @@ void relocation() {
 			case RT_OP4_4:
 				memory[addr+1] += v & 0xf;
 				Debug("rel", "%s relocated %x:[op%x]", name, addr, v&0xf);
+				break;
+			default:
 				break;
 			}
 		} else {
@@ -346,6 +349,7 @@ static const char *gMnemonics[16] =
 //entry point of the asmb
 int main(int argc, char** argv)
 {
+    int i;
 	FILE* fin;
 	FILE* f; //used for outputs
 	printf("%s %s\n", VersionName, VersionNumber);
@@ -400,7 +404,7 @@ int main(int argc, char** argv)
 		}
 		fprintf(f, "memory_initialization_radix=16;\n");
 		fprintf(f, "memory_initialization_vector=");
-		for (int i = 0; i < maxaddress; i++) {
+		for (i = 0; i < maxaddress; i++) {
 			if (i) fprintf(f, ",");
 			fprintf(f, "%02x", memory[i]);
 		}
@@ -424,12 +428,12 @@ int main(int argc, char** argv)
 		fprintf(f, "output reg [31:0] o_data;\n");
 		fprintf(f, "always@(posedge i_clk)\n");
 		fprintf(f, " case(init_counter)\n");
-		for (int i = 0; i < maxaddress; i++) {
+		for (i = 0; i < maxaddress; i++) {
 			if (0 == (i & 7)) fprintf(f, "  9'h%02x: o_data= 32'h", i / 8);
 			fprintf(f, "%x", memory[i] & 0xf);
 			if (7 == (i & 7)) fprintf(f, "; \n");
 		}
-		for (int i = (maxaddress + 1) & 7; i >= 0; i--) {
+		for (i = (maxaddress + 1) & 7; i >= 0; i--) {
 			fprintf(f, "0");
 		}
 		fprintf(f, ";\n endcase\n");
@@ -448,7 +452,7 @@ int main(int argc, char** argv)
 		int cols = 0;
 		char buflst[BUFLEN];
 		char bufcom[BUFLEN];
-		for (int i = 0; i < maxaddress; i++) {
+		for (i = 0; i < maxaddress; i++) {
 			int m = memory[i];
 			if (MT_data == memoryTypes[i]) {
 				cols += snprintf(buflst + cols, BUFLEN - cols, "%03x  %x", i, m);

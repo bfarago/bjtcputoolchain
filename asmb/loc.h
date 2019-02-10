@@ -36,24 +36,14 @@ extern struct yyltype yylloc;
  * Takes two locations and returns a new location which represents
  * the span from first to last, inclusive.
  */
-inline yyltype Join(yyltype first, yyltype last)
-{
-  yyltype combined;
-  combined.first_column = first.first_column;
-  combined.first_line = first.first_line;
-  combined.last_column = last.last_column;
-  combined.last_line = last.last_line;
-  return combined;
-}
+
+yyltype Join(yyltype first, yyltype last);
 
 
 /* Function: Joinp
  * Same as above Join, except operates on pointers as a convenience 
  */
-inline yyltype Joinp(yyltype *firstPtr, yyltype *lastPtr)
-{
-  return Join(*firstPtr, *lastPtr);
-}
+yyltype Joinp(yyltype *firstPtr, yyltype *lastPtr);
 
 
 #endif

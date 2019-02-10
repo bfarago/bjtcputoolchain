@@ -6,7 +6,11 @@
 #include <stdbool.h>
 
 //Eliminate warning in VisualStudio
+#ifdef WIN32
 #define UTIL_STRDUP(x) _strdup(x)
+#else
+#define UTIL_STRDUP(x) strdup(x)
+#endif
 
 typedef enum {
 	E_OK,
