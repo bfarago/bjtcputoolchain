@@ -5,17 +5,17 @@
  *  unistd.h on Windows
  *  Please add functionality as neeeded 
  */
-
+#if defined(_WIN32) || defined(WIN32)
 //#include <stdlib.h>
 #include <io.h>
-#include <getopt.h> /* getopt from: http://www.pwilson.net/sample.html. */
+//#include <getopt.h>
 #include <process.h> /* for getpid() and the exec..() family */
 
 #define srandom srand
 #define random rand
 
-const W_OK = 2;
-const R_OK = 4;
+const int W_OK = 2;
+const int R_OK = 4;
 
 #define access _access
 #define ftruncate _chsize
@@ -34,5 +34,5 @@ typedef unsigned __int8   uint8_t;
 typedef unsigned __int16  uint16_t;
 typedef unsigned __int32  uint32_t;
 typedef unsigned __int64  uint64_t;
-
+#endif /* _WIN32 */
 #endif /* unistd.h  */

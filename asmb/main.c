@@ -244,7 +244,7 @@ void relocation() {
 		const char* name;
 		int addr;
 		relocType_en relocType;
-		getReloc(i, &name, &addr, &relocType);
+		getReloc((int)i, &name, &addr, &relocType);
 		int ix= searchSymbol(name);
 		if (ix >= 0) {
 			int v = getSymbol(name);

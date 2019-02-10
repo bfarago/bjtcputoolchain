@@ -6,7 +6,7 @@
 #include <stdbool.h>
 
 //Eliminate warning in VisualStudio
-#ifdef WIN32
+#if defined(_WIN32) || defined(WIN32)
 #define UTIL_STRDUP(x) _strdup(x)
 #else
 #define UTIL_STRDUP(x) strdup(x)

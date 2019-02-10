@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#ifdef WIN32
+#ifdef _WIN32
 #include <conio.h>
 #define FOPEN(f, n, m) fopen_s(&(fi), (n), (m))
 #else /////////////////////////////////////////////////
@@ -231,7 +231,7 @@ int main(int ac, char** av) {
 		fseek(fi, 0, SEEK_END);
 		fi_size=ftell(fi);
 		fseek(fi, 0, SEEK_SET);
-		int rs=fread_s(memory, MAXMEMORY, 1, fi_size, fi);
+		size_t rs=fread_s(memory, MAXMEMORY, 1, fi_size, fi);
 		fclose(fi);
 		if (rs != fi_size) {
 			printf("Unable to read file?\n");
