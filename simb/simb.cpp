@@ -246,7 +246,7 @@ int main(int ac, char** av) {
 		run = 0;
 	}
 	int i = 0;
-	int ch;
+	int ch ='R';
 	//dumpheader();
 	do{
 		if (!(i++%5)) dumpheader();
