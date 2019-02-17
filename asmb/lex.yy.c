@@ -10,7 +10,8 @@
 #define FLEX_SCANNER
 #define YY_FLEX_MAJOR_VERSION 2
 #define YY_FLEX_MINOR_VERSION 5
-
+#define _CRT_SECURE_NO_WARNINGS
+#include <stdio.h>
 #include <stdio.h>
 
 
@@ -849,7 +850,7 @@ case 5:
 YY_RULE_SETUP
 #line 80 "scanner.l"
 { /* got the include file name */
-		yylval.stringConstant = strdup(yytext+1);
+		yylval.stringConstant = UTIL_STRDUP(yytext+1);
 		if (yylval.stringConstant[yyleng-2] != '"')
 			Debug("lex","improperly terminated string");
 		else
@@ -880,7 +881,7 @@ case 6:
 YY_RULE_SETUP
 #line 108 "scanner.l"
 {
-		yylval.stringConstant = strdup(yytext+1);
+		yylval.stringConstant = UTIL_STRDUP(yytext+1);
 		if (yylval.stringConstant[yyleng-2] != '"')
 			Debug("lex","improperly terminated string");
 		else

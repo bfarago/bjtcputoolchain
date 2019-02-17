@@ -1,4 +1,4 @@
-/** @file loc.h
+/** @file scanner.h
 *
 * @brief Lexer/Scanner interface module.
 *
@@ -120,6 +120,8 @@ int yylex();              //!< Defined in the generated lex.yy.c file
 void InitScanner();       //!< Defined in scanner.l user subroutines
 
 extern int yylineno;	  //!< Defined in the generated lex.yy.c file
+
+extern FILE* yyin;		  //!< used by scanner
 
 #ifdef __cplusplus
 }

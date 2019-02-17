@@ -1,3 +1,10 @@
+/** @file error.cpp
+*
+* @brief Error reporter class implementation.
+*
+* @par
+* COPYRIGHT NOTICE: (c) 2018 Barna Farago.  All rights reserved.
+*/
 #include "error.h"
 #include <iostream>
 #include <sstream>

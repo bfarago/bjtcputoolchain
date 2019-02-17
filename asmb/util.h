@@ -1,3 +1,10 @@
+/** @file util.h
+*
+* @brief Utility functions and type declarations.
+*
+* @par
+* COPYRIGHT NOTICE: (c) 2018 Barna Farago.  All rights reserved.
+*/
 #ifndef _UTIL_H
 #define _UTIL_H
 
@@ -22,6 +29,7 @@ typedef enum {
 extern "C" {
 #endif
 #include "scanner.h"
+
 extern int address;
 extern int maxaddress;
 
@@ -42,7 +50,9 @@ typedef struct {
 	int t;
 	YYSTYPE s;
 } GType_s;
+
 void stackPush(int t, YYSTYPE s);
+
 int parse_exp(int t, GType_s* res);
 /**
  * Function: Failure()

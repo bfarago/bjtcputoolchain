@@ -147,6 +147,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="error.cpp" />
+    <ClCompile Include="gen_bin.c" />
+    <ClCompile Include="gen_fpga.c" />
+    <ClCompile Include="gen_lst.c" />
+    <ClCompile Include="grammar.c" />
+    <ClCompile Include="intrep.c" />
     <ClCompile Include="lex.yy.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="scanner.c" />
@@ -154,7 +159,13 @@
     <ClCompile Include="version.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="config.h" />
     <ClInclude Include="error.h" />
+    <ClInclude Include="gen_bin.h" />
+    <ClInclude Include="gen_fpga.h" />
+    <ClInclude Include="gen_lst.h" />
+    <ClInclude Include="grammar.h" />
+    <ClInclude Include="intrep.h" />
     <ClInclude Include="loc.h" />
     <ClInclude Include="scanner.h" />
     <ClInclude Include="unistd.h" />

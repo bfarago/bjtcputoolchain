@@ -7,7 +7,9 @@ DEFS=-DDEBUG
 CFLAGS= $(DEBUG) $(DEFS) -Wformat=2 -Wall -Wextra -Winline $(INCLUDE) -pipe -fPIC
 LIBS=-lstdc++
 
-SRC= lex.yy.c  main.c  scanner.c  version.c  loc.c 
+SRC= lex.yy.c  main.c  scanner.c  version.c  loc.c  intrep.c \
+	gen_bin.c gen_fpga.c gen_lst.clean
+
 SRCPP= error.cpp  util.cpp 
 
 OBJ= $(SRC:.c=.o) $(SRCPP:.cpp=.o)

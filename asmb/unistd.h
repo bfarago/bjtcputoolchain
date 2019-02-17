@@ -1,3 +1,10 @@
+/** @file unistd.h
+*
+* @brief Compatibility typedefs
+*
+* @par
+* COPYRIGHT NOTICE: (c) 2018 Barna Farago.  All rights reserved.
+*/
 #ifndef _UNISTD_H
 #define _UNISTD_H    1
 

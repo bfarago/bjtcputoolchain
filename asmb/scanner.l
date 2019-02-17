@@ -11,7 +11,8 @@
  * or C++ variable declarations/prototypes that are needed by your code here.
  */
 
-
+ #define _CRT_SECURE_NO_WARNINGS
+#include <stdio.h>
 #include <string.h>
 #include "scanner.h"
 #include "util.h" // for PrintDebug()

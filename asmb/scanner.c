@@ -1,3 +1,10 @@
+/** @file scanner.c
+*
+* @brief Lexical scanner implemented by flex generated lex.yy.c file. This modul add some additional
+*   variables/functions, if needed.
+* @par
+* COPYRIGHT NOTICE: (c) 2018 Barna Farago.  All rights reserved.
+*/
 #include "scanner.h"
 
 //next usage of this macro will be not enum, but string constant
