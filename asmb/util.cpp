@@ -139,7 +139,8 @@ void Failure(const char *format, ...) {
   vsnprintf(errbuf, UTIL_BUFFERSIZE, format, args);
   va_end(args);
   fflush(stdout);
-  fprintf(stderr,"\n*** Failure: %s\n\n", errbuf);
+  
+  fprintf(stderr,"\n*** Failure in line:%d: %s '%s'\n\n", yylineno, errbuf, yytext);
   abort();
 }
 

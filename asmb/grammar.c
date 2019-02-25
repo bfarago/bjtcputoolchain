@@ -113,6 +113,7 @@ int parse_db() {
 	t = parse_exp(t, &grm);
 	if (grm.t != S_Exp) {
 		Debug("grm", "Expression not found: db expression");
+		Failure("Expression not found:");
 	}
 	else {
 		addMemory(grm.s.integerConstant);
@@ -144,7 +145,7 @@ int parse_identifier() {
 		}
 		break;
 	default:
-		Failure("syntax error: identifier: or identifier equ 0xff");
+		Failure("syntax error: identifier:"); // or identifier equ 0xff
 		return false;
 		break;
 	}
