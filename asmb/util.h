@@ -121,8 +121,16 @@ typedef struct {
 	const char* fname_out_lst;
 	const char* fname_out_coe;
 	const char* fname_out_verilog;
+	unsigned char enable_fpga;
+	unsigned char enable_lst;
+	unsigned char enable_map;
 }asmb_config_t;
 
+/**
+* Function: InitConfig
+* Default config.
+*/
+void InitConfig(asmb_config_t* cfg);
 
 /**
  * Function: ParseCommandLine
@@ -131,6 +139,11 @@ typedef struct {
  * as being flags to turn on.
  */
 Std_ReturnType ParseCommandLine(int argc, char *argv[], asmb_config_t* cfg);
+
+size_t SymbolLength();
+const char* SymbolByIndex(size_t index);
+int SymbolValueByIndex(size_t index);
+
 int searchSymbol(const char *key);
 void setSymbol(const char* name, int value);
 int getSymbol(const char* name);

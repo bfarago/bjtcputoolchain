@@ -11,5 +11,6 @@
 #include "util.h"
 
 Std_ReturnType gen_bin(asmb_config_t *asmb_config, int maxaddress, char* memory);
+Std_ReturnType gen_map(asmb_config_t *asmb_config);
 
 #endif

@@ -8,18 +8,32 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include <stdio.h>
 #include "gen_fpga.h"
+#include "config.h"
 
 Std_ReturnType gen_coe(asmb_config_t *asmb_config, int maxaddress, char* memory)
 {
 	FILE *f;
 	int i;
+	char bfname[MAXFNAMELEN];
+	const char* pfname = NULL;
 	Std_ReturnType ret = E_OK;
+	if (!asmb_config->enable_fpga) return ret;
 	if (asmb_config->fname_out_coe) {
-		f = fopen(asmb_config->fname_out_coe, "w+");
+		pfname = asmb_config->fname_out_coe;
+	}
+	else {
+		if (asmb_config->name_o) {
+			snprintf(bfname, MAXFNAMELEN, "%s.coe", asmb_config->name_o);
+			pfname = bfname;
+		}
+	}
+	if (pfname) {
+		f = fopen(pfname, "w+");
 		if (!f) {
-			Failure("Unable to create coe output file:%s", asmb_config->fname_out_coe);
+			Failure("Unable to create coe output file:%s", pfname);
 			return E_NOT_OK;
 		}
+		printf("Output coe file:%s\n", pfname);
 		fprintf(f, "memory_initialization_radix=16;\n");
 		fprintf(f, "memory_initialization_vector=");
 		for (i = 0; i < maxaddress; i++) {
@@ -36,11 +50,24 @@ Std_ReturnType gen_verilog(asmb_config_t *asmb_config, int maxaddress, char* mem
 {
 	FILE *f;
 	int i;
+	char bfname[MAXFNAMELEN];
+	const char* pfname = NULL;
 	Std_ReturnType ret = E_OK;
+	if (!asmb_config->enable_fpga) return ret;
 	if (asmb_config->fname_out_verilog) {
-		f = fopen(asmb_config->fname_out_verilog, "w+");
+		pfname = asmb_config->fname_out_verilog;
+	}
+	else {
+		if (asmb_config->name_o) {
+			snprintf(bfname, MAXFNAMELEN, "%s.v", asmb_config->name_o);
+			pfname = bfname;
+		}
+	}
+	if (pfname) {
+		f = fopen(pfname, "w+");
+		printf("Output verilog file:%s\n", pfname);
 		if (!f) {
-			Failure("Unable to create .v output file:%s", asmb_config->fname_out_verilog);
+			Failure("Unable to create .v output file:%s", pfname);
 			return E_NOT_OK;
 		}
 		fprintf(f, "module rom_content(\n");

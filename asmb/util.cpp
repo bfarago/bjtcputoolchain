@@ -184,39 +184,29 @@ void printHelp() {
 	printf(" -h : This help.\n");
 	printf(" -v : Verbose lexer and grammar. Very noisy...\n");
 	printf(" -i FileName.asm : input specification. This is the default switch, not needed...\n");
-	printf(" -o FileName : not implemented ! This will be the output filename without suffices.\n");
+	printf(" -b Filename.bin : Optional. Specify the bin output file name, in case of input and output name are different.\n");
+	printf(" -o FileName : Optional. This will be the name part of the output file names, without the suffixes. Input file name will be used as base by default, when it is not specified.\n");
+	printf(" -f : Fpga related outputs are enabled. (fname.coe and fname.v)\n");
+	printf(" -l : lst output is enabled. (fname.lst)\n");
+	printf(" -m : map output is enabled. (fname.map)\n");
+	
 	printf("\n");
 }
 
-
-Std_ReturnType ParseCommandLine(int argc, char *argv[], asmb_config_t* cfg) {
-	char actualSwitch = 'i';
-/*  
-//replaced by -v now
-  if (strcmp(argv[2], "-d") != 0) { // first arg is not -d
-	if (argc < 3) return E_NOT_OK;
-    printf("Incorrect Use:   ");
-    for (int i = 1; i < argc; i++) printf("%s ", argv[i]);
-    printf("\n");
-    printf("Correct Usage:  fname.asm -d <debug-key-1> <debug-key-2> ... \n");
-    exit(2); //Stop the whole program
-  }
-  for (int i = 3; i < argc; i++)
-	SetDebugForKey(argv[i], true);
- */
-
-	/*
-	// Ok, I am working on this part now, actually -o switch doing nothing...
+void InitConfig(asmb_config_t* cfg) {
+	cfg->fname_in = NULL;
+	cfg->name_o = NULL;
+	cfg->enable_fpga = 0;
+	cfg->enable_lst = 0;
+	cfg->enable_map = 0;
 	cfg->fname_out_bin = 0;
 	cfg->fname_out_coe = 0;
 	cfg->fname_out_verilog = 0;
 	cfg->fname_out_lst = 0;
-	*/
-	cfg->fname_out_bin = "a.out";
-	cfg->fname_out_coe = "a.coe";
-	cfg->fname_out_verilog = "a.v";
-	cfg->fname_out_lst = "a.lst";
+}
 
+Std_ReturnType ParseCommandLine(int argc, char *argv[], asmb_config_t* cfg) {
+	char actualSwitch = 'i';
 	yy_flex_debug = 0;
   if (argc > 1) {
 	  for (int i = 1; i < argc; i++) {
@@ -227,12 +217,10 @@ Std_ReturnType ParseCommandLine(int argc, char *argv[], asmb_config_t* cfg) {
 				  printHelp();
 				  exit(0); //need to exit here, because of the parsing will starts on standard input later.
 				  break;
-			  case 'o':
-				  actualSwitch = 'o';
-				  break;
+			  case 'o': 
+			  case 'b':
 			  case 'i':
-				  actualSwitch = 'i';
-				  //cfg->fname_in = &argv[i][1]; //optional: -ifilename.asm
+				  actualSwitch = argv[i][1]; break;
 				  break;
 			  case 'v':
 				  SetDebugForKey("lex", true);
@@ -241,6 +229,15 @@ Std_ReturnType ParseCommandLine(int argc, char *argv[], asmb_config_t* cfg) {
 				  SetDebugForKey("grm", true);
 				  SetDebugForKey("pse", true);
 				  yy_flex_debug = 1;
+				  break;
+			  case 'f':
+				  cfg->enable_fpga = 1;
+				  break;
+			  case 'l':
+				  cfg->enable_lst = 1;
+				  break;
+			  case 'm':
+				  cfg->enable_map = 1;
 				  break;
 			  case 'd':
 				  // TODO: debug switches ?
@@ -256,15 +253,26 @@ Std_ReturnType ParseCommandLine(int argc, char *argv[], asmb_config_t* cfg) {
 				//other than switch char ( ^{\-.+} ), assume this is the input filename
 			  switch (actualSwitch) {
 				case 'i':cfg->fname_in = argv[i]; break;
-				case 'o':
-				{
-					cfg->name_o = argv[i];
-				}
-				break;
+				case 'b':cfg->fname_out_bin = argv[i]; break;
+				case 'o':cfg->name_o = argv[i];	break;
 			  }
 				
 		  }
 
+	  }
+	  if (cfg->fname_in) {
+		  const char* p = strrchr(cfg->fname_in, '.');
+		  if (!cfg->name_o) {
+			  if (p) {
+				  static char b[255];
+				  strncpy_s(b, 255, cfg->fname_in, p- cfg->fname_in);
+				  cfg->name_o = b;
+				  printf("Output name prefix:%s\n", cfg->name_o);
+			  } else {
+				  //theres no . in the spec name.
+
+			  }
+		  }
 	  }
 
   }
@@ -273,6 +281,19 @@ Std_ReturnType ParseCommandLine(int argc, char *argv[], asmb_config_t* cfg) {
 
 int yywrap() {
 	return 1;
+}
+size_t SymbolLength() {
+	return symbols.size();
+}
+const char* SymbolByIndex(size_t index) {
+	return symbols[index];
+}
+int SymbolValueByIndex(size_t index) {
+	return symbolValues[index];
+}
+
+size_t RelocLength() {
+	return reloc.size();
 }
 
 int searchSymbol(const char *key) {

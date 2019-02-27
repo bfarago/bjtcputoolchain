@@ -138,7 +138,8 @@ int parse_identifier() {
 		GType_s grm;
 		t = parse_exp(t, &grm);
 		if (grm.t != S_Exp) {
-			Debug("grm", "Expression not found: mvi a,expression");
+			Debug("grm", "Expression not found: equ");
+			Failure("Expression not found: equ");
 		}
 		else {
 			setSymbol(name, grm.s.integerConstant);
@@ -167,6 +168,7 @@ int parse_Op4_4(int mnemonic) {
 	t = parse_exp(t, &grm);
 	if (grm.t != S_Exp) {
 		Debug("grm", "Expression not found: mvi a,expression");
+		Failure("Expression not found: op 4,4");
 	}
 	v = grm.s.integerConstant;
 	addMemory(opc);
@@ -184,25 +186,26 @@ int parse_Op4_12(int mnemonic) {
 		//#undef TOK
 #define TOK(x, xop) case x: opc=xop; break;
 		TOK(T_sta, 1)
-			TOK(T_lda, 2)
-			TOK(T_ad0, 3)
-			TOK(T_ad1, 4)
-			TOK(T_adc, 5)
-			TOK(T_nand, 6)
-			TOK(T_nor, 7)
-			TOK(T_rrm, 8)
-			TOK(T_jmp, 9)
-			TOK(T_jc, 10)
-			TOK(T_jnc, 11)
-			TOK(T_jz, 12)
-			TOK(T_jnz, 13)
-			TOK(T_jm, 14)
-			TOK(T_jp, 15)
+		TOK(T_lda, 2)
+		TOK(T_ad0, 3)
+		TOK(T_ad1, 4)
+		TOK(T_adc, 5)
+		TOK(T_nand, 6)
+		TOK(T_nor, 7)
+		TOK(T_rrm, 8)
+		TOK(T_jmp, 9)
+		TOK(T_jc, 10)
+		TOK(T_jnc, 11)
+		TOK(T_jz, 12)
+		TOK(T_jnz, 13)
+		TOK(T_jm, 14)
+		TOK(T_jp, 15)
 	}
 	GType_s grm;
 	t = parse_exp(t, &grm);
 	if (grm.t != S_Exp) {
 		Debug("grm", "Expression not found: mvi a,expression");
+		Failure("Expression not found: op 4,12");
 	}
 	v = grm.s.integerConstant;
 	addMemory(opc);
@@ -238,21 +241,21 @@ int parseFile(FILE* f) {
 				t = parse_Op4_4(t); break;
 
 			TOK(T_sta, 1)
-				TOK(T_lda, 2)
-				TOK(T_ad0, 3)
-				TOK(T_ad1, 4)
-				TOK(T_adc, 5)
-				TOK(T_nand, 6)
-				TOK(T_nor, 7)
-				TOK(T_rrm, 8)
-				TOK(T_jmp, 9)
-				TOK(T_jc, 10)
-				TOK(T_jnc, 11)
-				TOK(T_jz, 12)
-				TOK(T_jnz, 13)
-				TOK(T_jm, 14)
-				TOK(T_jp, 15)
-				t = parse_Op4_12(t); break;
+			TOK(T_lda, 2)
+			TOK(T_ad0, 3)
+			TOK(T_ad1, 4)
+			TOK(T_adc, 5)
+			TOK(T_nand, 6)
+			TOK(T_nor, 7)
+			TOK(T_rrm, 8)
+			TOK(T_jmp, 9)
+			TOK(T_jc, 10)
+			TOK(T_jnc, 11)
+			TOK(T_jz, 12)
+			TOK(T_jnz, 13)
+			TOK(T_jm, 14)
+			TOK(T_jp, 15)
+			t = parse_Op4_12(t); break;
 
 		case T_End:
 			//inside = 0;

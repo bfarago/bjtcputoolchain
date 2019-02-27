@@ -20,10 +20,23 @@ Std_ReturnType gen_lst(asmb_config_t *asmb_config, int maxaddress, char* memory)
 {
 	FILE *f;
 	FILE* fin;
+	char bfname[MAXFNAMELEN];
+	const char* pfname = NULL;
 	int i;
 	Std_ReturnType ret = E_OK;
+	if (!asmb_config->enable_lst) return ret;
 	if (asmb_config->fname_out_lst) {
-		f = fopen(asmb_config->fname_out_lst, "w+");
+		pfname = asmb_config->fname_out_lst;
+	}
+	else {
+		if (asmb_config->name_o) {
+			snprintf(bfname, MAXFNAMELEN, "%s.lst", asmb_config->name_o);
+			pfname = bfname;
+		}
+	}
+	if (pfname) {
+		f = fopen(pfname, "w+");
+		printf("Output lst file:%s\n", pfname);
 		fprintf(f, ";Generated list file\n");
 		if (asmb_config->fname_in) {
 			fin = fopen(asmb_config->fname_in, "r");
@@ -93,7 +106,11 @@ Std_ReturnType gen_lst(asmb_config_t *asmb_config, int maxaddress, char* memory)
 						colscom = 0;
 					}
 				}
+				else {
+					break;
+				}
 				fin_line++;
+				if (fin_line > 100000) break; //prevent endless
 			}
 			if (cols) {
 				buflst[cols] = 0;

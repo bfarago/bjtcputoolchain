@@ -17,4 +17,7 @@
 //Textual buffer length
 #define BUFLEN 512
 
+//Filename buffer length
+#define MAXFNAMELEN 255
+
 #endif

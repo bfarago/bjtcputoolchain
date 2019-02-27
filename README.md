@@ -14,11 +14,11 @@ It use flex as scanner. That called from an internal "grammar", which implement 
 
 Usage:
 ------
-  asmb.exe filename.asm
+  asmb.exe filename.asm -l -f
   
-  or type file.asm |asmb.exe
+  or as pipe: type file.asm |asmb.exe -o a -b a.out -l -f
   
-  writes a binary files:  a.out and a.lst a.coe a.v
+  writes a binary file as *.bin by default or as a.out if -b a.out switch override the default bin output. The -l switch for *.lst and -f switch generate *.coe *.v files.
   
   help: asmb -h
   

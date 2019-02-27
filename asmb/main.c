@@ -64,7 +64,7 @@ int main(int argc, char** argv)
 
 	// Setup configurations (filename, switches, etc)
 	asmb_config_t asmb_config;
-	asmb_config.fname_in = NULL;
+	InitConfig(&asmb_config);
 	ParseCommandLine(argc, argv, &asmb_config);
 	if (asmb_config.fname_in) {
 		fin = fopen(asmb_config.fname_in, "r"); // input file specified, open it
@@ -93,7 +93,7 @@ int main(int argc, char** argv)
 
 	// Write out Memory dump (compiled binary)
 	gen_bin(&asmb_config, maxaddress, memory);
-	
+	gen_map(&asmb_config);
 	// Write out FPGA coe output (you can import as ROM init values)
 	gen_coe(&asmb_config, maxaddress, memory);
 
