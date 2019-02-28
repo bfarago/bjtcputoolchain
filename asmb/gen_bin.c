@@ -13,7 +13,6 @@
 
 Std_ReturnType gen_bin(asmb_config_t *asmb_config, int maxaddress, char* memory)
 {
-	FILE *f;
 	char bfname[MAXFNAMELEN];
 	const char* pfname=NULL;
 	Std_ReturnType ret = E_OK;
@@ -27,6 +26,7 @@ Std_ReturnType gen_bin(asmb_config_t *asmb_config, int maxaddress, char* memory)
 		}
 	}
 	if (pfname) {
+		FILE *f;
 		// fopen_s(&f, asmb_config->fname_out_bin, "wb+");
 		printf("Output binary:%s\n", pfname);
 		f = fopen(pfname, "wb+");
@@ -42,13 +42,12 @@ Std_ReturnType gen_bin(asmb_config_t *asmb_config, int maxaddress, char* memory)
 
 Std_ReturnType gen_map(asmb_config_t *asmb_config)
 {
-	FILE *f;
 	Std_ReturnType ret = E_OK;
-	char b[MAXFNAMELEN];
-	size_t len;
-//	size_t i;
 	if (!asmb_config->enable_map) return ret;
 	if (asmb_config->name_o) {
+		FILE *f;
+		size_t len;
+		char b[MAXFNAMELEN];
 		snprintf(b, MAXFNAMELEN, "%s.map", asmb_config->name_o);
 		printf("Output memory map:%s\n", b);
 		f = fopen(b, "wb+");

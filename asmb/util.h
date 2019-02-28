@@ -51,7 +51,7 @@ typedef struct {
 	YYSTYPE s;
 } GType_s;
 
-void stackPush(int t, YYSTYPE s);
+void stackPush(int t, const YYSTYPE* s);
 
 int parse_exp(int t, GType_s* res);
 /**

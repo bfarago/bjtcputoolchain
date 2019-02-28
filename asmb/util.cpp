@@ -21,10 +21,10 @@ static vector<relocType_en> relocType;
 
 
 static vector<GType_s> gStack;
-void stackPush(int t, YYSTYPE s) {
+void stackPush(int t, const YYSTYPE* s) {
 	GType_s p ;
 	p.t = t;
-	p.s = s;
+	p.s = *s;
 	gStack.push_back(p);
 
 }
@@ -58,20 +58,20 @@ int parse_exp(int t, GType_s* res) {
 		case T_At:
 		case T_Ror:
 		case T_Rol:
-			stackPush(t, yylval);
+			stackPush(t, &yylval);
 			break;
 		case T_Identifier:
 			t = T_IntConstant; //rewrire
 			yylval.integerConstant = getSymbol(yylval.identifier);
-			stackPush(t, yylval);
+			stackPush(t, &yylval);
 			break;
 		case T_IntConstant:
-			stackPush(t, yylval);
+			stackPush(t, &yylval);
 			break;
 		case T_Dollar:
 			t = T_IntConstant; //rewrire
 			yylval.integerConstant = address;
-			stackPush(t, yylval);
+			stackPush(t, &yylval);
 			break;
 		default:
 			r = t;
@@ -206,9 +206,9 @@ void InitConfig(asmb_config_t* cfg) {
 }
 
 Std_ReturnType ParseCommandLine(int argc, char *argv[], asmb_config_t* cfg) {
-	char actualSwitch = 'i';
 	yy_flex_debug = 0;
-  if (argc > 1) {
+	if (argc > 1) {
+	  char actualSwitch = 'i';
 	  for (int i = 1; i < argc; i++) {
 		  if (argv[i][0] == '-') {
 			  switch (argv[i][1]) {
@@ -220,7 +220,7 @@ Std_ReturnType ParseCommandLine(int argc, char *argv[], asmb_config_t* cfg) {
 			  case 'o': 
 			  case 'b':
 			  case 'i':
-				  actualSwitch = argv[i][1]; break;
+				  actualSwitch = argv[i][1];
 				  break;
 			  case 'v':
 				  SetDebugForKey("lex", true);
@@ -275,8 +275,8 @@ Std_ReturnType ParseCommandLine(int argc, char *argv[], asmb_config_t* cfg) {
 		  }
 	  }
 
-  }
-  return E_OK;
+	}
+	return E_OK;
 }
 
 int yywrap() {
@@ -292,9 +292,11 @@ int SymbolValueByIndex(size_t index) {
 	return symbolValues[index];
 }
 
+/*
 size_t RelocLength() {
 	return reloc.size();
 }
+*/
 
 int searchSymbol(const char *key) {
 	for (unsigned int i = 0; i < symbols.size(); i++)

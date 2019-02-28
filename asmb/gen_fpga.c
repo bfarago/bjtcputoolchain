@@ -12,8 +12,6 @@
 
 Std_ReturnType gen_coe(asmb_config_t *asmb_config, int maxaddress, char* memory)
 {
-	FILE *f;
-	int i;
 	char bfname[MAXFNAMELEN];
 	const char* pfname = NULL;
 	Std_ReturnType ret = E_OK;
@@ -28,6 +26,8 @@ Std_ReturnType gen_coe(asmb_config_t *asmb_config, int maxaddress, char* memory)
 		}
 	}
 	if (pfname) {
+		FILE *f;
+		int i;
 		f = fopen(pfname, "w+");
 		if (!f) {
 			Failure("Unable to create coe output file:%s", pfname);
@@ -48,8 +48,6 @@ Std_ReturnType gen_coe(asmb_config_t *asmb_config, int maxaddress, char* memory)
 
 Std_ReturnType gen_verilog(asmb_config_t *asmb_config, int maxaddress, char* memory)
 {
-	FILE *f;
-	int i;
 	char bfname[MAXFNAMELEN];
 	const char* pfname = NULL;
 	Std_ReturnType ret = E_OK;
@@ -64,6 +62,8 @@ Std_ReturnType gen_verilog(asmb_config_t *asmb_config, int maxaddress, char* mem
 		}
 	}
 	if (pfname) {
+		FILE *f;
+		int i;
 		f = fopen(pfname, "w+");
 		printf("Output verilog file:%s\n", pfname);
 		if (!f) {

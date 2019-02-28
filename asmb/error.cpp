@@ -16,7 +16,7 @@ using namespace std;
 int Report::numErrors = 0;
 
  
-void Report::OutputError(yyltype *loc, string msg) {
+void Report::OutputError(yyltype *loc, const string& msg) {
     numErrors++;
     fflush(stdout); // make sure any buffered text has been output
     if (loc) {
@@ -27,20 +27,21 @@ void Report::OutputError(yyltype *loc, string msg) {
 }
 
 
-void Report::Formatted(yyltype *loc, const char *format, ...) {
-    va_list args;
-    char errbuf[BUFFERSIZE];
-    
-    va_start(args, format);
-    vsnprintf(errbuf, BUFFERSIZE, format, args);
-    va_end(args);
-    OutputError(loc, errbuf);
-}
 
 void Report::UntermComment() {
     OutputError(NULL, "Input ends with unterminated comment");
 }
 
+#ifdef ReportAdvanced
+void Report::Formatted(yyltype *loc, const char *format, ...) {
+	va_list args;
+	char errbuf[BUFFERSIZE];
+
+	va_start(args, format);
+	vsnprintf(errbuf, BUFFERSIZE, format, args);
+	va_end(args);
+	OutputError(loc, errbuf);
+}
 
 void Report::LongIdentifier(yyltype *loc, const char *ident) {
     ostringstream s;
@@ -59,3 +60,4 @@ void Report::UnrecogChar(yyltype *loc, char ch) {
     s << "Unrecognized char: '" << ch << "'";
     OutputError(loc, s.str());
 }
+#endif

@@ -274,9 +274,9 @@ int parseFile(FILE* f) {
 	yyin = save_yyin;
 	return t;
 }
-
+/*
 //parse a new file (include)
-int parseFnmae(const char* fname) {
+int parseFname(const char* fname) {
 	FILE* f;
 	f = fopen(fname, "r");
 	if (!f) {
@@ -286,3 +286,4 @@ int parseFnmae(const char* fname) {
 	fclose(f);
 	return ret;
 }
+*/

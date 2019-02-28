@@ -18,11 +18,8 @@ static const char *gMnemonics[16] =
 
 Std_ReturnType gen_lst(asmb_config_t *asmb_config, int maxaddress, char* memory)
 {
-	FILE *f;
-	FILE* fin;
 	char bfname[MAXFNAMELEN];
 	const char* pfname = NULL;
-	int i;
 	Std_ReturnType ret = E_OK;
 	if (!asmb_config->enable_lst) return ret;
 	if (asmb_config->fname_out_lst) {
@@ -35,6 +32,9 @@ Std_ReturnType gen_lst(asmb_config_t *asmb_config, int maxaddress, char* memory)
 		}
 	}
 	if (pfname) {
+		FILE *f;
+		FILE* fin;
+		int i;
 		f = fopen(pfname, "w+");
 		printf("Output lst file:%s\n", pfname);
 		fprintf(f, ";Generated list file\n");
