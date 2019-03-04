@@ -492,4 +492,10 @@ void CSimulator::LoadBinToMemory()
 	m_MemorySizeLoaded = f.Read(m_Memory, SIM_MAXMEMORYSIZE);
 	f.Close();
 	Reset();
+	for (int y = 0; y < 16; y++) {
+		for (int x = 0; x < 16; x++) {
+			unsigned char code = 0xff;
+			SimScreen.buf[x][y] = code;
+		}
+	}
 }

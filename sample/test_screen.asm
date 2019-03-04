@@ -35,15 +35,21 @@ v_h     equ $+1
 		sta scr_h
 v_l     equ $+1
 		mvi a,0
-		sta scr_l		
+		sta scr_l
+		lda v_x
+		ad0 plus1
+		sta v_x
+		jnc loop1
+		mvi a,1
+		ad0 v_y
+		sta v_y
+		jnc loop1
+		
+		lda v_l
 		ad0 plus1
 		sta v_l
-		jnz loop1
-		mvi a,1
-		ad0 v_h
-		sta v_h
-		jnz loop1
-		
+		jnc loop1
+		jmp loop1
 		
 start_inc:
 		mvi a,1
