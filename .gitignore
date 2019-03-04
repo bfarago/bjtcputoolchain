@@ -53,3 +53,7 @@ Debug/
 Release/
 *.out
 .vs/
+*-cppcheck-build-dir/
+*.aps
+*.user
+x64/

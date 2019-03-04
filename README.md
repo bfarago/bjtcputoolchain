@@ -4,6 +4,12 @@ This project was formed on that goal, to have a toolchain for a really existed, 
 See this short vieo: [Bipolar cpu running at 61Hz](https://www.youtube.com/watch?v=iL6OvX4frJs) 
 The processor made out of BC182 (~450 piece), 1N4148 and resistors. The data path is 4-bit, address space is 12-bit. Known max speed is more than 1MHz. There are 3 flags: Sign, Carry and Zero
 
+IDE
+---
+This is a Windows MFC application, under development. It simulates the BJT CPU, UART, Video card right now. Asm editor and compiler will
+be added later. Notepad++ custom syntax highlight config also added to the project.
+![ide screenshot](doc/sside1.png?raw=true "ide")
+
 ASSEMBLER
 ---------
 It use flex as scanner. That called from an internal "grammar", which implement simple symbol table, relocation table (two pass compiliation).

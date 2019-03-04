@@ -187,6 +187,8 @@
     <ClInclude Include="ideb.h" />
     <ClInclude Include="idebDoc.h" />
     <ClInclude Include="idebView.h" />
+    <ClInclude Include="IIpcCom.h" />
+    <ClInclude Include="IpcCom.h" />
     <ClInclude Include="MainFrm.h" />
     <ClInclude Include="OutputWnd.h" />
     <ClInclude Include="PropertiesWnd.h" />
@@ -204,6 +206,7 @@
     <ClCompile Include="ideb.cpp" />
     <ClCompile Include="idebDoc.cpp" />
     <ClCompile Include="idebView.cpp" />
+    <ClCompile Include="IpcCom.cpp" />
     <ClCompile Include="MainFrm.cpp" />
     <ClCompile Include="OutputWnd.cpp" />
     <ClCompile Include="PropertiesWnd.cpp" />

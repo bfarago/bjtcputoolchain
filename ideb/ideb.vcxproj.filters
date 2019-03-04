@@ -60,6 +60,12 @@
     <ClInclude Include="CSimulator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="IIpcCom.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="IpcCom.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ideb.cpp">
@@ -99,6 +105,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="CSimulator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="IpcCom.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
