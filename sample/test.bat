@@ -29,6 +29,7 @@ call :compile test1
 call :compile test2
 call :compile test3
 call :compile test
+call :compile test_screen
 
 @rem if %1.==run. goto :run
 

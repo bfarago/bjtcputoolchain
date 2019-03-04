@@ -110,7 +110,7 @@ void dump() {
 
 	printf(" | ");
 	if ('D'==cpu.state)
-	if (cpu.op>=0) printf("%s %x", gMnemonics[cpu.op], cpu.data);
+	if (cpu.op>=0) printf("%s %03x", gMnemonics[cpu.op], cpu.data);
 
 	printf("\n");
 }
