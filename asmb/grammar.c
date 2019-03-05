@@ -209,9 +209,9 @@ int parse_Op4_12(int mnemonic) {
 	}
 	v = grm.s.integerConstant;
 	addMemory(opc);
-	addMemory(v >> 8);
+	addMemory(v );
 	addMemory(v >> 4);
-	addMemory(v);
+	addMemory(v >> 8);
 	return t;
 }
 

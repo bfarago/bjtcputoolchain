@@ -1,17 +1,22 @@
 ; This is a test asm file
 ; for BJT CPU.
 ;PERIPHERIALS
-periph_uart  equ 0xc00
-uart_oh  	equ periph_uart+0
-uart_ol  	equ periph_uart+1
-uart_ih  	equ periph_uart+2
-uart_il  	equ periph_uart+3
+periph 		equ 0xc00
+periph_scr  equ periph+4
+periph_uart equ periph+8
 
-periph_scr   equ 0xd00
+arr			equ periph+0
+rnd			equ periph+1
+key0		equ periph+2
+key1		equ periph+3
 scr_x	  	equ periph_scr+0
 scr_y  		equ periph_scr+1
 scr_h  		equ periph_scr+2
 scr_l  		equ periph_scr+3
+uart_oh  	equ periph_uart+0
+uart_ol  	equ periph_uart+1
+uart_ih  	equ periph_uart+2
+uart_il  	equ periph_uart+3
 
 ;APPLICATION CONSTANTS
 c_start_offs equ 0x00

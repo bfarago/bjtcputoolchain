@@ -6,6 +6,8 @@ typedef int SimAddress_t;
 typedef unsigned char SimData_t;
 
 #define SIM_MAXMEMORYSIZE (4096)
+#define SIM_REFRESH_TIMER 20
+#define SIM_STEPS_PER_TIMER (16*SIM_REFRESH_TIMER*1000)//(4000*SIM_REFRESH_TIMER)
 
 typedef enum {
 	bd_Tristate,
@@ -20,6 +22,16 @@ typedef enum {
 	cs_Store= 'S',
 	cs_Decode= 'D'
 } cpuState_t;
+
+typedef enum {
+	ka_Nothing,
+	ka_Left,
+	ka_Right,
+	ka_Up,
+	ka_Down,
+	ka_Fire=11, //todo: document arr periph, how it is works, meaning of the values, etc...
+	ka_max
+} keyArrow_t;
 
 typedef enum {
 	ss_Halt=0,
@@ -75,7 +87,9 @@ public:
 	void SetStop(BOOL isStop);
 	BOOL GetStop()const { return m_Stop; }
 	void LoadBinToMemory();
-	void OnDraw(CDC * pDC);
+	void OnDraw(CDC * pDC, int mode);
+	void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
+	void OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags);
 private:
 	void AddressBusDrive(SimAddress_t addr);
 	BOOL OnScreenLoadStore(SimAddress_t addr, busDirection_t dir, SimData_t * data);
@@ -105,5 +119,7 @@ protected:
 	cpu_SnapShot_t m_CpuSnapshot;
 	TCHAR m_UartFromCpuBuf[512];
 	int m_UartFromCpuWr;
+	SimData_t m_KeyArrow;
+	SimData_t m_Key;
 };
 

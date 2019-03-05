@@ -79,7 +79,7 @@ Std_ReturnType gen_lst(asmb_config_t *asmb_config, int maxaddress, char* memory)
 						cols += snprintf(buflst + cols, BUFLEN - cols, "%03x  %x %x %x %x  %s 0x%x%x%x",
 							i,
 							m, memory[i + 1], memory[i + 2], memory[i + 3],
-							gMnemonics[m], memory[i + 1], memory[i + 2], memory[i + 3]);
+							gMnemonics[m], memory[i + 3], memory[i + 2], memory[i + 1]);
 					i += 3;
 					break;
 				default:

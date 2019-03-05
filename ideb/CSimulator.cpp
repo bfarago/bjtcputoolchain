@@ -5,15 +5,32 @@ static const TCHAR *gMnemonics[17] =
 { _T("mvi a,"),_T("sta"),_T("lda"),_T("ad0"),_T("ad1"),_T("adc"),_T("nand"),_T("nor"),_T("rrm"),_T("jmp"),_T("jc"),_T("jnc"),_T("jz"),_T("jnz"),_T("jm"),_T("jp"),_T("INVALID")};
 
 static const TCHAR *gSimStates[9] =
-{ _T("Halt"), _T("FetchOp"), _T("FetchImm0"), _T("FetchImm1"), _T("FetchImm2"), _T("Decode"), _T("Load"), _T("Alu"), _T("Store") };
+{ _T("Halt     "), _T("FetchOp  "), _T("FetchImm0"), _T("FetchImm1"), _T("FetchImm2"),
+  _T("Decode   "), _T("Load     "), _T("Alu      "), _T("Store    ") };
 enum {
-	ADDR_UART_H = 0xc00,
-	ADDR_UART_L,
-	ADDR_SCREEN_X = 0xd00,
+	ADDR_ARR =0xc00,
+	ADDR_RND,
+	ADDR_KEY0,
+	ADDR_KEY1,
+	ADDR_SCREEN_X,	//mask:0xc04
 	ADDR_SCREEN_Y,
-	ADDR_SCREEN_CH1,
-	ADDR_SCREEN_CH0
+	ADDR_SCREEN_CH1, //High
+	ADDR_SCREEN_CH0, //Low
+
+	ADDR_UART_H,   // mask:0xc08
+	ADDR_UART_L,
+	ADDR_PERIPH_MAX
 };
+/*
+arr		equ 3072
+rnd		equ 3073
+key0	equ 3074
+key1	equ 3075
+cord_x	equ 3076
+cord_y	equ 3077
+ch_h	equ 3078
+ch_l	equ 3079
+*/
 typedef struct {
 	char x, y;
 	char ch0, ch1;
@@ -23,10 +40,10 @@ typedef struct {
 SimScreen_t SimScreen;
 
 TCHAR SimCode2Ascii[257] = _T(
-	"0123456789abcdef" // 0
-	"ghijklmnopqrstuv" // 1
-	"wxyz!@#$%^&*()[]" // 2
-	"-<>             " // 3
+	"0123456789ABCDEF" // 0
+	"GHIJKLMNOPQRSTUV" // 1
+	"WXYZ.,:;!?><=+-/" // 2
+	"\\()#©½¤»[_]/\\/\\f" // 3
 	"                " // 4
 	"                " // 5
 	"                " // 6
@@ -58,7 +75,18 @@ CSimulator::CSimulator()
 		m_Break[i] = 0;
 	}
 	m_CpuSnapshot_p = &m_CpuSnapshot; //TODO: implement a debug timeline possibility later
-	//m_Memory[0]=
+	m_CpuSnapshot.op = 16;
+	m_CpuSnapshot.state= cs_Fetch;
+	m_CpuSnapshot.acc = 0;
+	m_CpuSnapshot.addr = 0;
+	m_CpuSnapshot.carry = 0;
+	m_CpuSnapshot.cpuTick = 0;
+	m_CpuSnapshot.cpuTime = 0;
+	m_CpuSnapshot.immediate = 0;
+	m_CpuSnapshot.pc = 0;
+	m_CpuSnapshot.pcnext = 0;
+	m_Key = 0;
+	m_KeyArrow = 0;
 	m_UartFromCpuBuf[0] = 0;
 }
 
@@ -85,7 +113,7 @@ void CSimulator::AddressBusDrive(SimAddress_t addr) {
 #define DISTANCEX 16
 #define DISTANCEY 16
 #define HEXDISTANCEX 9
-#define HEXDISTANCEY 10
+#define HEXDISTANCEY 14
 
 int CSimulator::OnDrawHexDump(CDC* pDC, SimAddress_t aBegin, SimAddress_t aEnd, int sy) {
 	CRect r;
@@ -127,7 +155,7 @@ int CSimulator::OnDrawHexDump(CDC* pDC, SimAddress_t aBegin, SimAddress_t aEnd, 
 		pDC->SetTextColor(COLORREF(0));
 		if (m_Pc == i) {
 			CPen penPc;
-			penPc.CreatePen(PS_SOLID, 1, RGB(0xFF, 0x8F, 0));
+			penPc.CreatePen(PS_SOLID, 2, RGB(0xFF, 0x7F, 0x4f));
 			CPen* pOldPen = pDC->SelectObject(&penPc);
 			CBrush brush;
 			brush.CreateStockObject(NULL_BRUSH);
@@ -153,7 +181,7 @@ int CSimulator::OnDrawHexDump(CDC* pDC, SimAddress_t aBegin, SimAddress_t aEnd, 
 	return y;
 }
 
-void CSimulator::OnDraw(CDC* pDC) {
+void CSimulator::OnDraw(CDC* pDC, int mode) {
 	CRect r;
 	int sy = 0;
 	// CSize s = pDC->GetViewportExt();
@@ -173,9 +201,10 @@ void CSimulator::OnDraw(CDC* pDC) {
 			pDC->DrawTextW(b, &r, DT_TOP);
 		}
 	}
+	//if (mode) return;
 	sy = OnDrawHexDump(pDC, 0, m_MemorySizeLoaded, sy)+1;
-	sy = OnDrawHexDump(pDC, 0xc00, 0xc0f, sy) + 1;
-	sy = OnDrawHexDump(pDC, 0xd00, 0xd0f, sy) + 1;
+	sy = OnDrawHexDump(pDC, ADDR_ARR, ADDR_PERIPH_MAX, sy) + 1;
+	//sy = OnDrawHexDump(pDC, 0xd00, 0xd0f, sy) + 1;
 	
 	r.top = 0;
 	r.bottom = 15;
@@ -183,21 +212,55 @@ void CSimulator::OnDraw(CDC* pDC) {
 	r.right = 700;
 	if (m_CpuSnapshot_p) {
 		CString s;
-		char op = m_CpuSnapshot_p->op;
+		char op = m_Memory[m_Pc]; //m_CpuSnapshot_p->op;
 		char st = m_CpuSnapshot_p->state;
 		short imm = m_CpuSnapshot_p->immediate;
 		short adr = m_CpuSnapshot_p->addr;
+		short operand;
 		if (op > 15) op = 16; //invalid instruction
 		if (st > 'S') st = '-';
 		imm &= 0xfff;
 		adr &= 0xfff;
-
-		s.Format(_T("Tick: %06d PC: %03x Acc: %x +%d Imm: %03x Adr: %03x State: %c (%s) Op: %s "),
+		if (op) {
+			operand = m_Memory[m_Pc + 1] | m_Memory[m_Pc + 2] << 4 | m_Memory[m_Pc + 3] << 8;
+		}
+		else {
+			operand = m_Memory[m_Pc + 1];
+		}
+		s.Format(_T("Tick: %06d PC: %03x Acc: %x +%d Imm: %03x Adr: %03x State: %c (%s) Op: %s 0x%x"),
 			m_ClockCount, m_Pc, m_CpuSnapshot_p->acc, m_CpuSnapshot_p->carry,  imm, adr,
-			st, gSimStates[m_State], gMnemonics[op]);
+			st, gSimStates[m_State], gMnemonics[op], operand);
 		pDC->DrawTextW(s, &r, DT_TOP);
 	}
 }
+void CSimulator::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
+{
+	BOOL hit = FALSE;
+	if (nChar == VK_UP) {
+		m_KeyArrow = ka_Fire; hit = TRUE;
+		m_Memory[ADDR_ARR] = m_KeyArrow;
+	}
+	if (hit) return;
+	if (nChar == VK_SPACE) {
+		m_Key = 0x11; //Todo: conversion?
+		m_Memory[ADDR_KEY1] = (m_Key >> 4) & 0x0f;
+		m_Memory[ADDR_KEY0] = m_Key & 0x0f;
+	}
+}
+void CSimulator::OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
+{
+	if (nChar == VK_SPACE) {
+		m_Key = 0x00; //Todo: conversion?
+		m_Memory[ADDR_KEY1] = (m_Key >> 4) & 0x0f;
+		m_Memory[ADDR_KEY0] = m_Key & 0x0f;
+	}
+}
+/*
+void CSimulator::OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags) {
+	m_Key = 0;
+	m_KeyArr = 0;
+}
+*/
 BOOL CSimulator::OnScreenLoadStore(SimAddress_t addr, busDirection_t dir, SimData_t* data) {
 	BOOL processed = TRUE;
 	if (bd_Write == dir) {
@@ -205,7 +268,8 @@ BOOL CSimulator::OnScreenLoadStore(SimAddress_t addr, busDirection_t dir, SimDat
 		case ADDR_SCREEN_X: SimScreen.x = *data; break;
 		case ADDR_SCREEN_Y: SimScreen.y = *data; break;
 		case ADDR_SCREEN_CH0: SimScreen.ch0 = *data; break;
-		case ADDR_SCREEN_CH1: SimScreen.ch1 = *data; break;
+		case ADDR_SCREEN_CH1: SimScreen.ch1 = *data; 
+			;
 		default: processed = FALSE;	break;
 		}
 		//activate shadow buffer write
@@ -270,11 +334,28 @@ BOOL CSimulator::OnUartLoadStore(SimAddress_t addr, busDirection_t dir, SimData_
 	return processed;
 }
 BOOL CSimulator::OnPerifLoadStore(SimAddress_t addr, busDirection_t dir, SimData_t* data) {
-	SimAddress_t masked = (addr & 0xf00);
+	SimAddress_t masked = (addr & 0xffc);
 	if (ADDR_SCREEN_X == masked) {
 		return OnScreenLoadStore(addr, dir, data);
 	}else if (ADDR_UART_H == masked){
 		return OnUartLoadStore(addr, dir, data);
+	}
+	else {
+		BOOL processed = TRUE;
+		if (bd_Read == dir) {
+			switch (addr) {
+			case ADDR_RND: *data = rand() & 0x0f; break;
+			case ADDR_ARR: *data = m_KeyArrow; m_Memory[ADDR_ARR] = m_KeyArrow = 0;  break;
+			case ADDR_KEY0: *data = m_Key & 0x0f;  m_Key &= 0xf0; break;
+			case ADDR_KEY1: *data = m_Key>>4;  m_Key &= 0x0f; break;
+			default:processed = FALSE;	break;
+			}
+			m_Memory[ADDR_KEY0] = m_Key & 0x0f;
+			m_Memory[ADDR_KEY1] = (m_Key >>4)& 0x0f;
+			if (processed) return TRUE;
+		}else if (bd_Write ==dir){
+			// not writable
+		}
 	}
 	return FALSE;
 }
@@ -294,7 +375,7 @@ SimData_t CSimulator::DataBusRead()
 	m_HeatRead[m_CpuSnapshot_p->addr] = 0xff;
 	if (m_CpuSnapshot_p->addr >= 0xc00) {
 		SimData_t data = 0;
-		if (OnPerifLoadStore(m_CpuSnapshot_p->addr, bd_Write, &data)) {
+		if (OnPerifLoadStore(m_CpuSnapshot_p->addr, bd_Read, &data)) {
 			m_Memory[m_CpuSnapshot_p->addr] = data;
 			return data;
 		}
@@ -323,7 +404,7 @@ void CSimulator::AluSetAccumulator(SimData_t data) {
 }
 void CSimulator::BrakePC(BOOL isSet)
 {
-	if (isSet) {
+	if (!m_Break[m_Pc] & 1) {
 		m_Break[m_Pc] |= 1;
 	}
 	else {
@@ -377,13 +458,13 @@ BOOL CSimulator::Step()
 	case ss_FetchImm1:
 		m_CpuSnapshot_p->state = cs_Fetch;
 		AddressBusDrive(m_Pc + 2);
-		m_CpuSnapshot_p->immediate = (m_CpuSnapshot_p->immediate << 4) | DataBusRead();
+		m_CpuSnapshot_p->immediate = (m_CpuSnapshot_p->immediate ) | DataBusRead() << 4;
 		m_State = ss_FetchImm2;
 		break;
 	case ss_FetchImm2:
 		m_CpuSnapshot_p->state = cs_Fetch;
 		AddressBusDrive(m_Pc + 3);
-		m_CpuSnapshot_p->immediate = (m_CpuSnapshot_p->immediate << 4) | DataBusRead();
+		m_CpuSnapshot_p->immediate = (m_CpuSnapshot_p->immediate ) | DataBusRead() << 8;
 		m_State = ss_Decode;
 		break;
 	case ss_Decode:
@@ -410,7 +491,7 @@ BOOL CSimulator::Step()
 			{
 				#undef TOK
 				#define TOK(x, xop) case xop:
-				TOK(T_mvi, 0) AluSetAccumulator( data ); break;
+				TOK(T_mvi, 0) m_CpuSnapshot_p->acc = data & 0xf; break;//AluSetAccumulator( data ); break;
 				TOK(T_sta, 1) m_State = ss_Store; break;
 				TOK(T_lda, 2) AluSetAccumulator( data );  break;
 				TOK(T_ad0, 3) AluSetAccumulator( m_CpuSnapshot_p->acc + data); break;

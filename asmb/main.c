@@ -33,15 +33,21 @@ void relocation() {
 		int ix = searchSymbol(name);
 		if (ix >= 0) {
 			int v = getSymbol(name);
+			int c;
+			//todo: feature: reloctype can encode operation too
 			switch (relocType) {
 			case RT_OP4_12:
-				memory[addr + 1] += (v >> 8) & 0xf;
-				memory[addr + 2] += (v >> 4) & 0xf;
-				memory[addr + 3] += v & 0xf;
+				c = (memory[addr + 3] << 8) | (memory[addr + 2]) << 4 | (memory[addr + 1]);
+				v += c; //operation
+				memory[addr + 3] = (v >> 8) & 0xf;
+				memory[addr + 2] = (v >> 4) & 0xf;
+				memory[addr + 1] = v & 0xf;
 				Debug("rel", "%s relocated %x:[op%03x]", name, addr, v & 0xfff);
 				break;
 			case RT_OP4_4:
-				memory[addr + 1] += v & 0xf;
+				c = memory[addr + 1] & 0x0f;
+				v += c;
+				memory[addr + 1] = v & 0xf;
 				Debug("rel", "%s relocated %x:[op%x]", name, addr, v & 0xf);
 				break;
 			default:
