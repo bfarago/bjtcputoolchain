@@ -1,8 +1,18 @@
 #include "stdafx.h"
 #include "CSimulator.h"
 #include "idebdoc.h"
+
+#include "Resource.h"
+
+#define STARTX 16
+#define STARTY 48
+#define DISTANCEX 16
+#define DISTANCEY 16
+#define HEXDISTANCEX 8
+#define HEXDISTANCEY 17
+
 static const TCHAR *gMnemonics[17] =
-{ _T("mvi a,"),_T("sta"),_T("lda"),_T("ad0"),_T("ad1"),_T("adc"),_T("nand"),_T("nor"),_T("rrm"),_T("jmp"),_T("jc"),_T("jnc"),_T("jz"),_T("jnz"),_T("jm"),_T("jp"),_T("INVALID")};
+{ _T("mvi a,"),_T("sta"),_T("lda"),_T("ad0"),_T("ad1"),_T("adc"),_T("nand"),_T("nor"),_T("rrm"),_T("jmp"),_T("jc "),_T("jnc"),_T("jz "),_T("jnz"),_T("jm "),_T("jp "),_T("INVALID")};
 
 static const TCHAR *gSimStates[9] =
 { _T("Halt     "), _T("FetchOp  "), _T("FetchImm0"), _T("FetchImm1"), _T("FetchImm2"),
@@ -16,7 +26,6 @@ enum {
 	ADDR_SCREEN_Y,
 	ADDR_SCREEN_CH1, //High
 	ADDR_SCREEN_CH0, //Low
-
 	ADDR_UART_H,   // mask:0xc08
 	ADDR_UART_L,
 	ADDR_PERIPH_MAX
@@ -58,7 +67,7 @@ TCHAR SimCode2Ascii[257] = _T(
 	"               ." // f
 );
 CSimulator::CSimulator()
-	:m_pDoc(0), m_MemorySizeLoaded(0), m_Pc(0),m_CpuHz(1000000),m_Time(0), m_ClockCount(0), m_State(ss_Halt),
+	:m_pDoc(0), m_MemorySizeLoaded(0), m_Pc(0),m_CpuHz(SIM_HZ),m_Time(0), m_ClockCount(0), m_State(ss_Halt),
 	m_UartFromCpuWr(0), m_CpuSnapshot_p(0), m_Stop(FALSE)
 {
 	for (int y = 0; y < 16; y++) {
@@ -85,13 +94,15 @@ CSimulator::CSimulator()
 	m_CpuSnapshot.immediate = 0;
 	m_CpuSnapshot.pc = 0;
 	m_CpuSnapshot.pcnext = 0;
-	m_Key = 0;
-	m_KeyArrow = 0;
 	m_UartFromCpuBuf[0] = 0;
+	hIconBreak = (HICON) ::LoadImage(::AfxGetResourceHandle(), MAKEINTRESOURCE(IDI_ICON_BREAK), 
+		IMAGE_ICON, 16, 16, 0);
+
 }
 
 CSimulator::~CSimulator()
 {
+	
 }
 
 void CSimulator::SetDocument(CidebDoc * pDoc)
@@ -103,17 +114,11 @@ void CSimulator::SetPc(SimAddress_t pc)
 {
 	m_Pc = pc; //TODO: next pc or change state to fetch ?
 }
-void CSimulator::AddressBusDrive(SimAddress_t addr) {
+
+inline void CSimulator::AddressBusDrive(SimAddress_t addr) {
 	if (!m_CpuSnapshot_p) return;
 	m_CpuSnapshot_p->addr = addr;
 }
-
-#define STARTX 16
-#define STARTY 48
-#define DISTANCEX 16
-#define DISTANCEY 16
-#define HEXDISTANCEX 9
-#define HEXDISTANCEY 14
 
 int CSimulator::OnDrawHexDump(CDC* pDC, SimAddress_t aBegin, SimAddress_t aEnd, int sy) {
 	CRect r;
@@ -125,12 +130,16 @@ int CSimulator::OnDrawHexDump(CDC* pDC, SimAddress_t aBegin, SimAddress_t aEnd, 
 		int offs = i - aBegin;
 		int x = offs & 0x3f;
 		y = (offs >> 6)+sy;
-		COLORREF cBk = RGB(m_HeatPc[i], 0, m_HeatWrite[i]);
+		COLORREF cBk = 0; 
+		if (m_Break[i])cBk= RGB(0xc0, 0, 0);
+		//COLORREF cBk = RGB(m_HeatPc[i], 0, 0); // m_HeatWrite[i]);
 		pDC->SetBkColor(cBk);
-		if (m_HeatPc[i] > 16) {
+		/*if (m_HeatPc[i] > 16) {
 			pDC->SetTextColor(RGB(255-m_HeatPc[i], 0x00, 0x00));
 		}
-		else {
+		else
+		*/
+		{
 			//unsigned char ct = m_HeatPc[i] > 128 ? 0x00 : 0xff;
 			//unsigned char ct = 0xff;
 			//pDC->SetTextColor(RGB(ct, ct, ct));
@@ -140,6 +149,15 @@ int CSimulator::OnDrawHexDump(CDC* pDC, SimAddress_t aBegin, SimAddress_t aEnd, 
 		r.bottom = r.top + HEXDISTANCEY;
 		r.left = 330 + x * HEXDISTANCEX;
 		r.right = r.left + HEXDISTANCEX;
+		//if (m_HeatPc[i]) 
+		{
+			CPen p(PS_SOLID, 4, RGB(m_HeatPc[i], 0, 0));
+			CPen* pOldPen = pDC->SelectObject(&p);
+			pDC->MoveTo(r.left+1, r.bottom - 2);
+			pDC->LineTo(r.right-1, r.bottom - 2);
+			pDC->SelectObject(pOldPen);
+		}
+
 		SimData_t d = m_Memory[i];
 		if (d > 15) {
 			b[0] = '-';
@@ -163,11 +181,21 @@ int CSimulator::OnDrawHexDump(CDC* pDC, SimAddress_t aBegin, SimAddress_t aEnd, 
 			pDC->Rectangle(&r);
 			pDC->SelectObject(pOldPen);
 		}
-		if (m_HeatRead[i]) {
+
+		if (m_HeatRead[i]) 
+		{
 			CPen p(PS_SOLID, 2, RGB(0, m_HeatRead[i], 0));
 			CPen* pOldPen = pDC->SelectObject(&p);
 			pDC->MoveTo(r.left, r.bottom);
 			pDC->LineTo(r.right, r.bottom);
+			pDC->SelectObject(pOldPen);
+		}
+		if (m_HeatWrite[i]) 
+		{
+			CPen p(PS_SOLID, 2, RGB(0, 0, m_HeatWrite[i]));
+			CPen* pOldPen = pDC->SelectObject(&p);
+			pDC->MoveTo(r.left, r.bottom-3);
+			pDC->LineTo(r.right, r.bottom-3);
 			pDC->SelectObject(pOldPen);
 		}
 		if (!x) {
@@ -204,12 +232,18 @@ void CSimulator::OnDraw(CDC* pDC, int mode) {
 	//if (mode) return;
 	sy = OnDrawHexDump(pDC, 0, m_MemorySizeLoaded, sy)+1;
 	sy = OnDrawHexDump(pDC, ADDR_ARR, ADDR_PERIPH_MAX, sy) + 1;
-	//sy = OnDrawHexDump(pDC, 0xd00, 0xd0f, sy) + 1;
+	
 	
 	r.top = 0;
 	r.bottom = 15;
 	r.left = 0;
-	r.right = 700;
+	r.right = 900;
+	if (rm_Run == m_RunMode) {
+		CString s;
+		s.Format(_T("Tick: %08dus Time: %03.6fs"),
+			m_ClockCount, m_Time);
+		pDC->DrawTextW(s, &r, DT_TOP);
+	}else
 	if (m_CpuSnapshot_p) {
 		CString s;
 		char op = m_Memory[m_Pc]; //m_CpuSnapshot_p->op;
@@ -227,41 +261,99 @@ void CSimulator::OnDraw(CDC* pDC, int mode) {
 		else {
 			operand = m_Memory[m_Pc + 1];
 		}
-		s.Format(_T("Tick: %06d PC: %03x Acc: %x +%d Imm: %03x Adr: %03x State: %c (%s) Op: %s 0x%x"),
-			m_ClockCount, m_Pc, m_CpuSnapshot_p->acc, m_CpuSnapshot_p->carry,  imm, adr,
-			st, gSimStates[m_State], gMnemonics[op], operand);
+		if (rm_StepState == m_RunMode) {
+			s.Format(_T("Tick: %08dus Time: %03.6fs PC: %03x Acc: %x +%d Imm: %03x Adr: %03x State: %c (%s) Op: %s 0x%x"),
+				m_ClockCount, m_Time, m_Pc, m_CpuSnapshot_p->acc, m_CpuSnapshot_p->carry, imm, adr,
+				st, gSimStates[m_State], gMnemonics[op], operand);
+		}
+		else {
+			s.Format(_T("Tick: %08dus Time: %03.6fs PC: %03x Acc: %x +%d Op: %s 0x%x"),
+				m_ClockCount, m_Time, m_Pc, m_CpuSnapshot_p->acc, m_CpuSnapshot_p->carry, 
+			    gMnemonics[op], operand);
+		}
 		pDC->DrawTextW(s, &r, DT_TOP);
+		SimAddress_t a = m_Pc;
+		for (int row = 0; row < 32; row++ ) {
+			r.top = row*16;
+			r.bottom = r.top+ 15;
+			r.left = 864;
+			r.right = r.left+130;
+			char op = m_Memory[a];
+			short operand = m_Memory[a + 1];
+			if (op) {
+				operand |= m_Memory[a + 2] << 4 | m_Memory[a + 3] << 8;
+				s.Format(_T("%03x %s 0x%x"), a, gMnemonics[op], operand);
+			}
+			else {
+				s.Format(_T("%03x %s0x%x"), a, gMnemonics[op], operand);
+			}
+			if (m_Break[a]) {
+				pDC->DrawIcon(r.left - 32, r.top-8, hIconBreak);
+			}
+			
+			pDC->DrawTextW(s, &r, DT_TOP);
+			if (m_HeatPc[a]) 
+			{
+				CPen p(PS_SOLID, 2, RGB(m_HeatPc[a], 0, 0));
+				CPen* pOldPen = pDC->SelectObject(&p);
+				pDC->MoveTo(r.left, r.bottom - 2);
+				pDC->LineTo(r.left +52, r.bottom - 2);
+				pDC->SelectObject(pOldPen);
+			}
+			if (m_HeatWrite[a + 1])
+			{
+				CPen p(PS_SOLID, 2, RGB(0, 0, m_HeatWrite[a + 1]));
+				CPen* pOldPen = pDC->SelectObject(&p);
+				pDC->MoveTo(r.left + HEXDISTANCEX * 12, r.bottom - 2);
+				pDC->LineTo(r.left + HEXDISTANCEX * 13, r.bottom - 2);
+				pDC->SelectObject(pOldPen);
+			}
+			if (m_HeatWrite[a + 2])
+			{
+				CPen p(PS_SOLID, 2, RGB(0, 0, m_HeatWrite[a + 2]));
+				CPen* pOldPen = pDC->SelectObject(&p);
+				pDC->MoveTo(r.left + HEXDISTANCEX * 11, r.bottom - 2);
+				pDC->LineTo(r.left + HEXDISTANCEX * 12, r.bottom - 2);
+				pDC->SelectObject(pOldPen);
+			}
+			if (m_HeatWrite[a + 3])
+			{
+				CPen p(PS_SOLID, 2, RGB(0, 0, m_HeatWrite[a + 3]));
+				CPen* pOldPen = pDC->SelectObject(&p);
+				pDC->MoveTo(r.left + HEXDISTANCEX * 10, r.bottom - 2);
+				pDC->LineTo(r.left + HEXDISTANCEX * 11, r.bottom - 2);
+				pDC->SelectObject(pOldPen);
+			}
+			a += (op) ? 4 : 2;
+		}
 	}
 }
 void CSimulator::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
 	BOOL hit = FALSE;
 	if (nChar == VK_UP) {
-		m_KeyArrow = ka_Fire; hit = TRUE;
-		m_Memory[ADDR_ARR] = m_KeyArrow;
+		hit = TRUE;
+		m_Memory[ADDR_ARR] = ka_Fire;
 	}
 	if (hit) return;
 	if (nChar == VK_SPACE) {
-		m_Key = 0x11; //Todo: conversion?
-		m_Memory[ADDR_KEY1] = (m_Key >> 4) & 0x0f;
-		m_Memory[ADDR_KEY0] = m_Key & 0x0f;
+		unsigned char key = 0x11; //Todo: conversion?
+		m_Memory[ADDR_KEY1] = (key >> 4) & 0x0f;
+		m_Memory[ADDR_KEY0] = key & 0x0f;
 	}
 }
 void CSimulator::OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
-	if (nChar == VK_SPACE) {
-		m_Key = 0x00; //Todo: conversion?
-		m_Memory[ADDR_KEY1] = (m_Key >> 4) & 0x0f;
-		m_Memory[ADDR_KEY0] = m_Key & 0x0f;
+	/*if (nChar == VK_UP) {
+		m_Memory[ADDR_ARR] = 0;
 	}
+	if (nChar == VK_SPACE) {
+		m_Memory[ADDR_KEY1] = 0;
+		m_Memory[ADDR_KEY0] = 0;
+	}
+	*/
 }
-/*
-void CSimulator::OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags) {
-	m_Key = 0;
-	m_KeyArr = 0;
-}
-*/
-BOOL CSimulator::OnScreenLoadStore(SimAddress_t addr, busDirection_t dir, SimData_t* data) {
+inline BOOL CSimulator::OnScreenLoadStore(SimAddress_t addr, busDirection_t dir, SimData_t* data) {
 	BOOL processed = TRUE;
 	if (bd_Write == dir) {
 		switch (addr) {
@@ -294,7 +386,8 @@ BOOL CSimulator::OnScreenLoadStore(SimAddress_t addr, busDirection_t dir, SimDat
 	}
 	return processed;
 }
-BOOL CSimulator::OnUartLoadStore(SimAddress_t addr, busDirection_t dir, SimData_t* data) {
+
+inline BOOL CSimulator::OnUartLoadStore(SimAddress_t addr, busDirection_t dir, SimData_t* data) {
 	BOOL processed = TRUE;
 	static unsigned char uart_ch;
 	if (bd_Write == dir) {
@@ -333,7 +426,8 @@ BOOL CSimulator::OnUartLoadStore(SimAddress_t addr, busDirection_t dir, SimData_
 	}
 	return processed;
 }
-BOOL CSimulator::OnPerifLoadStore(SimAddress_t addr, busDirection_t dir, SimData_t* data) {
+
+inline BOOL CSimulator::OnPerifLoadStore(SimAddress_t addr, busDirection_t dir, SimData_t* data, SimData_t* mem) {
 	SimAddress_t masked = (addr & 0xffc);
 	if (ADDR_SCREEN_X == masked) {
 		return OnScreenLoadStore(addr, dir, data);
@@ -344,14 +438,12 @@ BOOL CSimulator::OnPerifLoadStore(SimAddress_t addr, busDirection_t dir, SimData
 		BOOL processed = TRUE;
 		if (bd_Read == dir) {
 			switch (addr) {
-			case ADDR_RND: *data = rand() & 0x0f; break;
-			case ADDR_ARR: *data = m_KeyArrow; m_Memory[ADDR_ARR] = m_KeyArrow = 0;  break;
-			case ADDR_KEY0: *data = m_Key & 0x0f;  m_Key &= 0xf0; break;
-			case ADDR_KEY1: *data = m_Key>>4;  m_Key &= 0x0f; break;
+			case ADDR_RND: *mem= *data = rand() & 0x0f; break;
+			case ADDR_ARR: *data = m_Memory[ADDR_ARR]; *mem = 0; break;
+			case ADDR_KEY0: *data = m_Memory[ADDR_KEY0];  *mem = 0; break;
+			case ADDR_KEY1: *data = m_Memory[ADDR_KEY1];  *mem = 0; break;
 			default:processed = FALSE;	break;
 			}
-			m_Memory[ADDR_KEY0] = m_Key & 0x0f;
-			m_Memory[ADDR_KEY1] = (m_Key >>4)& 0x0f;
 			if (processed) return TRUE;
 		}else if (bd_Write ==dir){
 			// not writable
@@ -360,13 +452,19 @@ BOOL CSimulator::OnPerifLoadStore(SimAddress_t addr, busDirection_t dir, SimData
 	return FALSE;
 }
 void CSimulator::ProcessHeatMaps() {
-	for (int i = 0; i < SIM_MAXMEMORYSIZE; i++) {
+	for (int i = 0; i < m_MemorySizeLoaded; i++) {
+		if (m_HeatRead[i]) m_HeatRead[i]--; //>>= 1; //--;
+		if (m_HeatWrite[i]) m_HeatWrite[i]--;// >>= 1; // --;
+		if (m_HeatPc[i]) m_HeatPc[i]--; //>>=1;
+	}
+	for (int i = ADDR_ARR; i < ADDR_PERIPH_MAX; i++) {
 		if (m_HeatRead[i]) m_HeatRead[i]--; //>>= 1; //--;
 		if (m_HeatWrite[i]) m_HeatWrite[i]--;// >>= 1; // --;
 		if (m_HeatPc[i]) m_HeatPc[i]--; //>>=1;
 	}
 }
-SimData_t CSimulator::DataBusRead()
+
+inline SimData_t CSimulator::DataBusRead()
 {
 	if (!m_CpuSnapshot_p) return 0;
 	if (m_CpuSnapshot_p->addr > SIM_MAXMEMORYSIZE) {
@@ -375,29 +473,28 @@ SimData_t CSimulator::DataBusRead()
 	m_HeatRead[m_CpuSnapshot_p->addr] = 0xff;
 	if (m_CpuSnapshot_p->addr >= 0xc00) {
 		SimData_t data = 0;
-		if (OnPerifLoadStore(m_CpuSnapshot_p->addr, bd_Read, &data)) {
-			m_Memory[m_CpuSnapshot_p->addr] = data;
+		if (OnPerifLoadStore(m_CpuSnapshot_p->addr, bd_Read, &data, &m_Memory[m_CpuSnapshot_p->addr])) {
 			return data;
 		}
 	}
 	return  m_Memory[m_CpuSnapshot_p->addr];
 }
-void CSimulator::DataBusDrive(SimData_t data)
+inline void CSimulator::DataBusDrive(SimData_t data)
 {
 	if (m_CpuSnapshot_p->addr > SIM_MAXMEMORYSIZE) {
 		m_CpuSnapshot_p->addr = SIM_MAXMEMORYSIZE; //Invalid address
 	}
 	m_HeatWrite[m_CpuSnapshot_p->addr] = 0xff;
 	if (m_CpuSnapshot_p->addr >= 0xc00) {
-		if (OnPerifLoadStore(m_CpuSnapshot_p->addr, bd_Write, &data)) {
-			m_Memory[m_CpuSnapshot_p->addr] = data;
-			return;
+		if (OnPerifLoadStore(m_CpuSnapshot_p->addr, bd_Write, &data, &m_Memory[m_CpuSnapshot_p->addr])) {
+			 return;
 		}
 	}
 	
 	m_Memory[m_CpuSnapshot_p->addr] = data;
 }
-void CSimulator::AluSetAccumulator(SimData_t data) {
+
+inline void CSimulator::AluSetAccumulator(SimData_t data) {
 	m_CpuSnapshot_p->acc = data; //can be wider than 4 bit
 	m_CpuSnapshot_p->carry = (m_CpuSnapshot_p->acc >= 0x10) ? 1 : 0; //store carry
 	m_CpuSnapshot_p->acc &= 0x0f; //remove carry
@@ -530,6 +627,52 @@ BOOL CSimulator::Step()
 	return ret;
 }
 
+BOOL CSimulator::RunQuick() {
+	m_ClockCount++;
+	m_Time += 1 / (double)m_CpuHz;
+	if (!(m_ClockCount%SIM_HEATMAP_PERIOD)) {
+		ProcessHeatMaps();
+	}
+	m_HeatPc[m_Pc] = 0xFf;
+	SimData_t op = m_Memory[m_Pc];
+	SimData_t data = m_Memory[m_Pc + 1];
+	SimAddress_t imm = data | (m_Memory[m_Pc + 2]<<4)| (m_Memory[m_Pc + 3]<<8);
+	SimData_t acc = m_CpuSnapshot_p->acc;
+	m_Pc += (op) ? 4 : 2;
+	if ((2 <= op)&&(op<=8))//lda..rrm
+	{
+		AddressBusDrive(imm);
+		data = DataBusRead();
+	}
+	switch (op)
+	{
+#undef TOK
+#define TOK(x, xop) case xop:
+		TOK(T_mvi, 0) m_CpuSnapshot_p->acc = data; break;
+		TOK(T_lda, 2) AluSetAccumulator(data);  break;
+		TOK(T_ad0, 3) AluSetAccumulator(acc + data); break;
+		TOK(T_ad1, 4) AluSetAccumulator(acc + data + 1); break;
+		TOK(T_adc, 5) AluSetAccumulator(acc + data + m_CpuSnapshot_p->carry); break;
+		TOK(T_nand, 6) AluSetAccumulator(~(acc & data)); break;
+		TOK(T_nor, 7) AluSetAccumulator(~(acc | data));	break;
+		TOK(T_rrm, 8) AluSetAccumulator(data >> 1); break;
+
+		TOK(T_jmp, 9) m_Pc = imm;	break;
+		TOK(T_jc, 10) if (m_CpuSnapshot_p->carry) m_Pc = imm;	break;
+		TOK(T_jnc, 11) if (!m_CpuSnapshot_p->carry) m_Pc = imm; break;
+		TOK(T_jz, 12)  if (!m_CpuSnapshot_p->acc) m_Pc = imm; break;
+		TOK(T_jnz, 13) if (m_CpuSnapshot_p->acc) m_Pc = imm; break;
+		TOK(T_jm, 14) if (m_CpuSnapshot_p->acc & 0x8) m_Pc = imm; break;
+		TOK(T_jp, 15) if (!(m_CpuSnapshot_p->acc & 0x8)) m_Pc = imm; break;
+	}
+	if (1 == op)//sta
+	{
+		AddressBusDrive(imm);
+		DataBusDrive(m_CpuSnapshot_p->acc);
+	}
+	if (m_Break[m_Pc]) return FALSE;
+	return TRUE;
+}
 void CSimulator::Reset()
 {
 	m_Pc = 0;
@@ -570,7 +713,7 @@ void CSimulator::LoadBinToMemory()
 	{
 		TRACE(_T("File could not be opened %d\n"), e.m_cause);
 	}
-	m_MemorySizeLoaded = f.Read(m_Memory, SIM_MAXMEMORYSIZE);
+	m_MemorySizeLoaded = f.Read((void*)m_Memory, SIM_MAXMEMORYSIZE);
 	f.Close();
 	Reset();
 	for (int y = 0; y < 16; y++) {
