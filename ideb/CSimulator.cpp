@@ -243,7 +243,7 @@ void CSimulator::OnDraw(CDC* pDC, int mode) {
 		s.Format(_T("Tick: %08dus Time: %03.6fs"),
 			m_ClockCount, m_Time);
 		pDC->DrawTextW(s, &r, DT_TOP);
-	}else
+	}//else
 	if (m_CpuSnapshot_p) {
 		CString s;
 		char op = m_Memory[m_Pc]; //m_CpuSnapshot_p->op;

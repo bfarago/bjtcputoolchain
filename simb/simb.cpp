@@ -180,9 +180,9 @@ void fetch() {
 	cpu.op = cpu_busRead(cpu.pc);
 	cpu.data = cpu_busRead(cpu.pc + 1);
 	if (cpu.op > 0) {
-		cpu.data <<= 8;
+		// cpu.data <<= 8;
 		cpu.data |= cpu_busRead(cpu.pc + 2) << 4;
-		cpu.data |= cpu_busRead(cpu.pc + 3) ;
+		cpu.data |= cpu_busRead(cpu.pc + 3) << 8;
 		cpu.ilen = 4;
 	}
 	cpu.state = 'D';
@@ -192,7 +192,7 @@ void fetch() {
 	switch (cpu.op) {
 		#undef TOK
 		#define TOK(x, xop) case xop:
-		TOK(T_mvi, 0) cpu.alu = cpu.data; cpu.carry = 0;  break;
+		TOK(T_mvi, 0) cpu.alu = cpu.data; break; //no effect on carry
 		TOK(T_sta, 1) cpu_busWrite(cpu.data, cpu.alu); break;
 		TOK(T_lda, 2) cpu.alu = cpu_busRead(cpu.data); cpu.carry = 0; break;
 		TOK(T_ad0, 3) cpu.alu += cpu_busRead(cpu.data); cpu.carry = 0; break;
@@ -210,6 +210,7 @@ void fetch() {
 		TOK(T_jm, 14) if (cpu.alu & 0x8) cpu.pcnext = cpu.data; break;
 		TOK(T_jp, 15) if (!(cpu.alu & 0x8)) cpu.pcnext = cpu.data; break;
 	}
+	if (cpu.op) //mvi no effects to carry
 	if (cpu.alu > 0xf) {
 		cpu.carry = 1; cpu.alu &= 0xf;
 	}

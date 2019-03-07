@@ -30,6 +30,7 @@ call :compile test2
 call :compile test3
 call :compile test
 call :compile test_screen
+call :compile ScopeRunner_7
 
 @rem if %1.==run. goto :run
 

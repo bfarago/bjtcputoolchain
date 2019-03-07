@@ -121,9 +121,11 @@ typedef struct {
 	const char* fname_out_lst;
 	const char* fname_out_coe;
 	const char* fname_out_verilog;
+	const char* fname_err;
 	unsigned char enable_fpga;
 	unsigned char enable_lst;
 	unsigned char enable_map;
+	unsigned char enable_err;
 }asmb_config_t;
 
 /**

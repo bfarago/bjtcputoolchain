@@ -5,6 +5,7 @@
 
 using std::vector;
 
+FILE* g_err_file = stdout;
 
 static vector<const char*> debugKeys;
 static vector<const char*> symbols;
@@ -138,9 +139,10 @@ void Failure(const char *format, ...) {
   va_start(args, format);
   vsnprintf(errbuf, UTIL_BUFFERSIZE, format, args);
   va_end(args);
-  fflush(stdout);
+  fflush(stdout); //TODO: check if it is needed anymore
+  //fprintf(stderr,"\n*** Failure in line:%d: %s '%s'\n\n", yylineno, errbuf, yytext);
+  fprintf(g_err_file, "\n*** Failure in line:%d: %s '%s'\n\n", yylineno, errbuf, yytext);
   
-  fprintf(stderr,"\n*** Failure in line:%d: %s '%s'\n\n", yylineno, errbuf, yytext);
   abort();
 }
 
@@ -174,7 +176,7 @@ void Debug(const char *key, const char *format, ...) {
   va_start(args, format);
   vsnprintf(buf, UTIL_BUFFERSIZE, format, args);
   va_end(args);
-  printf("+++ (%s)%i: %s%s", key, yylineno, buf, buf[strlen(buf)-1] != '\n'? "\n" : "");
+  fprintf(g_err_file, "+++ (%s)%i: %s%s", key, yylineno, buf, buf[strlen(buf)-1] != '\n'? "\n" : "");
 }
 
 void printHelp() {
@@ -189,6 +191,8 @@ void printHelp() {
 	printf(" -f : Fpga related outputs are enabled. (fname.coe and fname.v)\n");
 	printf(" -l : lst output is enabled. (fname.lst)\n");
 	printf(" -m : map output is enabled. (fname.map)\n");
+	printf(" -e : standard err output redirected to fname.log\n");
+	//printf(" -E fname.log: standard err output redirected to the specified file (fname.log)\n");
 	
 	printf("\n");
 }
@@ -203,6 +207,8 @@ void InitConfig(asmb_config_t* cfg) {
 	cfg->fname_out_coe = 0;
 	cfg->fname_out_verilog = 0;
 	cfg->fname_out_lst = 0;
+	cfg->fname_err = 0;
+	cfg->enable_err = 0;
 }
 
 Std_ReturnType ParseCommandLine(int argc, char *argv[], asmb_config_t* cfg) {
@@ -239,6 +245,9 @@ Std_ReturnType ParseCommandLine(int argc, char *argv[], asmb_config_t* cfg) {
 			  case 'm':
 				  cfg->enable_map = 1;
 				  break;
+			  case 'e':
+				  cfg->enable_err = 1;
+				  break;
 			  case 'd':
 				  // TODO: debug switches ?
 				  break;
@@ -267,7 +276,6 @@ Std_ReturnType ParseCommandLine(int argc, char *argv[], asmb_config_t* cfg) {
 				  static char b[255];
 				  strncpy_s(b, 255, cfg->fname_in, p- cfg->fname_in);
 				  cfg->name_o = b;
-				  printf("Output name prefix:%s\n", cfg->name_o);
 			  } else {
 				  //theres no . in the spec name.
 
@@ -276,6 +284,16 @@ Std_ReturnType ParseCommandLine(int argc, char *argv[], asmb_config_t* cfg) {
 	  }
 
 	}
+	if (cfg->enable_err) {
+		static char s[255];
+		sprintf(s, "%s.log", cfg->name_o);
+		cfg->fname_err = s; // todo: check if this is needed  really
+		g_err_file = fopen(s, "w+");
+		//this would be fine on unix,linux
+		freopen(s, "a+", stderr);
+		freopen(s, "a+", stdout); // not works with new windows crt lib
+	}
+	printf("Output name prefix:%s\n", cfg->name_o);
 	return E_OK;
 }
 
