@@ -219,5 +219,14 @@
     <Image Include="res\icon_break.ico">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="res\bitmap1.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\scopebg.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\abc.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

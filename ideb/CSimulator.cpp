@@ -5,7 +5,7 @@
 #include "Resource.h"
 
 #define STARTX 16
-#define STARTY 48
+#define STARTY 16
 #define DISTANCEX 16
 #define DISTANCEY 16
 #define HEXDISTANCEX 8
@@ -97,7 +97,9 @@ CSimulator::CSimulator()
 	m_UartFromCpuBuf[0] = 0;
 	hIconBreak = (HICON) ::LoadImage(::AfxGetResourceHandle(), MAKEINTRESOURCE(IDI_ICON_BREAK), 
 		IMAGE_ICON, 16, 16, 0);
-
+	
+	m_bitmapScopeBg.LoadBitmap(IDB_SCOPE_BG);
+	m_bitmapAbc.LoadBitmap(IDB_ABC);
 }
 
 CSimulator::~CSimulator()
@@ -147,7 +149,7 @@ int CSimulator::OnDrawHexDump(CDC* pDC, SimAddress_t aBegin, SimAddress_t aEnd, 
 		}
 		r.top = STARTY + y * HEXDISTANCEY;
 		r.bottom = r.top + HEXDISTANCEY;
-		r.left = 330 + x * HEXDISTANCEX;
+		r.left = 360 + x * HEXDISTANCEX;
 		r.right = r.left + HEXDISTANCEX;
 		//if (m_HeatPc[i]) 
 		{
@@ -200,7 +202,7 @@ int CSimulator::OnDrawHexDump(CDC* pDC, SimAddress_t aBegin, SimAddress_t aEnd, 
 		}
 		if (!x) {
 			CString s;
-			r.left = 275;
+			r.left = 310;
 			r.right = r.left + HEXDISTANCEX * 6;
 			s.Format(_T("0x%03x:"), i);
 			pDC->DrawTextW(s, &r, DT_TOP);
@@ -212,21 +214,51 @@ int CSimulator::OnDrawHexDump(CDC* pDC, SimAddress_t aBegin, SimAddress_t aEnd, 
 void CSimulator::OnDraw(CDC* pDC, int mode) {
 	CRect r;
 	int sy = 0;
-	// CSize s = pDC->GetViewportExt();
+	
+	CDC dcBg;
+	dcBg.CreateCompatibleDC(pDC);
+	dcBg.SelectObject(m_bitmapScopeBg);
+	
+	CDC dcAbc;
+	dcAbc.CreateCompatibleDC(pDC);
+	dcAbc.SelectObject(m_bitmapAbc);
+
+	pDC->BitBlt(0, DISTANCEY, 301, 252, &dcBg, 0, 0, SRCCOPY);
 	r.right = 400;//s.cx;
 	r.bottom = 400;// s.cy;
+	
 	pDC->SetTextColor(COLORREF(0));
 	TCHAR b[2];
 	b[1] = 0;
-	for (int y = 0; y < 16; y++) {
-		r.top = STARTY+y * DISTANCEY;
-		r.bottom = r.top+ DISTANCEY;
-		for (int x = 0; x < 16; x++) {
-			unsigned char code= SimScreen.buf[x][y];
-			r.left = STARTX+x * DISTANCEX;
-			r.right = r.left + DISTANCEX;
-			b[0] = SimCode2Ascii[code];
-			pDC->DrawTextW(b, &r, DT_TOP);
+	if (0){
+		for (int y = 0; y < 16; y++) {
+			r.top = STARTY+y * DISTANCEY;
+			r.bottom = r.top+ DISTANCEY;
+			for (int x = 0; x < 16; x++) {
+				unsigned char code= SimScreen.buf[x][y];
+				r.left = STARTX+x * DISTANCEX;
+				r.right = r.left + DISTANCEX;
+				b[0] = SimCode2Ascii[code];
+				pDC->DrawTextW(b, &r, DT_TOP);
+			}
+		}
+	}
+#define BM_SRT_Y (40)
+#define BM_SRT_X (50)
+#define BM_OFS_Y (13)
+#define BM_OFS_X (13)
+	if (1) {
+		for (int y = 0; y < 16; y++) {
+			r.top = BM_SRT_Y + y * BM_OFS_Y;
+			r.bottom = r.top + BM_OFS_Y;
+			for (int x = 0; x < 16; x++) {
+				unsigned char code = SimScreen.buf[x][y];
+				unsigned char lx = code & 0xf;
+				unsigned char ly = code >> 4;
+				r.left = BM_SRT_X + x * BM_OFS_X;
+				r.right = r.left + BM_OFS_X;
+				pDC->TransparentBlt(r.left, r.top, BM_OFS_X, BM_OFS_Y, &dcAbc, lx*BM_OFS_X, ly*BM_OFS_Y, BM_OFS_X, BM_OFS_Y, RGB(0, 0, 0)); //RGB(0xff, 0xff, 0xff)
+			}
 		}
 	}
 	//if (mode) return;
@@ -276,7 +308,7 @@ void CSimulator::OnDraw(CDC* pDC, int mode) {
 		for (int row = 0; row < 32; row++ ) {
 			r.top = row*16;
 			r.bottom = r.top+ 15;
-			r.left = 864;
+			r.left = 890;
 			r.right = r.left+130;
 			char op = m_Memory[a];
 			short operand = m_Memory[a + 1];

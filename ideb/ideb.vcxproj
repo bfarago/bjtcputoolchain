@@ -226,6 +226,8 @@
     <ResourceCompile Include="ideb.rc" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="res\abc.bmp" />
+    <Image Include="res\bitmap1.bmp" />
     <Image Include="res\classview.bmp" />
     <Image Include="res\classview_hc.bmp" />
     <Image Include="res\class_view.ico" />
@@ -253,6 +255,7 @@
     <Image Include="res\properties_hc.bmp" />
     <Image Include="res\properties_wnd.ico" />
     <Image Include="res\properties_wnd_hc.ico" />
+    <Image Include="res\scopebg.bmp" />
     <Image Include="res\sort.bmp" />
     <Image Include="res\sort_hc.bmp" />
     <Image Include="res\Toolbar.bmp" />
