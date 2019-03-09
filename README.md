@@ -9,6 +9,7 @@ IDE
 This is a Windows MFC application, under development. It simulates the BJT CPU, UART, Video card right now. Asm editor and compiler will
 be added later. Notepad++ custom syntax highlight config also added to the project.
 ![ide screenshot](doc/sside1.png?raw=true "ide")
+The software shown here was made by one of my colleague Denes Suhayda. It was presented running on the original cpu earlier, now running on the simulator.
 
 ASSEMBLER
 ---------
