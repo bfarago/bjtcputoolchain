@@ -98,6 +98,9 @@ public:
 	void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
 	void OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags);
 	void ProcessHeatMaps();
+	void ProcessMeasurement();
+	void ProcessDrawMeasurement();
+	void ResetMeasurement();
 private:
 	void AddressBusDrive(SimAddress_t addr);
 	BOOL OnScreenLoadStore(SimAddress_t addr, busDirection_t dir, SimData_t * data);
@@ -131,5 +134,20 @@ protected:
 	runMode_t m_RunMode;
 	CBitmap m_bitmapScopeBg;
 	CBitmap m_bitmapAbc;
+public: //temporary
+	int m_ExecTimeActual;
+	BOOL m_DisplayMeasurement;
+	BOOL m_DisplayMemory;
+	BOOL m_DisplayDebugMonitor;
+protected:
+	ULONG64 m_ExecTimeSum;
+	int m_ExecTimeAvg;
+	int m_ExecTimeMax;
+	int m_ExecTimeMin;
+	int m_DrawTimeActual;
+	ULONG64 m_DrawTimeSum;
+	int m_DrawTimeAvg;
+	int m_DrawTimeMax;
+	int m_DrawTimeMin;
 };
 

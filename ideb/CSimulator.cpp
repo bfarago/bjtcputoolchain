@@ -68,7 +68,8 @@ TCHAR SimCode2Ascii[257] = _T(
 );
 CSimulator::CSimulator()
 	:m_pDoc(0), m_MemorySizeLoaded(0), m_Pc(0),m_CpuHz(SIM_HZ),m_Time(0), m_ClockCount(0), m_State(ss_Halt),
-	m_UartFromCpuWr(0), m_CpuSnapshot_p(0), m_Stop(FALSE)
+	m_UartFromCpuWr(0), m_CpuSnapshot_p(0), m_Stop(FALSE), m_DisplayMeasurement(TRUE), m_DisplayMemory(TRUE), m_DisplayDebugMonitor(TRUE),
+	m_ExecTimeActual(0), m_DrawTimeActual(0)
 {
 	for (int y = 0; y < 16; y++) {
 		for (int x = 0; x < 16; x++) {
@@ -100,6 +101,7 @@ CSimulator::CSimulator()
 	
 	m_bitmapScopeBg.LoadBitmap(IDB_SCOPE_BG);
 	m_bitmapAbc.LoadBitmap(IDB_ABC);
+	ResetMeasurement();
 }
 
 CSimulator::~CSimulator()
@@ -214,11 +216,15 @@ int CSimulator::OnDrawHexDump(CDC* pDC, SimAddress_t aBegin, SimAddress_t aEnd, 
 void CSimulator::OnDraw(CDC* pDC, int mode) {
 	CRect r;
 	int sy = 0;
-	
+	LARGE_INTEGER StartingTime, EndingTime, ElapsedMicroseconds;
+	LARGE_INTEGER Frequency;
+	QueryPerformanceFrequency(&Frequency);
+	QueryPerformanceCounter(&StartingTime);
+
 	CDC dcBg;
 	dcBg.CreateCompatibleDC(pDC);
 	dcBg.SelectObject(m_bitmapScopeBg);
-	
+
 	CDC dcAbc;
 	dcAbc.CreateCompatibleDC(pDC);
 	dcAbc.SelectObject(m_bitmapAbc);
@@ -226,17 +232,17 @@ void CSimulator::OnDraw(CDC* pDC, int mode) {
 	pDC->BitBlt(0, DISTANCEY, 301, 252, &dcBg, 0, 0, SRCCOPY);
 	r.right = 400;//s.cx;
 	r.bottom = 400;// s.cy;
-	
+
 	pDC->SetTextColor(COLORREF(0));
 	TCHAR b[2];
 	b[1] = 0;
-	if (0){
+	if (0) {
 		for (int y = 0; y < 16; y++) {
-			r.top = STARTY+y * DISTANCEY;
-			r.bottom = r.top+ DISTANCEY;
+			r.top = STARTY + y * DISTANCEY;
+			r.bottom = r.top + DISTANCEY;
 			for (int x = 0; x < 16; x++) {
-				unsigned char code= SimScreen.buf[x][y];
-				r.left = STARTX+x * DISTANCEX;
+				unsigned char code = SimScreen.buf[x][y];
+				r.left = STARTX + x * DISTANCEX;
 				r.right = r.left + DISTANCEX;
 				b[0] = SimCode2Ascii[code];
 				pDC->DrawTextW(b, &r, DT_TOP);
@@ -261,104 +267,129 @@ void CSimulator::OnDraw(CDC* pDC, int mode) {
 			}
 		}
 	}
-	//if (mode) return;
-	sy = OnDrawHexDump(pDC, 0, m_MemorySizeLoaded, sy)+1;
-	sy = OnDrawHexDump(pDC, ADDR_ARR, ADDR_PERIPH_MAX, sy) + 1;
-	
-	
-	r.top = 0;
-	r.bottom = 15;
-	r.left = 0;
-	r.right = 900;
-	if (rm_Run == m_RunMode) {
+	if (m_DisplayMemory){
+		sy = OnDrawHexDump(pDC, 0, m_MemorySizeLoaded, sy) + 1;
+		sy = OnDrawHexDump(pDC, ADDR_ARR, ADDR_PERIPH_MAX, sy) + 1;
+	}
+	if (m_DisplayMeasurement) {
 		CString s;
-		s.Format(_T("Tick: %08dus Time: %03.6fs"),
-			m_ClockCount, m_Time);
+		r.top = 600;
+		r.bottom = r.top+15;
+		r.left = 0;
+		r.right = 900;
+		s.Format(_T("Exec Actual:%03.3fms Avg:%03.3fms Min:%03.3fms Max:%03.3fms"),
+			m_ExecTimeActual/1000.0, m_ExecTimeAvg /1000.0, m_ExecTimeMin /1000.0, m_ExecTimeMax /1000.0);
 		pDC->DrawTextW(s, &r, DT_TOP);
-	}//else
-	if (m_CpuSnapshot_p) {
-		CString s;
-		char op = m_Memory[m_Pc]; //m_CpuSnapshot_p->op;
-		char st = m_CpuSnapshot_p->state;
-		short imm = m_CpuSnapshot_p->immediate;
-		short adr = m_CpuSnapshot_p->addr;
-		short operand;
-		if (op > 15) op = 16; //invalid instruction
-		if (st > 'S') st = '-';
-		imm &= 0xfff;
-		adr &= 0xfff;
-		if (op) {
-			operand = m_Memory[m_Pc + 1] | m_Memory[m_Pc + 2] << 4 | m_Memory[m_Pc + 3] << 8;
-		}
-		else {
-			operand = m_Memory[m_Pc + 1];
-		}
-		if (rm_StepState == m_RunMode) {
-			s.Format(_T("Tick: %08dus Time: %03.6fs PC: %03x Acc: %x +%d Imm: %03x Adr: %03x State: %c (%s) Op: %s 0x%x"),
-				m_ClockCount, m_Time, m_Pc, m_CpuSnapshot_p->acc, m_CpuSnapshot_p->carry, imm, adr,
-				st, gSimStates[m_State], gMnemonics[op], operand);
-		}
-		else {
-			s.Format(_T("Tick: %08dus Time: %03.6fs PC: %03x Acc: %x +%d Op: %s 0x%x"),
-				m_ClockCount, m_Time, m_Pc, m_CpuSnapshot_p->acc, m_CpuSnapshot_p->carry, 
-			    gMnemonics[op], operand);
-		}
+		r.top += 15; r.bottom += 15;
+		s.Format(_T("Draw Actual:%03.3fms Avg:%03.3fms Min:%03.3fms Max:%03.3fms"),
+			m_DrawTimeActual /1000.0, m_DrawTimeAvg /1000.0, m_DrawTimeMin /1000.0, m_DrawTimeMax /1000.0);
 		pDC->DrawTextW(s, &r, DT_TOP);
-		SimAddress_t a = m_Pc;
-		for (int row = 0; row < 32; row++ ) {
-			r.top = row*16;
-			r.bottom = r.top+ 15;
-			r.left = 890;
-			r.right = r.left+130;
-			char op = m_Memory[a];
-			short operand = m_Memory[a + 1];
+	}
+	
+	if (m_DisplayDebugMonitor) {
+		r.top = 0;
+		r.bottom = 15;
+		r.left = 0;
+		r.right = 900;
+		if (rm_Run == m_RunMode) {
+			CString s;
+			s.Format(_T("Tick: %08dus Time: %03.6fs"),
+				m_ClockCount, m_Time);
+			pDC->DrawTextW(s, &r, DT_TOP);
+		}//else
+		if (m_CpuSnapshot_p) {
+			CString s;
+			char op = m_Memory[m_Pc]; //m_CpuSnapshot_p->op;
+			char st = m_CpuSnapshot_p->state;
+			short imm = m_CpuSnapshot_p->immediate;
+			short adr = m_CpuSnapshot_p->addr;
+			short operand;
+			if (op > 15) op = 16; //invalid instruction
+			if (st > 'S') st = '-';
+			imm &= 0xfff;
+			adr &= 0xfff;
 			if (op) {
-				operand |= m_Memory[a + 2] << 4 | m_Memory[a + 3] << 8;
-				s.Format(_T("%03x %s 0x%x"), a, gMnemonics[op], operand);
+				operand = m_Memory[m_Pc + 1] | m_Memory[m_Pc + 2] << 4 | m_Memory[m_Pc + 3] << 8;
 			}
 			else {
-				s.Format(_T("%03x %s0x%x"), a, gMnemonics[op], operand);
+				operand = m_Memory[m_Pc + 1];
 			}
-			if (m_Break[a]) {
-				pDC->DrawIcon(r.left - 32, r.top-8, hIconBreak);
+			if (rm_StepState == m_RunMode) {
+				s.Format(_T("Tick: %08dus Time: %03.6fs PC: %03x Acc: %x +%d Imm: %03x Adr: %03x State: %c (%s) Op: %s 0x%x"),
+					m_ClockCount, m_Time, m_Pc, m_CpuSnapshot_p->acc, m_CpuSnapshot_p->carry, imm, adr,
+					st, gSimStates[m_State], gMnemonics[op], operand);
 			}
-			
+			else {
+				s.Format(_T("Tick: %08dus Time: %03.6fs PC: %03x Acc: %x +%d Op: %s 0x%x"),
+					m_ClockCount, m_Time, m_Pc, m_CpuSnapshot_p->acc, m_CpuSnapshot_p->carry,
+					gMnemonics[op], operand);
+			}
 			pDC->DrawTextW(s, &r, DT_TOP);
-			if (m_HeatPc[a]) 
-			{
-				CPen p(PS_SOLID, 2, RGB(m_HeatPc[a], 0, 0));
-				CPen* pOldPen = pDC->SelectObject(&p);
-				pDC->MoveTo(r.left, r.bottom - 2);
-				pDC->LineTo(r.left +52, r.bottom - 2);
-				pDC->SelectObject(pOldPen);
+			SimAddress_t a = m_Pc;
+			for (int row = 0; row < 32; row++) {
+				r.top = row * 16;
+				r.bottom = r.top + 15;
+				r.left = 890;
+				r.right = r.left + 130;
+				char op = m_Memory[a];
+				short operand = m_Memory[a + 1];
+				if (op) {
+					operand |= m_Memory[a + 2] << 4 | m_Memory[a + 3] << 8;
+					s.Format(_T("%03x %s 0x%x"), a, gMnemonics[op], operand);
+				}
+				else {
+					s.Format(_T("%03x %s0x%x"), a, gMnemonics[op], operand);
+				}
+				if (m_Break[a]) {
+					pDC->DrawIcon(r.left - 32, r.top - 8, hIconBreak);
+				}
+
+				pDC->DrawTextW(s, &r, DT_TOP);
+				if (m_HeatPc[a])
+				{
+					CPen p(PS_SOLID, 2, RGB(m_HeatPc[a], 0, 0));
+					CPen* pOldPen = pDC->SelectObject(&p);
+					pDC->MoveTo(r.left, r.bottom - 2);
+					pDC->LineTo(r.left + 52, r.bottom - 2);
+					pDC->SelectObject(pOldPen);
+				}
+				if (m_HeatWrite[a + 1])
+				{
+					CPen p(PS_SOLID, 2, RGB(0, 0, m_HeatWrite[a + 1]));
+					CPen* pOldPen = pDC->SelectObject(&p);
+					pDC->MoveTo(r.left + HEXDISTANCEX * 12, r.bottom - 2);
+					pDC->LineTo(r.left + HEXDISTANCEX * 13, r.bottom - 2);
+					pDC->SelectObject(pOldPen);
+				}
+				if (m_HeatWrite[a + 2])
+				{
+					CPen p(PS_SOLID, 2, RGB(0, 0, m_HeatWrite[a + 2]));
+					CPen* pOldPen = pDC->SelectObject(&p);
+					pDC->MoveTo(r.left + HEXDISTANCEX * 11, r.bottom - 2);
+					pDC->LineTo(r.left + HEXDISTANCEX * 12, r.bottom - 2);
+					pDC->SelectObject(pOldPen);
+				}
+				if (m_HeatWrite[a + 3])
+				{
+					CPen p(PS_SOLID, 2, RGB(0, 0, m_HeatWrite[a + 3]));
+					CPen* pOldPen = pDC->SelectObject(&p);
+					pDC->MoveTo(r.left + HEXDISTANCEX * 10, r.bottom - 2);
+					pDC->LineTo(r.left + HEXDISTANCEX * 11, r.bottom - 2);
+					pDC->SelectObject(pOldPen);
+				}
+				a += (op) ? 4 : 2;
 			}
-			if (m_HeatWrite[a + 1])
-			{
-				CPen p(PS_SOLID, 2, RGB(0, 0, m_HeatWrite[a + 1]));
-				CPen* pOldPen = pDC->SelectObject(&p);
-				pDC->MoveTo(r.left + HEXDISTANCEX * 12, r.bottom - 2);
-				pDC->LineTo(r.left + HEXDISTANCEX * 13, r.bottom - 2);
-				pDC->SelectObject(pOldPen);
-			}
-			if (m_HeatWrite[a + 2])
-			{
-				CPen p(PS_SOLID, 2, RGB(0, 0, m_HeatWrite[a + 2]));
-				CPen* pOldPen = pDC->SelectObject(&p);
-				pDC->MoveTo(r.left + HEXDISTANCEX * 11, r.bottom - 2);
-				pDC->LineTo(r.left + HEXDISTANCEX * 12, r.bottom - 2);
-				pDC->SelectObject(pOldPen);
-			}
-			if (m_HeatWrite[a + 3])
-			{
-				CPen p(PS_SOLID, 2, RGB(0, 0, m_HeatWrite[a + 3]));
-				CPen* pOldPen = pDC->SelectObject(&p);
-				pDC->MoveTo(r.left + HEXDISTANCEX * 10, r.bottom - 2);
-				pDC->LineTo(r.left + HEXDISTANCEX * 11, r.bottom - 2);
-				pDC->SelectObject(pOldPen);
-			}
-			a += (op) ? 4 : 2;
 		}
 	}
+	QueryPerformanceCounter(&EndingTime);
+	ElapsedMicroseconds.QuadPart = EndingTime.QuadPart - StartingTime.QuadPart;
+	ElapsedMicroseconds.QuadPart *= 1000000;
+	ElapsedMicroseconds.QuadPart /= Frequency.QuadPart;
+
+	m_DrawTimeActual = ElapsedMicroseconds.QuadPart;
+	ProcessDrawMeasurement();
+
+
 }
 void CSimulator::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
@@ -484,7 +515,7 @@ inline BOOL CSimulator::OnPerifLoadStore(SimAddress_t addr, busDirection_t dir, 
 	return FALSE;
 }
 void CSimulator::ProcessHeatMaps() {
-	for (int i = 0; i < m_MemorySizeLoaded; i++) {
+	for (UINT i = 0; i < m_MemorySizeLoaded; i++) {
 		if (m_HeatRead[i]) m_HeatRead[i]--; //>>= 1; //--;
 		if (m_HeatWrite[i]) m_HeatWrite[i]--;// >>= 1; // --;
 		if (m_HeatPc[i]) m_HeatPc[i]--; //>>=1;
@@ -496,6 +527,32 @@ void CSimulator::ProcessHeatMaps() {
 	}
 }
 
+void CSimulator::ProcessMeasurement()
+{
+	if (m_ExecTimeActual < m_ExecTimeMin) m_ExecTimeMin = m_ExecTimeActual;
+	if (m_ExecTimeActual > m_ExecTimeMax) m_ExecTimeMax = m_ExecTimeActual;
+	m_ExecTimeSum += m_ExecTimeActual;
+	m_ExecTimeSum -= m_ExecTimeAvg;
+	m_ExecTimeAvg = m_ExecTimeSum >> 8;
+}
+void CSimulator::ProcessDrawMeasurement()
+{
+	if (m_DrawTimeActual < m_DrawTimeMin) m_DrawTimeMin = m_DrawTimeActual;
+	if (m_DrawTimeActual > m_DrawTimeMax) m_DrawTimeMax = m_DrawTimeActual;
+	m_DrawTimeSum += m_DrawTimeActual;
+	m_DrawTimeSum -= m_DrawTimeAvg;
+	m_DrawTimeAvg = m_DrawTimeSum >> 8;
+}
+void CSimulator::ResetMeasurement() {
+	m_ExecTimeMin = INT32_MAX;
+	m_ExecTimeMax = 0;
+	m_ExecTimeAvg = m_ExecTimeActual;
+	m_ExecTimeSum = m_ExecTimeAvg << 8;
+	m_DrawTimeMin = INT32_MAX;
+	m_DrawTimeMax = 0;
+	m_DrawTimeAvg = m_DrawTimeActual;
+	m_DrawTimeSum = m_DrawTimeAvg << 8;
+}
 inline SimData_t CSimulator::DataBusRead()
 {
 	if (!m_CpuSnapshot_p) return 0;
@@ -713,6 +770,7 @@ void CSimulator::Reset()
 	m_Stop = m_StopAfterReset;
 	m_State = m_Stop? ss_Halt: ss_FetchOp;
 	ClearHeatMap();
+	ResetMeasurement();
 }
 
 void CSimulator::ClearHeatMap()
@@ -737,10 +795,11 @@ void CSimulator::SetStop(BOOL isStop)
 void CSimulator::LoadBinToMemory()
 {
 	if (!m_pDoc) return;
-	//FILE* f=fopen(m_pDoc->m_SimTargetBinFileName, "r");
+	CString s;
+	s.Format(L"%s%s", m_pDoc->m_AsmbDirOut, m_pDoc->m_SimTargetBinFileName);
 	CFile f;
 	CFileException e;
-	TCHAR* pszFileName = m_pDoc->m_SimTargetBinFileName.GetBuffer();
+	TCHAR* pszFileName = s.GetBuffer();
 	if (!f.Open(pszFileName,CFile::modeRead| CFile::typeBinary, &e)) // CFile::modeCreate | CFile::modeWrite, &e))
 	{
 		TRACE(_T("File could not be opened %d\n"), e.m_cause);

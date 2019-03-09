@@ -31,8 +31,12 @@ void relocation() {
 		relocType_en relocType;
 		getReloc((int)i, &name, &addr, &relocType);
 		int ix = searchSymbol(name);
+		Debug("rel", "%i. %s relocated %x %i", i, name, addr, ix);
 		if (ix >= 0) {
 			int v = getSymbol(name);
+			if (0 == v) {
+				Debug("ext", "extern %s relocate %x", name, addr);
+			}
 			int c;
 			//todo: feature: reloctype can encode operation too
 			switch (relocType) {
@@ -53,10 +57,10 @@ void relocation() {
 			default:
 				break;
 			}
-		}
-		else {
+		} else {
 			//not found, external
 			Debug("ext", "extern %s relocate %x", name, addr);
+			printf("Warning: Missing symbol declaration %s. Memory location 0x%03x will be set as 0.\n",  name, addr);
 		}
 	}
 }
