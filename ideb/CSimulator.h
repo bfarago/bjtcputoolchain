@@ -7,8 +7,8 @@ typedef unsigned char SimData_t;
 
 #define SIM_MAXMEMORYSIZE (4096)
 
-#define SIM_REFRESH_TIMER (100) //ms windows, screen refresh
-#define SIM_TICK_PER_MS (500)  //instruction per ms
+#define SIM_REFRESH_TIMER (70) //ms windows, screen refresh
+#define SIM_TICK_PER_MS (1500/4)  //instruction per ms
 #define SIM_HZ (SIM_TICK_PER_MS*1000)
 #define SIM_STEPS_PER_TIMER (SIM_REFRESH_TIMER*SIM_TICK_PER_MS)//(4000*SIM_REFRESH_TIMER)
 #define SIM_HEATMAP_PERIOD (2000) //todo: think through
@@ -110,8 +110,11 @@ private:
 	void DataBusDrive(SimData_t data);
 	void AluSetAccumulator(SimData_t data);
 	SimData_t DataBusRead();
-	int OnDrawHexDump(CDC * pDC, SimAddress_t aBegin, SimAddress_t aEnd, int sy);
+	int OnDrawHexDump(CDC * pDC, SimAddress_t aBegin, SimAddress_t aEnd, int sx, int sy);
 	HICON hIconBreak;
+	CFont m_FontMonospace;
+	CDC m_DCTmp;
+	CBitmap m_BitmapTmp;
 protected:
 	CidebDoc * m_pDoc;
 	SimAddress_t m_Pc;

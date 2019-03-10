@@ -102,11 +102,14 @@ CSimulator::CSimulator()
 	m_bitmapScopeBg.LoadBitmap(IDB_SCOPE_BG);
 	m_bitmapAbc.LoadBitmap(IDB_ABC);
 	ResetMeasurement();
+	m_FontMonospace.CreateStockObject(SYSTEM_FIXED_FONT);
 }
 
 CSimulator::~CSimulator()
 {
-	
+	m_FontMonospace.Detach();
+	m_DCTmp.DeleteDC();
+	m_BitmapTmp.DeleteObject();
 }
 
 void CSimulator::SetDocument(CidebDoc * pDoc)
@@ -124,12 +127,12 @@ inline void CSimulator::AddressBusDrive(SimAddress_t addr) {
 	m_CpuSnapshot_p->addr = addr;
 }
 
-int CSimulator::OnDrawHexDump(CDC* pDC, SimAddress_t aBegin, SimAddress_t aEnd, int sy) {
+int CSimulator::OnDrawHexDump(CDC* pDC, SimAddress_t aBegin, SimAddress_t aEnd, int sx, int sy) {
 	CRect r;
 	int y = sy;
 	TCHAR b[2];
 	b[1] = 0;
-	
+
 	for (int i = aBegin; i < aEnd; i++) {
 		int offs = i - aBegin;
 		int x = offs & 0x3f;
@@ -149,11 +152,11 @@ int CSimulator::OnDrawHexDump(CDC* pDC, SimAddress_t aBegin, SimAddress_t aEnd, 
 			//pDC->SetTextColor(RGB(ct, ct, ct));
 			pDC->SetTextColor(cBk ^ 0xffffff);
 		}
-		r.top = STARTY + y * HEXDISTANCEY;
+		r.top = 2 + y * HEXDISTANCEY;
 		r.bottom = r.top + HEXDISTANCEY;
-		r.left = 360 + x * HEXDISTANCEX;
+		r.left = 38+sx + x * HEXDISTANCEX;
 		r.right = r.left + HEXDISTANCEX;
-		//if (m_HeatPc[i]) 
+		if (m_HeatPc[i]) 
 		{
 			CPen p(PS_SOLID, 4, RGB(m_HeatPc[i], 0, 0));
 			CPen* pOldPen = pDC->SelectObject(&p);
@@ -173,8 +176,8 @@ int CSimulator::OnDrawHexDump(CDC* pDC, SimAddress_t aBegin, SimAddress_t aEnd, 
 			b[0] = 0x30 + d;
 			pDC->DrawTextW(b, &r, DT_TOP);
 		}
-		pDC->SetBkColor(RGB(0xff, 0xff, 0xff));
-		pDC->SetTextColor(COLORREF(0));
+		//pDC->SetBkColor(RGB(0xff, 0xff, 0xff));
+		//pDC->SetTextColor(COLORREF(0));
 		if (m_Pc == i) {
 			CPen penPc;
 			penPc.CreatePen(PS_SOLID, 2, RGB(0xFF, 0x7F, 0x4f));
@@ -204,9 +207,9 @@ int CSimulator::OnDrawHexDump(CDC* pDC, SimAddress_t aBegin, SimAddress_t aEnd, 
 		}
 		if (!x) {
 			CString s;
-			r.left = 310;
-			r.right = r.left + HEXDISTANCEX * 6;
-			s.Format(_T("0x%03x:"), i);
+			r.left = sx+2;
+			r.right = r.left + HEXDISTANCEX * 5;
+			s.Format(_T("%03x:"), i);
 			pDC->DrawTextW(s, &r, DT_TOP);
 		}
 	}
@@ -268,22 +271,53 @@ void CSimulator::OnDraw(CDC* pDC, int mode) {
 		}
 	}
 	if (m_DisplayMemory){
-		sy = OnDrawHexDump(pDC, 0, m_MemorySizeLoaded, sy) + 1;
-		sy = OnDrawHexDump(pDC, ADDR_ARR, ADDR_PERIPH_MAX, sy) + 1;
+		static int dmcount = 0;
+		r.left = 310;
+		r.right = r.left + (4+64)*HEXDISTANCEX+10;
+		r.top = 15;
+		r.bottom = r.top + (m_MemorySizeLoaded/64+2)*HEXDISTANCEY;
+		if (!dmcount) {
+			m_DCTmp.CreateCompatibleDC(pDC);
+			CPalette* pPalette = pDC->GetCurrentPalette();
+			m_BitmapTmp.CreateCompatibleBitmap(pDC, r.Width(), r.Height());
+			m_DCTmp.SelectObject(&m_BitmapTmp);
+			m_DCTmp.SelectObject(&m_FontMonospace);
+			sy = OnDrawHexDump(&m_DCTmp, 0, m_MemorySizeLoaded, 0, sy) + 1;
+			sy = OnDrawHexDump(&m_DCTmp, ADDR_ARR, ADDR_PERIPH_MAX, 0, sy) + 1;
+		}
+		pDC->BitBlt(r.left, r.top, r.Width(), r.Height(), &m_DCTmp, 0, 0, SRCCOPY);
+		dmcount++;
+		dmcount &= 3;
+		if (!dmcount) {
+			m_DCTmp.DeleteDC();
+			m_BitmapTmp.DeleteObject();
+		}
+		
 	}
 	if (m_DisplayMeasurement) {
 		CString s;
-		r.top = 600;
+		r.top = 300;
 		r.bottom = r.top+15;
 		r.left = 0;
 		r.right = 900;
-		s.Format(_T("Exec Actual:%03.3fms Avg:%03.3fms Min:%03.3fms Max:%03.3fms"),
-			m_ExecTimeActual/1000.0, m_ExecTimeAvg /1000.0, m_ExecTimeMin /1000.0, m_ExecTimeMax /1000.0);
+		s.Format(_T("Draw period:%dms Refresh rate:%03.3f"),
+			SIM_REFRESH_TIMER, 1000.0/ SIM_REFRESH_TIMER);
 		pDC->DrawTextW(s, &r, DT_TOP);
 		r.top += 15; r.bottom += 15;
-		s.Format(_T("Draw Actual:%03.3fms Avg:%03.3fms Min:%03.3fms Max:%03.3fms"),
-			m_DrawTimeActual /1000.0, m_DrawTimeAvg /1000.0, m_DrawTimeMin /1000.0, m_DrawTimeMax /1000.0);
+		s.Format(_T("Exec[ms]:%03.3f Min:%03.3f Max:%03.3f"),
+			m_ExecTimeAvg /1000.0, m_ExecTimeMin /1000.0, m_ExecTimeMax /1000.0);
 		pDC->DrawTextW(s, &r, DT_TOP);
+		r.top += 15; r.bottom += 15;
+		s.Format(_T("Draw[ms]:%03.3f Min:%03.3f Max:%03.3f"),
+			m_DrawTimeAvg /1000.0, m_DrawTimeMin /1000.0, m_DrawTimeMax /1000.0);
+		pDC->DrawTextW(s, &r, DT_TOP);
+		if (m_Time > 0) {
+			r.top += 15; r.bottom += 15;
+			int n = m_ClockCount / m_Time;
+			s.Format(_T("MHz:%3.3f Instr/sec:%d"),
+				4*n/1000000.0, n);
+			pDC->DrawTextW(s, &r, DT_TOP);
+		}
 	}
 	
 	if (m_DisplayDebugMonitor) {
@@ -327,9 +361,9 @@ void CSimulator::OnDraw(CDC* pDC, int mode) {
 			pDC->DrawTextW(s, &r, DT_TOP);
 			SimAddress_t a = m_Pc;
 			for (int row = 0; row < 32; row++) {
-				r.top = row * 16;
+				r.top = row * 16+16;
 				r.bottom = r.top + 15;
-				r.left = 890;
+				r.left = 870+10;
 				r.right = r.left + 130;
 				char op = m_Memory[a];
 				short operand = m_Memory[a + 1];
@@ -341,7 +375,7 @@ void CSimulator::OnDraw(CDC* pDC, int mode) {
 					s.Format(_T("%03x %s0x%x"), a, gMnemonics[op], operand);
 				}
 				if (m_Break[a]) {
-					pDC->DrawIcon(r.left - 32, r.top - 8, hIconBreak);
+					pDC->DrawIcon(r.left - 28, r.top - 8, hIconBreak);
 				}
 
 				pDC->DrawTextW(s, &r, DT_TOP);
@@ -544,11 +578,10 @@ void CSimulator::ProcessDrawMeasurement()
 	m_DrawTimeAvg = m_DrawTimeSum >> 8;
 }
 void CSimulator::ResetMeasurement() {
-	m_ExecTimeMin = INT32_MAX;
+	m_ExecTimeMin = m_DrawTimeMin = 999999;
 	m_ExecTimeMax = 0;
 	m_ExecTimeAvg = m_ExecTimeActual;
 	m_ExecTimeSum = m_ExecTimeAvg << 8;
-	m_DrawTimeMin = INT32_MAX;
 	m_DrawTimeMax = 0;
 	m_DrawTimeAvg = m_DrawTimeActual;
 	m_DrawTimeSum = m_DrawTimeAvg << 8;
@@ -606,6 +639,9 @@ BOOL CSimulator::Step()
 	ProcessHeatMaps();
 	m_ClockCount++;
 	m_Time += 1.0 / (double)m_CpuHz;
+	if (m_Pc < 0) {
+		m_Pc = 0; //Invalid address in PC
+	}
 	if (m_Pc > SIM_MAXMEMORYSIZE) {
 		m_Pc = 0; //Invalid address in PC
 	}
@@ -721,6 +757,14 @@ BOOL CSimulator::RunQuick() {
 	m_Time += 1 / (double)m_CpuHz;
 	if (!(m_ClockCount%SIM_HEATMAP_PERIOD)) {
 		ProcessHeatMaps();
+	}
+	if (m_Pc < 0) {
+		m_Pc = 0; //Invalid address in PC
+		return FALSE;
+	}
+	if (m_Pc >= SIM_MAXMEMORYSIZE) {
+		m_Pc = 0; //Invalid address in PC
+		return FALSE;
 	}
 	m_HeatPc[m_Pc] = 0xFf;
 	SimData_t op = m_Memory[m_Pc];
