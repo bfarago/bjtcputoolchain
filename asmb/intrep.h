@@ -42,4 +42,10 @@ void chkAddress(int a);
 //to add code or data to the memory
 void addMemory(int data);
 
+//to get original source line
+int getMemoryLineNo(int address);
+
+//to get memory usage kind
+int getMemoryType(int address);
+
 #endif

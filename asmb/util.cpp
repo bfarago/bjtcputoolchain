@@ -191,6 +191,7 @@ void printHelp() {
 	printf(" -f : Fpga related outputs are enabled. (fname.coe and fname.v)\n");
 	printf(" -l : lst output is enabled. (fname.lst)\n");
 	printf(" -m : map output is enabled. (fname.map)\n");
+	printf(" -g : dbg output is enabled. (fname.dbg)\n");
 	printf(" -e : standard err output redirected to fname.log\n");
 	//printf(" -E fname.log: standard err output redirected to the specified file (fname.log)\n");
 	
@@ -209,6 +210,7 @@ void InitConfig(asmb_config_t* cfg) {
 	cfg->fname_out_lst = 0;
 	cfg->fname_err = 0;
 	cfg->enable_err = 0;
+	cfg->enable_dbg = 0;
 }
 
 Std_ReturnType ParseCommandLine(int argc, char *argv[], asmb_config_t* cfg) {
@@ -247,6 +249,9 @@ Std_ReturnType ParseCommandLine(int argc, char *argv[], asmb_config_t* cfg) {
 				  break;
 			  case 'e':
 				  cfg->enable_err = 1;
+				  break;
+			  case 'g':
+				  cfg->enable_dbg = 1;
 				  break;
 			  case 'd':
 				  // TODO: debug switches ?

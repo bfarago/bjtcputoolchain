@@ -72,6 +72,15 @@
     <ClInclude Include="WorkspaceView.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="AsmDoc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AsmView.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ChildFrmAsm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ideb.cpp">
@@ -120,6 +129,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="WorkspaceView.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="AsmDoc.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="AsmView.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ChildFrmAsm.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -12,6 +12,12 @@ typedef unsigned char SimData_t;
 #define SIM_HZ (SIM_TICK_PER_MS*1000)
 #define SIM_STEPS_PER_TIMER (SIM_REFRESH_TIMER*SIM_TICK_PER_MS)//(4000*SIM_REFRESH_TIMER)
 #define SIM_HEATMAP_PERIOD (2000) //todo: think through
+typedef enum {
+	MT_undef,
+	MT_code,
+	MT_data,
+	MT_max
+} memoryType_t;
 
 typedef enum {
 	bd_Tristate,
@@ -87,6 +93,8 @@ public:
 	void SetRunMode(runMode_t rm) { m_RunMode = rm; }
 	SimAddress_t GetPc()const { return m_Pc; }
 	void BrakePC(BOOL isSet);
+	BOOL SetBrakePC(SimAddress_t pc);
+	BOOL IsBreakPC(SimAddress_t pc)const;
 	BOOL Step();
 	BOOL RunQuick();
 	void Reset();
@@ -101,6 +109,9 @@ public:
 	void ProcessMeasurement();
 	void ProcessDrawMeasurement();
 	void ResetMeasurement();
+	BOOL IsDebugFileLoaded()const { return m_DbgFileLoaded; }
+	SimAddress_t SearchLine(int line);
+	BOOL GetDisAsm(SimAddress_t addr ,CString& s);
 private:
 	void AddressBusDrive(SimAddress_t addr);
 	BOOL OnScreenLoadStore(SimAddress_t addr, busDirection_t dir, SimData_t * data);
@@ -123,6 +134,9 @@ protected:
 	SimData_t m_HeatRead[SIM_MAXMEMORYSIZE];
 	SimData_t m_HeatWrite[SIM_MAXMEMORYSIZE];
 	SimData_t m_Break[SIM_MAXMEMORYSIZE];
+	memoryType_t m_MemoryType[SIM_MAXMEMORYSIZE];
+	int m_MemoryLine[SIM_MAXMEMORYSIZE];
+
 	UINT m_MemorySizeLoaded;
 	DWORD m_CpuHz;
 	DWORD m_ClockCount;
@@ -152,5 +166,6 @@ protected:
 	int m_DrawTimeAvg;
 	int m_DrawTimeMax;
 	int m_DrawTimeMin;
+	BOOL m_DbgFileLoaded;
 };
 

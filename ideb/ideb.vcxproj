@@ -180,7 +180,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="calendarbar.h" />
+    <ClInclude Include="AsmDoc.h" />
+    <ClInclude Include="AsmView.h" />
     <ClInclude Include="ChildFrm.h" />
+    <ClInclude Include="ChildFrmAsm.h" />
     <ClInclude Include="ClassView.h" />
     <ClInclude Include="CSimulator.h" />
     <ClInclude Include="FileView.h" />
@@ -201,7 +204,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="calendarbar.cpp" />
+    <ClCompile Include="AsmDoc.cpp" />
+    <ClCompile Include="AsmView.cpp" />
     <ClCompile Include="ChildFrm.cpp" />
+    <ClCompile Include="ChildFrmAsm.cpp" />
     <ClCompile Include="ClassView.cpp" />
     <ClCompile Include="CSimulator.cpp" />
     <ClCompile Include="FileView.cpp" />

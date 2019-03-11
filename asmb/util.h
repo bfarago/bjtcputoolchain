@@ -126,6 +126,7 @@ typedef struct {
 	unsigned char enable_lst;
 	unsigned char enable_map;
 	unsigned char enable_err;
+	unsigned char enable_dbg;
 }asmb_config_t;
 
 /**

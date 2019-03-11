@@ -11,6 +11,9 @@
 //acceptable length of a section name
 #define MAXSECTIONNAME (32)
 
+//acceptable length of a symbole name
+#define MAXSYMBOLENAME (255)
+
 //Output bin and addressable max memory size
 #define MAXMEMORY (1<<12)
 

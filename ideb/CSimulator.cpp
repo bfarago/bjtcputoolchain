@@ -235,7 +235,15 @@ void CSimulator::OnDraw(CDC* pDC, int mode) {
 	pDC->BitBlt(0, DISTANCEY, 301, 252, &dcBg, 0, 0, SRCCOPY);
 	r.right = 400;//s.cx;
 	r.bottom = 400;// s.cy;
-
+	int sx = 0;
+	int firstXDisasm = 0;
+	if (1) {
+		sx += 310;
+	}
+	if (m_DisplayMemory) {
+		sx+= (4 + 64)*HEXDISTANCEX + 10;
+	}
+	firstXDisasm = sx;
 	pDC->SetTextColor(COLORREF(0));
 	TCHAR b[2];
 	b[1] = 0;
@@ -363,55 +371,65 @@ void CSimulator::OnDraw(CDC* pDC, int mode) {
 			for (int row = 0; row < 32; row++) {
 				r.top = row * 16+16;
 				r.bottom = r.top + 15;
-				r.left = 870+10;
+				r.left = firstXDisasm + 10;//870+10;
 				r.right = r.left + 130;
 				char op = m_Memory[a];
-				short operand = m_Memory[a + 1];
-				if (op) {
-					operand |= m_Memory[a + 2] << 4 | m_Memory[a + 3] << 8;
-					s.Format(_T("%03x %s 0x%x"), a, gMnemonics[op], operand);
+				memoryType_t mt = MT_code;
+				if (m_DbgFileLoaded) {
+					mt = m_MemoryType[a];
+				}
+				if (MT_code == mt) {
+					//m_DbgFileLoaded
+					short operand = m_Memory[a + 1];
+					if (op) {
+						operand |= m_Memory[a + 2] << 4 | m_Memory[a + 3] << 8;
+						s.Format(_T("%03x %s 0x%x"), a, gMnemonics[op], operand);
+					}
+					else {
+						s.Format(_T("%03x %s0x%x"), a, gMnemonics[op], operand);
+					}
+					if (m_Break[a]) {
+						pDC->DrawIcon(r.left - 28, r.top - 8, hIconBreak);
+					}
+
+					pDC->DrawTextW(s, &r, DT_TOP);
+					if (m_HeatPc[a])
+					{
+						CPen p(PS_SOLID, 2, RGB(m_HeatPc[a], 0, 0));
+						CPen* pOldPen = pDC->SelectObject(&p);
+						pDC->MoveTo(r.left, r.bottom - 2);
+						pDC->LineTo(r.left + 52, r.bottom - 2);
+						pDC->SelectObject(pOldPen);
+					}
+					if (m_HeatWrite[a + 1])
+					{
+						CPen p(PS_SOLID, 2, RGB(0, 0, m_HeatWrite[a + 1]));
+						CPen* pOldPen = pDC->SelectObject(&p);
+						pDC->MoveTo(r.left + HEXDISTANCEX * 12, r.bottom - 2);
+						pDC->LineTo(r.left + HEXDISTANCEX * 13, r.bottom - 2);
+						pDC->SelectObject(pOldPen);
+					}
+					if (m_HeatWrite[a + 2])
+					{
+						CPen p(PS_SOLID, 2, RGB(0, 0, m_HeatWrite[a + 2]));
+						CPen* pOldPen = pDC->SelectObject(&p);
+						pDC->MoveTo(r.left + HEXDISTANCEX * 11, r.bottom - 2);
+						pDC->LineTo(r.left + HEXDISTANCEX * 12, r.bottom - 2);
+						pDC->SelectObject(pOldPen);
+					}
+					if (m_HeatWrite[a + 3])
+					{
+						CPen p(PS_SOLID, 2, RGB(0, 0, m_HeatWrite[a + 3]));
+						CPen* pOldPen = pDC->SelectObject(&p);
+						pDC->MoveTo(r.left + HEXDISTANCEX * 10, r.bottom - 2);
+						pDC->LineTo(r.left + HEXDISTANCEX * 11, r.bottom - 2);
+						pDC->SelectObject(pOldPen);
+					}
+					a += (op) ? 4 : 2;
 				}
 				else {
-					s.Format(_T("%03x %s0x%x"), a, gMnemonics[op], operand);
+					a += 1;
 				}
-				if (m_Break[a]) {
-					pDC->DrawIcon(r.left - 28, r.top - 8, hIconBreak);
-				}
-
-				pDC->DrawTextW(s, &r, DT_TOP);
-				if (m_HeatPc[a])
-				{
-					CPen p(PS_SOLID, 2, RGB(m_HeatPc[a], 0, 0));
-					CPen* pOldPen = pDC->SelectObject(&p);
-					pDC->MoveTo(r.left, r.bottom - 2);
-					pDC->LineTo(r.left + 52, r.bottom - 2);
-					pDC->SelectObject(pOldPen);
-				}
-				if (m_HeatWrite[a + 1])
-				{
-					CPen p(PS_SOLID, 2, RGB(0, 0, m_HeatWrite[a + 1]));
-					CPen* pOldPen = pDC->SelectObject(&p);
-					pDC->MoveTo(r.left + HEXDISTANCEX * 12, r.bottom - 2);
-					pDC->LineTo(r.left + HEXDISTANCEX * 13, r.bottom - 2);
-					pDC->SelectObject(pOldPen);
-				}
-				if (m_HeatWrite[a + 2])
-				{
-					CPen p(PS_SOLID, 2, RGB(0, 0, m_HeatWrite[a + 2]));
-					CPen* pOldPen = pDC->SelectObject(&p);
-					pDC->MoveTo(r.left + HEXDISTANCEX * 11, r.bottom - 2);
-					pDC->LineTo(r.left + HEXDISTANCEX * 12, r.bottom - 2);
-					pDC->SelectObject(pOldPen);
-				}
-				if (m_HeatWrite[a + 3])
-				{
-					CPen p(PS_SOLID, 2, RGB(0, 0, m_HeatWrite[a + 3]));
-					CPen* pOldPen = pDC->SelectObject(&p);
-					pDC->MoveTo(r.left + HEXDISTANCEX * 10, r.bottom - 2);
-					pDC->LineTo(r.left + HEXDISTANCEX * 11, r.bottom - 2);
-					pDC->SelectObject(pOldPen);
-				}
-				a += (op) ? 4 : 2;
 			}
 		}
 	}
@@ -586,6 +604,39 @@ void CSimulator::ResetMeasurement() {
 	m_DrawTimeAvg = m_DrawTimeActual;
 	m_DrawTimeSum = m_DrawTimeAvg << 8;
 }
+SimAddress_t CSimulator::SearchLine(int line)
+{
+	line += 1;
+	if (line < 0) line = 2; //TODO: bugfix in asmb ??
+	for (SimAddress_t i = 0; i < SIM_MAXMEMORYSIZE; i++) {
+		if (m_MemoryLine[i] == line) {
+			return i;
+		}
+	}
+	return SimAddress_t(-1);
+}
+BOOL CSimulator::GetDisAsm(SimAddress_t addr, CString & s)
+{
+	s = L"DATA";
+	char op = m_Memory[addr];
+	memoryType_t mt = MT_code;
+	if (m_DbgFileLoaded) {
+		mt = m_MemoryType[addr];
+	}
+	if (MT_code == mt) {
+		//m_DbgFileLoaded
+		short operand = m_Memory[addr + 1];
+		if (op) {
+			operand |= m_Memory[addr + 2] << 4 | m_Memory[addr + 3] << 8;
+			s.Format(_T("%03x %s 0x%x"), addr, gMnemonics[op], operand);
+		}
+		else {
+			s.Format(_T("%03x %s0x%x"), addr, gMnemonics[op], operand);
+		}
+	}
+	else return FALSE;
+	return TRUE;
+}
 inline SimData_t CSimulator::DataBusRead()
 {
 	if (!m_CpuSnapshot_p) return 0;
@@ -623,12 +674,21 @@ inline void CSimulator::AluSetAccumulator(SimData_t data) {
 }
 void CSimulator::BrakePC(BOOL isSet)
 {
-	if (!m_Break[m_Pc] & 1) {
-		m_Break[m_Pc] |= 1;
+	SetBrakePC(m_Pc);
+}
+BOOL CSimulator::SetBrakePC(SimAddress_t pc)
+{
+	if (!m_Break[pc] & 1) {
+		m_Break[pc] |= 1;
 	}
 	else {
-		m_Break[m_Pc] &= ~1;
+		m_Break[pc] &= ~1;
 	}
+	return m_Break[pc];
+}
+BOOL CSimulator::IsBreakPC(SimAddress_t pc) const
+{
+	return (m_Break[pc]) ? TRUE : FALSE;
 }
 BOOL CSimulator::Step()
 {
@@ -835,7 +895,37 @@ void CSimulator::SetStop(BOOL isStop)
 	//TODO: halt vs stop
 	// m_State = m_Stop ? ss_Halt : ss_FetchOp;
 }
-
+//todo: separate to a lib > internal representation
+typedef enum {
+	DF_VERSION,
+	DF_NAME,
+	DF_FNAME_BIN,
+	DF_FNAME_ASM,
+	DF_SYM,
+	DF_LINES,
+	DF_MEMTYPES
+} tDbgFileBlockId;
+#define MAXSYMBOLENAME 255
+typedef enum {
+	E_OK,
+    E_NOT_OK
+}Std_ReturnType;
+typedef struct {
+	unsigned int value;
+	unsigned int lineno;
+	unsigned char memtype;
+	unsigned char len;
+	unsigned char name[MAXSYMBOLENAME];
+}tDbgFileSymbol;
+Std_ReturnType dbgfile_rd(CFile*f, tDbgFileBlockId& id, void* b, int& len) {
+	unsigned int r=4;
+	if (f->Read(&id, r) != r) return E_NOT_OK;
+	if (f->Read(&len, r) != r) return E_NOT_OK;
+	if (b) { //provided or pending 
+		if (f->Read(b, len) != len) return E_NOT_OK;
+	}
+	return E_OK;
+}
 void CSimulator::LoadBinToMemory()
 {
 	if (!m_pDoc) return;
@@ -856,5 +946,61 @@ void CSimulator::LoadBinToMemory()
 			unsigned char code = 0xff;
 			SimScreen.buf[x][y] = code;
 		}
+	}
+	m_DbgFileLoaded = FALSE;
+	int pos = s.ReverseFind('.');
+	if (pos > 0) {
+		s = s.Left(pos);
+		s.Format(L"%s.dbg",s);
+		if (!f.Open(s.GetBuffer(), CFile::modeRead | CFile::typeBinary, &e)) // CFile::modeCreate | CFile::modeWrite, &e))
+		{
+			TRACE(_T("File could not be opened %d\n"), e.m_cause);
+		}
+		int len = 0;
+		int id = 0;
+		int r = 4;
+		CFileStatus fs;
+		//fs.m_mtime
+		//f.GetStatus(&fs);
+		int DbgFormatVersion;
+		BOOL process = TRUE;
+		while (process) {
+			tDbgFileBlockId id;
+			int len;
+			if (E_OK == dbgfile_rd(&f, id, 0, len)) {
+				switch (id) {
+				case DF_VERSION:
+					if (4 == len) {
+						f.Read(&DbgFormatVersion, len);
+					}
+					else {
+						process = FALSE;
+					}
+					if (1 != DbgFormatVersion) {
+						process = FALSE;
+					}
+					break;
+				case DF_MEMTYPES:
+					f.Read(m_MemoryType, len);
+					break;
+				case DF_LINES:
+					f.Read(m_MemoryLine, len);
+					break;
+				case DF_NAME:
+				case DF_FNAME_BIN:
+				case DF_FNAME_ASM:
+				case DF_SYM:
+				default:
+					f.Seek(len, CFile::current);
+					break;
+				}
+			}
+			else process = FALSE;
+			
+		}
+		m_DbgFileLoaded = TRUE;
+		// m_MemorySizeLoaded = f.Read((void*)m_Memory, SIM_MAXMEMORYSIZE);
+		f.Close();
+
 	}
 }

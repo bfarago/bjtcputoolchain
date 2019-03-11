@@ -112,7 +112,7 @@ int main(int argc, char** argv)
 
 	// Write out list file
 	gen_lst(&asmb_config, maxaddress, memory);
-
+	gen_dbg(&asmb_config);
 	printf("Assembler task finished.");
 	//todo: add counter of the warnings or errors. There is an abort() in fatal error reporter, check that as well...
 	return 0;

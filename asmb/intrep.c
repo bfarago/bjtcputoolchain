@@ -42,3 +42,10 @@ void addMemory(int data) {
 	memory[address++] = data & 0xf;
 	chkAddress(address);
 }
+
+int getMemoryType(int address) {
+	return memoryTypes[address];
+}
+int getMemoryLineNo(int address) {
+	return lines[address];
+}

@@ -1,6 +1,18 @@
 #pragma once
-//#include "idebDoc.h"
-class CidebDoc; //forward
+//forward
+class CidebDoc; 
+class CSimulator;
+class CWorkspace;
+class CWorkspaceView;
+
+class CWorkspaceSingleton {
+public:
+	static void RegisterWorkspace(CWorkspace* ws);
+	static CWorkspace* GetActiveWorkspace() { return g_ActiveWorkspace; }
+	//static void RegisterWorkspaceView(CWorkspaceView* ws);
+protected:
+	static CWorkspace* g_ActiveWorkspace;
+};
 
 class CWorkspace
 {
@@ -13,6 +25,7 @@ public:
 	inline CidebDoc* GetProjectDocument(){
 			return reinterpret_cast<CidebDoc*>(this);
 	};
+	virtual CSimulator* GetSimulator() = 0;
 	virtual const CString& GetProjectName() = 0;
 	virtual void SetProjectName(const CString& s) = 0;
 
@@ -20,5 +33,10 @@ public:
 	virtual BOOL& AsmbVerbose() = 0;
 	virtual CString& AsmbDirIn() = 0;
 	virtual CString& AsmbDirOut() = 0;
+	virtual void RegisterView(CWorkspaceView* pV);
+	virtual void UnRegisterView(CWorkspaceView* pV);
+	virtual void Update();
+protected:
+	CArray<CWorkspaceView*> m_Views;
 };
 
