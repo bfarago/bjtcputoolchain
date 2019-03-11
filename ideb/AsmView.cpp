@@ -13,7 +13,7 @@
 static const TCHAR *gAsmMnemonics[17] =
 { _T("mvi a,"),_T("sta"),_T("lda"),_T("ad0"),_T("ad1"),_T("adc"),_T("nand"),_T("nor"),_T("rrm"),_T("jmp"),_T("jc "),_T("jnc"),_T("jz "),_T("jnz"),_T("jm "),_T("jp "),_T("INVALID") };
 
-
+#define ID_ASMEDITORTIMER 1001
 // CAsmView
 IMPLEMENT_DYNCREATE(CAsmView, CView)
 
@@ -30,10 +30,11 @@ BEGIN_MESSAGE_MAP(CAsmView, CView)
 	ON_WM_LBUTTONDBLCLK()
 	ON_WM_SIZE()
 	ON_WM_LBUTTONDOWN()
+	ON_WM_TIMER()
 END_MESSAGE_MAP()
 
 CAsmView::CAsmView()
-	:m_FirstLine(0), m_FirstColumn(0)
+	:m_FirstLine(0), m_FirstColumn(0), m_CursorVisible(1)
 {
 	m_FontMonospace.CreateStockObject(SYSTEM_FIXED_FONT); //ANSI_FIXED_FONT);
 	hIconBreak = (HICON) ::LoadImage(::AfxGetResourceHandle(), MAKEINTRESOURCE(IDI_ICON_BREAK),
@@ -50,6 +51,7 @@ CAsmView::~CAsmView()
 	m_FontMonospace.Detach();
 	if (m_Workspace)
 		m_Workspace->UnRegisterView(this);
+	
 }
 BOOL CAsmView::PreCreateWindow(CREATESTRUCT& cs)
 {
@@ -259,7 +261,7 @@ void CAsmView::OnInitialUpdate()
 {
 	CView::OnInitialUpdate();
 	UpdateScollbars();
-	//SetTimer(SIM_ID_REFRESHTIMER, SIM_REFRESH_TIMER, NULL);
+	SetTimer(ID_ASMEDITORTIMER, 600, NULL);
 }
 
 
@@ -394,3 +396,14 @@ void CAsmView::OnSize(UINT nType, int cx, int cy)
 }
 
 
+
+
+void CAsmView::OnTimer(UINT_PTR nIDEvent)
+{
+	if (ID_ASMEDITORTIMER == nIDEvent) {
+		m_CursorVisible ^= 1;
+		Invalidate();
+	}
+
+	__super::OnTimer(nIDEvent);
+}
