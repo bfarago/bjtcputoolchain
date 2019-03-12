@@ -7,6 +7,7 @@ public:
 	~CWorkspaceView();
 	void RegisterToActiveWorkspace();
 	void RegisterWorkspace(CWorkspace* ws);
+	void UnRegister();
 	CWorkspace* GetWorkspace() { return m_Workspace; }
 	CSimulator* GetSimulator() { 
 		if (m_Workspace) return m_Workspace->GetSimulator();

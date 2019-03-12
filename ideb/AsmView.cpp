@@ -31,10 +31,13 @@ BEGIN_MESSAGE_MAP(CAsmView, CView)
 	ON_WM_SIZE()
 	ON_WM_LBUTTONDOWN()
 	ON_WM_TIMER()
+	ON_WM_VSCROLL()
+	ON_WM_MOUSEWHEEL()
 END_MESSAGE_MAP()
 
 CAsmView::CAsmView()
-	:m_FirstLine(0), m_FirstColumn(0), m_CursorVisible(1)
+	:m_FirstLine(0), m_FirstColumn(0), m_CursorVisible(1),
+	m_CurX(0), m_CurY(0), m_CurXWish(0)
 {
 	m_FontMonospace.CreateStockObject(SYSTEM_FIXED_FONT); //ANSI_FIXED_FONT);
 	hIconBreak = (HICON) ::LoadImage(::AfxGetResourceHandle(), MAKEINTRESOURCE(IDI_ICON_BREAK),
@@ -49,9 +52,7 @@ CAsmView::CAsmView()
 CAsmView::~CAsmView()
 {
 	m_FontMonospace.Detach();
-	if (m_Workspace)
-		m_Workspace->UnRegisterView(this);
-	
+	UnRegister();
 }
 BOOL CAsmView::PreCreateWindow(CREATESTRUCT& cs)
 {
@@ -70,6 +71,7 @@ void CAsmView::OnDraw(CDC* pDC)
 	CWorkspace* pWs = GetWorkspace();
 	if (!pWs) {
 		//TODO: check if the opened asm file belongs to the workspace...
+		//TODO: close views, when workspace closed...
 		RegisterToActiveWorkspace();
 		pWs = GetWorkspace();
 	}
@@ -97,9 +99,10 @@ void CAsmView::OnDraw(CDC* pDC)
 	m_DCTmp.SelectObject(&m_FontMonospace);
 	TEXTMETRIC tm;
 	m_DCTmp.GetTextMetrics(&tm);
-
+	COLORREF crBlack = 0; 
 	CBrush bWhite(RGB(0xff, 0xff, 0xff));
-	CBrush brProgramCounter(RGB(0xff, 0xaf, 0xaf));
+	CBrush brCursorBk(RGB(0xf0, 0xf0, 0xf0));
+	CBrush brProgramCounter(RGB(0xff, 0xdf, 0xdf));
 	CBrush brBrakepointAreaBk(RGB(0xff, 0xfd, 0xfd));
 	CBrush brLineNrAreaBk(RGB(0xf0, 0xff, 0xf0));
 	CBrush brWarningAreaBk(RGB(0xef, 0xef, 0xef));
@@ -133,9 +136,10 @@ void CAsmView::OnDraw(CDC* pDC)
 		tr.left = firstXDisAsm; tr.right = lastXDisAsm;
 		m_DCTmp.FillRect(&tr, &brDisAsmAreaBk);
 	}
+	int linesInFile = pDoc->m_lines.GetCount();
 	if (m_LineNrAreaVisible) {
 		firstXLineNr = firstX;
-		lastXLineNr = firstX += tm.tmAveCharWidth* (log10(pDoc->m_lines.GetCount())+1);
+		lastXLineNr = firstX += tm.tmAveCharWidth* (log10(linesInFile)+1);
 		tr.top = 0; tr.bottom = r.bottom;
 		tr.left = firstXLineNr; tr.right = lastXLineNr;
 		m_DCTmp.FillRect(&tr, &brLineNrAreaBk);
@@ -153,7 +157,8 @@ void CAsmView::OnDraw(CDC* pDC)
 	int DbgMemLocation = 0;
 	int pc = 0;
 	if (pSimulator) pc= pSimulator->GetPc();
-	
+	if (linesInFile < m_FirstLine + m_SizeLines)
+		m_SizeLines = linesInFile - m_FirstLine;
 	for (LONG i = 0; i < m_SizeLines; i++) {
 		CAsmDoc::LineData* ld = &(pDoc->m_lines.GetAt(i+m_FirstLine));
 		tr.top = i * tm.tmHeight; tr.bottom = tr.top + tm.tmHeight;
@@ -178,16 +183,6 @@ void CAsmView::OnDraw(CDC* pDC)
 				m_DCTmp.DrawText(s, tr, DT_LEFT);
 			}
 		}
-		
-		if (m_LineNrAreaVisible) {
-			CString s;
-			s.Format(L"%d", ld->number);
-			tr.left = firstXLineNr; tr.right = lastXLineNr;
-			m_DCTmp.DrawText(s, tr, DT_RIGHT);
-		}
-		CString s = ld->text;
-		tr.left = firstX; tr.right = r.right;
-		m_DCTmp.DrawText(s, tr, DT_TOP| DT_EXPANDTABS);
 		if (ld->memAddress >= 0)
 		{
 			if (pSimulator) {
@@ -197,6 +192,34 @@ void CAsmView::OnDraw(CDC* pDC)
 					}
 				}
 			}
+		}
+		if (m_LineNrAreaVisible) {
+			CString s;
+			s.Format(L"%d", ld->number);
+			tr.left = firstXLineNr; tr.right = lastXLineNr;
+			m_DCTmp.DrawText(s, tr, DT_RIGHT);
+		}
+		if (m_CurY == i) {
+			tr.left = firstX; tr.right = r.right;
+			//m_DCTmp.FillSolidRect()
+			m_DCTmp.FillRect(&tr, &brCursorBk);
+		}
+		int nTokens = ld->tokens.GetCount();
+		if (nTokens) {
+			for (int q = 0; q < nTokens; q++) {
+				const CAsmDoc::TokenData& td = ld->tokens[q];
+				int x = td.column * tm.tmAveCharWidth;
+				tr.left = firstX + x; tr.right = tr.left + td.count*tm.tmAveCharWidth;
+				m_DCTmp.SetTextColor(td.color);
+				m_DCTmp.DrawText(ld->text.Mid(td.first, td.count), tr, DT_TOP | DT_EXPANDTABS);
+			}
+			m_DCTmp.SetTextColor(crBlack);
+		}
+		else
+		{
+			CString s = ld->text;
+			tr.left = firstX; tr.right = r.right;
+			m_DCTmp.DrawText(s, tr, DT_TOP | DT_EXPANDTABS);
 		}
 	}
 
@@ -267,7 +290,8 @@ void CAsmView::OnInitialUpdate()
 
 void CAsmView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
-	int maxlines = GetDocument()->m_lines.GetCount();
+	CAsmDoc* pDoc= GetDocument();
+	int maxlines = pDoc->m_lines.GetCount();
 	switch (nChar) {
 	case VK_HOME:
 		if (m_CurY<1) m_FirstLine = 0;
@@ -301,6 +325,15 @@ void CAsmView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 			m_FirstLine += 1;
 		}
 		m_CurY -= 1;
+	}
+	pDoc->CursorValidate(m_CurX, m_CurY, m_CurXWish, nChar);
+	if (!pDoc->IsReadOnly())
+	{
+		switch (nChar) {
+		case VK_SPACE:
+			//todo: convert xcoord to text pos..
+			break;
+		}
 	}
 	Invalidate();
 }
@@ -383,7 +416,9 @@ void CAsmView::OnLButtonDown(UINT nFlags, CPoint point)
 	int m = (point.x - offsx) / 8;
 	m_CurY = n;
 	if (m>=0)
-		m_CurX = m;
+		m_CurXWish=m_CurX = m;
+	CAsmDoc* pDoc = GetDocument();
+	pDoc->CursorValidate(m_CurX, m_CurY, m_CurXWish, 0);
 	Invalidate();
 	__super::OnLButtonDown(nFlags, point);
 }
@@ -406,4 +441,33 @@ void CAsmView::OnTimer(UINT_PTR nIDEvent)
 	}
 
 	__super::OnTimer(nIDEvent);
+}
+
+
+void CAsmView::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
+{
+	// TODO: Add your message handler code here and/or call default
+
+	__super::OnVScroll(nSBCode, nPos, pScrollBar);
+}
+
+
+BOOL CAsmView::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
+{
+	if (zDelta > 0) {
+		//m_CurY -= 10;
+		m_FirstLine -= 10;
+		if (m_FirstLine < 0) m_FirstLine = 0;
+	}
+	else {
+		//m_CurY += 10;
+		m_FirstLine += 10;
+		int n = GetDocument()->m_lines.GetCount();
+		int m = n - m_SizeLines;
+		if (m_FirstLine >m ) m_FirstLine = m;
+	}
+	GetDocument()->CursorValidate(m_CurX, m_CurY, m_CurXWish, 0);
+	SetScrollPos(SB_VERT, m_FirstLine);
+	Invalidate();
+	return __super::OnMouseWheel(nFlags, zDelta, pt);
 }

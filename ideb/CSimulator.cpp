@@ -617,7 +617,7 @@ SimAddress_t CSimulator::SearchLine(int line)
 }
 BOOL CSimulator::GetDisAsm(SimAddress_t addr, CString & s)
 {
-	s = L"DATA";
+	s = L"-";
 	char op = m_Memory[addr];
 	memoryType_t mt = MT_code;
 	if (m_DbgFileLoaded) {
@@ -633,6 +633,9 @@ BOOL CSimulator::GetDisAsm(SimAddress_t addr, CString & s)
 		else {
 			s.Format(_T("%03x %s0x%x"), addr, gMnemonics[op], operand);
 		}
+	}else
+	if (MT_data == mt) {
+		s.Format(_T("%03x DATA"), addr);
 	}
 	else return FALSE;
 	return TRUE;

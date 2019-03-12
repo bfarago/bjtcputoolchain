@@ -27,3 +27,10 @@ void CWorkspaceView::RegisterWorkspace(CWorkspace * ws)
 		m_Workspace->RegisterView(this);
 	}
 }
+
+void CWorkspaceView::UnRegister()
+{
+	if (m_Workspace) {
+		m_Workspace->UnRegisterView(this);
+	}
+}

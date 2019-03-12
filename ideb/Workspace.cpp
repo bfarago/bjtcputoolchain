@@ -14,6 +14,7 @@ CWorkspace::~CWorkspace()
 		CWorkspaceView* pV = m_Views.GetAt(i);
 		pV->RegisterWorkspace(NULL);
 	}
+	CWorkspaceSingleton::RegisterWorkspace(NULL);
 }
 
 CWorkspace* CWorkspaceSingleton::g_ActiveWorkspace = NULL;
