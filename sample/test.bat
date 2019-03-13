@@ -11,12 +11,13 @@ set bin=..\bin
 @rem set bin=..\Release
 set asmb=%bin%\asmb.exe
 set simb=%bin%\simb.exe
-set switch=-f -l -m
+set switch=-f -l -m -g
 
 echo **TEST**
 echo clean previous compile output
 del /Q *.out 2>nul
 del /Q *.bin 2>nul
+del /Q *.dbg 2>nul
 del /Q *.lst 2>nul
 del /Q *.map 2>nul
 del /Q *.log 2>nul

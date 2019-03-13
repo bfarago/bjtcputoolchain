@@ -112,6 +112,7 @@ public:
 	BOOL IsDebugFileLoaded()const { return m_DbgFileLoaded; }
 	SimAddress_t SearchLine(int line);
 	BOOL GetDisAsm(SimAddress_t addr ,CString& s);
+	SimAddress_t OnDrawDisasm(CDC* pDC, CRect & r, SimAddress_t a);
 private:
 	void AddressBusDrive(SimAddress_t addr);
 	BOOL OnScreenLoadStore(SimAddress_t addr, busDirection_t dir, SimData_t * data);
@@ -122,6 +123,7 @@ private:
 	void AluSetAccumulator(SimData_t data);
 	SimData_t DataBusRead();
 	int OnDrawHexDump(CDC * pDC, SimAddress_t aBegin, SimAddress_t aEnd, int sx, int sy);
+	
 	HICON hIconBreak;
 	CFont m_FontMonospace;
 	CDC m_DCTmp;

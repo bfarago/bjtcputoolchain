@@ -215,7 +215,66 @@ int CSimulator::OnDrawHexDump(CDC* pDC, SimAddress_t aBegin, SimAddress_t aEnd, 
 	}
 	return y;
 }
+SimAddress_t CSimulator::OnDrawDisasm(CDC* pDC, CRect& r, SimAddress_t a)
+{
+	CString s;
+	char op = m_Memory[a];
+	memoryType_t mt = MT_code;
+	if (m_DbgFileLoaded) {
+		mt = m_MemoryType[a];
+	}
+	if (MT_code == mt) {
+		short operand = m_Memory[a + 1];
+		if (op) {
+			operand |= m_Memory[a + 2] << 4 | m_Memory[a + 3] << 8;
+			s.Format(_T("%03x %s 0x%x"), a, gMnemonics[op], operand);
+		}
+		else {
+			s.Format(_T("%03x %s0x%x"), a, gMnemonics[op], operand);
+		}
 
+		pDC->DrawTextW(s, &r, DT_TOP);
+		if (m_HeatPc[a])
+		{
+			CPen p(PS_SOLID, 2, RGB(m_HeatPc[a], 0, 0));
+			CPen* pOldPen = pDC->SelectObject(&p);
+			pDC->MoveTo(r.left, r.bottom - 2);
+			pDC->LineTo(r.left + 52, r.bottom - 2);
+			pDC->SelectObject(pOldPen);
+		}
+		if (m_HeatWrite[a + 1])
+		{
+			CPen p(PS_SOLID, 2, RGB(0, 0, m_HeatWrite[a + 1]));
+			CPen* pOldPen = pDC->SelectObject(&p);
+			pDC->MoveTo(r.left + HEXDISTANCEX * 12, r.bottom - 2);
+			pDC->LineTo(r.left + HEXDISTANCEX * 13, r.bottom - 2);
+			pDC->SelectObject(pOldPen);
+		}
+		if (m_HeatWrite[a + 2])
+		{
+			CPen p(PS_SOLID, 2, RGB(0, 0, m_HeatWrite[a + 2]));
+			CPen* pOldPen = pDC->SelectObject(&p);
+			pDC->MoveTo(r.left + HEXDISTANCEX * 11, r.bottom - 2);
+			pDC->LineTo(r.left + HEXDISTANCEX * 12, r.bottom - 2);
+			pDC->SelectObject(pOldPen);
+		}
+		if (m_HeatWrite[a + 3])
+		{
+			CPen p(PS_SOLID, 2, RGB(0, 0, m_HeatWrite[a + 3]));
+			CPen* pOldPen = pDC->SelectObject(&p);
+			pDC->MoveTo(r.left + HEXDISTANCEX * 10, r.bottom - 2);
+			pDC->LineTo(r.left + HEXDISTANCEX * 11, r.bottom - 2);
+			pDC->SelectObject(pOldPen);
+		}
+		a += (op) ? 4 : 2;
+	}
+	else {
+		s.Format(_T("%03x"), a);
+		pDC->DrawTextW(s, &r, DT_TOP);
+		a += 1;
+	}
+	return a;
+}
 void CSimulator::OnDraw(CDC* pDC, int mode) {
 	CRect r;
 	int sy = 0;
@@ -373,63 +432,10 @@ void CSimulator::OnDraw(CDC* pDC, int mode) {
 				r.bottom = r.top + 15;
 				r.left = firstXDisasm + 10;//870+10;
 				r.right = r.left + 130;
-				char op = m_Memory[a];
-				memoryType_t mt = MT_code;
-				if (m_DbgFileLoaded) {
-					mt = m_MemoryType[a];
+				if (m_Break[a]) {
+					pDC->DrawIcon(r.left - 28, r.top - 8, hIconBreak);
 				}
-				if (MT_code == mt) {
-					//m_DbgFileLoaded
-					short operand = m_Memory[a + 1];
-					if (op) {
-						operand |= m_Memory[a + 2] << 4 | m_Memory[a + 3] << 8;
-						s.Format(_T("%03x %s 0x%x"), a, gMnemonics[op], operand);
-					}
-					else {
-						s.Format(_T("%03x %s0x%x"), a, gMnemonics[op], operand);
-					}
-					if (m_Break[a]) {
-						pDC->DrawIcon(r.left - 28, r.top - 8, hIconBreak);
-					}
-
-					pDC->DrawTextW(s, &r, DT_TOP);
-					if (m_HeatPc[a])
-					{
-						CPen p(PS_SOLID, 2, RGB(m_HeatPc[a], 0, 0));
-						CPen* pOldPen = pDC->SelectObject(&p);
-						pDC->MoveTo(r.left, r.bottom - 2);
-						pDC->LineTo(r.left + 52, r.bottom - 2);
-						pDC->SelectObject(pOldPen);
-					}
-					if (m_HeatWrite[a + 1])
-					{
-						CPen p(PS_SOLID, 2, RGB(0, 0, m_HeatWrite[a + 1]));
-						CPen* pOldPen = pDC->SelectObject(&p);
-						pDC->MoveTo(r.left + HEXDISTANCEX * 12, r.bottom - 2);
-						pDC->LineTo(r.left + HEXDISTANCEX * 13, r.bottom - 2);
-						pDC->SelectObject(pOldPen);
-					}
-					if (m_HeatWrite[a + 2])
-					{
-						CPen p(PS_SOLID, 2, RGB(0, 0, m_HeatWrite[a + 2]));
-						CPen* pOldPen = pDC->SelectObject(&p);
-						pDC->MoveTo(r.left + HEXDISTANCEX * 11, r.bottom - 2);
-						pDC->LineTo(r.left + HEXDISTANCEX * 12, r.bottom - 2);
-						pDC->SelectObject(pOldPen);
-					}
-					if (m_HeatWrite[a + 3])
-					{
-						CPen p(PS_SOLID, 2, RGB(0, 0, m_HeatWrite[a + 3]));
-						CPen* pOldPen = pDC->SelectObject(&p);
-						pDC->MoveTo(r.left + HEXDISTANCEX * 10, r.bottom - 2);
-						pDC->LineTo(r.left + HEXDISTANCEX * 11, r.bottom - 2);
-						pDC->SelectObject(pOldPen);
-					}
-					a += (op) ? 4 : 2;
-				}
-				else {
-					a += 1;
-				}
+				a=OnDrawDisasm(pDC, r, a);
 			}
 		}
 	}

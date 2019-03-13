@@ -9,6 +9,8 @@
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
+#include "CSimulator.h"
+#include "idebDoc.h"
 
 static const TCHAR *gAsmMnemonics[17] =
 { _T("mvi a,"),_T("sta"),_T("lda"),_T("ad0"),_T("ad1"),_T("adc"),_T("nand"),_T("nor"),_T("rrm"),_T("jmp"),_T("jc "),_T("jnc"),_T("jz "),_T("jnz"),_T("jm "),_T("jp "),_T("INVALID") };
@@ -62,8 +64,7 @@ void CAsmView::UpdateScollbars() {
 	int maxlines = GetDocument()->m_lines.GetCount();
 	SetScrollRange(SB_VERT, 0, maxlines);
 }
-#include "CSimulator.h"
-#include "idebDoc.h"
+
 void CAsmView::OnDraw(CDC* pDC)
 {
 	CScrollBar* pSV = GetScrollBarCtrl(SB_VERT);
@@ -99,14 +100,16 @@ void CAsmView::OnDraw(CDC* pDC)
 	m_DCTmp.SelectObject(&m_FontMonospace);
 	TEXTMETRIC tm;
 	m_DCTmp.GetTextMetrics(&tm);
+
 	COLORREF crBlack = 0; 
-	CBrush bWhite(RGB(0xff, 0xff, 0xff));
-	CBrush brCursorBk(RGB(0xf0, 0xf0, 0xf0));
-	CBrush brProgramCounter(RGB(0xff, 0xdf, 0xdf));
-	CBrush brBrakepointAreaBk(RGB(0xff, 0xfd, 0xfd));
-	CBrush brLineNrAreaBk(RGB(0xf0, 0xff, 0xf0));
-	CBrush brWarningAreaBk(RGB(0xef, 0xef, 0xef));
-	CBrush brDisAsmAreaBk(RGB(0xd0, 0xd0, 0xd0));
+	COLORREF crLineNrText = RGB(0x60, 0x90, 0x60);
+	COLORREF crCursorBk = RGB(0xf0, 0xf0, 0xf0);
+	COLORREF crTextAreaBk = RGB(0xff, 0xff, 0xff);
+	COLORREF crLineNrAreaBk = RGB(0xf0, 0xff, 0xf0);
+	COLORREF crDisAsmAreaBk = RGB(0xd0, 0xd0, 0xd0);
+	COLORREF crProgramCounter = RGB(0xff, 0xdf, 0xdf);
+	COLORREF crBrakepointAreaBk = RGB(0xff, 0xfd, 0xfd);
+	COLORREF crWarningAreaBk = RGB(0xef, 0xef, 0xef);
 
 	m_DCTmp.SetBkMode(TRANSPARENT);
 	LONG n = pDoc->m_lines.GetCount();
@@ -126,7 +129,7 @@ void CAsmView::OnDraw(CDC* pDC)
 		firstX += 16;
 		tr.top = 0; tr.bottom = r.bottom;
 		tr.left = 0; tr.right = 16;
-		m_DCTmp.FillRect(&tr, &brBrakepointAreaBk);
+		m_DCTmp.FillSolidRect(&tr, crBrakepointAreaBk);
 	}
 	if (m_DisAsmAreaVisible) {
 		firstXDisAsm = firstX;
@@ -134,7 +137,7 @@ void CAsmView::OnDraw(CDC* pDC)
 		lastXDisAsm = firstX;
 		tr.top = 0; tr.bottom = r.bottom;
 		tr.left = firstXDisAsm; tr.right = lastXDisAsm;
-		m_DCTmp.FillRect(&tr, &brDisAsmAreaBk);
+		m_DCTmp.FillSolidRect(&tr, crDisAsmAreaBk);
 	}
 	int linesInFile = pDoc->m_lines.GetCount();
 	if (m_LineNrAreaVisible) {
@@ -142,18 +145,19 @@ void CAsmView::OnDraw(CDC* pDC)
 		lastXLineNr = firstX += tm.tmAveCharWidth* (log10(linesInFile)+1);
 		tr.top = 0; tr.bottom = r.bottom;
 		tr.left = firstXLineNr; tr.right = lastXLineNr;
-		m_DCTmp.FillRect(&tr, &brLineNrAreaBk);
+		m_DCTmp.FillSolidRect(&tr, crLineNrAreaBk);
 	}
 	if (m_WarningAreaVisible) {
 		firstX += 16;
 		tr.top = 0; tr.bottom = r.bottom;
 		tr.left = lastXLineNr; tr.right = firstX;
-		m_DCTmp.FillRect(&tr, &brWarningAreaBk);
+		m_DCTmp.FillSolidRect(&tr, crWarningAreaBk);
 	}
 	m_FirstXPos = firstX;
 	tr.top = 0; tr.bottom = r.bottom;
 	tr.left = firstX; tr.right =r.right;
-	m_DCTmp.FillRect(&tr, &bWhite);
+	m_DCTmp.FillSolidRect(&tr, crTextAreaBk);
+
 	int DbgMemLocation = 0;
 	int pc = 0;
 	if (pSimulator) pc= pSimulator->GetPc();
@@ -166,21 +170,17 @@ void CAsmView::OnDraw(CDC* pDC)
 		if (m_DisAsmAreaVisible)
 		{
 			if (ld->memAddress < 0) {
-				//if (pSimulator) ld->memAddress = pSimulator->SearchLine(i);
+				//if (pSimulator) ld->memAddress = pSimulator->SearchLine(i); //No no nonono
 			}
 			if (ld->memAddress >= 0) {
 				if (pc == ld->memAddress) {
 					tr.left = 0; tr.right = r.right;
-					m_DCTmp.FillRect(&tr, &brProgramCounter);
+					m_DCTmp.FillSolidRect(&tr, crProgramCounter);
 				}
-				CString s;
-				CString disasm;
-				if(pSimulator) pSimulator->GetDisAsm(ld->memAddress, disasm);
-				else disasm = L"";
-				//s.Format(L"%03x: %s", ld->memAddress & 0xfff, disasm);
-				s = disasm;
-				tr.left = firstXDisAsm; tr.right = lastXDisAsm;
-				m_DCTmp.DrawText(s, tr, DT_LEFT);
+				if (pSimulator) {
+					tr.left = firstXDisAsm; tr.right = lastXDisAsm;
+					pSimulator->OnDrawDisasm(&m_DCTmp, tr, ld->memAddress);
+				}
 			}
 		}
 		if (ld->memAddress >= 0)
@@ -197,12 +197,12 @@ void CAsmView::OnDraw(CDC* pDC)
 			CString s;
 			s.Format(L"%d", ld->number);
 			tr.left = firstXLineNr; tr.right = lastXLineNr;
+			m_DCTmp.SetTextColor(crLineNrText);
 			m_DCTmp.DrawText(s, tr, DT_RIGHT);
 		}
 		if (m_CurY == i) {
 			tr.left = firstX; tr.right = r.right;
-			//m_DCTmp.FillSolidRect()
-			m_DCTmp.FillRect(&tr, &brCursorBk);
+			m_DCTmp.FillSolidRect(&tr, crCursorBk);
 		}
 		int nTokens = ld->tokens.GetCount();
 		if (nTokens) {
