@@ -1152,6 +1152,11 @@ void CSimulator::LoadBinToMemory()
 		if (!f.Open(s.GetBuffer(), CFile::modeRead | CFile::typeBinary, &e)) // CFile::modeCreate | CFile::modeWrite, &e))
 		{
 			TRACE(_T("File could not be opened %d\n"), e.m_cause);
+			CString err;
+			err.Format(L"File not found:%s", s);
+			COutputWnd* ow = ((CMainFrame*)AfxGetMainWnd())->GetOutputWnd();
+			ow->FillBuildWindow(err);
+			return;
 		}
 		if (f.GetStatus(status))
 		{
