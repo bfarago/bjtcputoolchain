@@ -1106,6 +1106,8 @@ First step, It loads the .bin file to the operative memory of the simulator.
 Then, it tries to open the .dbg file as well.
 TODO: add more informations to the .dbg file, like: compiler warnings and additional symbole related things.
 */
+#include "MainFrm.h"
+#include "OutputWnd.h"
 void CSimulator::LoadBinToMemory()
 {
 	if (!m_pDoc) return;
@@ -1116,11 +1118,17 @@ void CSimulator::LoadBinToMemory()
 	s.Format(L"%s%s", m_pDoc->m_AsmbDirOut, m_pDoc->m_SimTargetBinFileName);
 	CFile f;
 	CFileException e;
-	TCHAR* pszFileName = s.GetBuffer();
+	TCHAR*  pszFileName  = s.GetBuffer();
 	if (!f.Open(pszFileName,CFile::modeRead| CFile::typeBinary, &e)) // CFile::modeCreate | CFile::modeWrite, &e))
 	{
+		CString err;
 		TRACE(_T("File could not be opened %d\n"), e.m_cause);
+		COutputWnd* ow = ((CMainFrame*)AfxGetMainWnd())->GetOutputWnd();
+		err.Format(L"File not found: %s", pszFileName);
+		ow->FillBuildWindow(err);
+		return;
 	}
+
 	m_MemorySizeLoaded = f.Read((void*)m_Memory, SIM_MAXMEMORYSIZE);
 	CFileStatus status;
 	if (f.GetStatus(status))
