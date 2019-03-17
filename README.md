@@ -56,3 +56,6 @@ Planned...  The goal is to be able to download the binary to real hw, and able t
 ![fpga model](doc/se1.png?raw=true "emulator")
  
 2) as a microcontroller based device.
+
+3) raspberry
+![fpga model](doc/ssrpi1.png?raw=true "simulator")
