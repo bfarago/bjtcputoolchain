@@ -11,6 +11,10 @@
 #include "util.h"
 #include "config.h"
 #include "intrep.h"
+#include <sys/stat.h>
+
+struct stat g_filestat_bin;
+//struct stat g_filestat_asm;
 
 Std_ReturnType gen_bin(asmb_config_t *asmb_config, int maxaddress, char* memory)
 {
@@ -38,6 +42,7 @@ Std_ReturnType gen_bin(asmb_config_t *asmb_config, int maxaddress, char* memory)
 		}
 		fwrite(memory, 1, maxaddress, f);
 		fclose(f);
+		stat(pfname, &g_filestat_bin);
 	}
 	return ret;
 }
@@ -90,16 +95,24 @@ typedef enum {
 	DF_VERSION,
 	DF_NAME,
 	DF_FNAME_BIN,
+	DF_TIME_BIN,
 	DF_FNAME_ASM,
+	DF_TIME_ASM,
 	DF_SYM,
-	DF_LINES,
-	DF_MEMTYPES
+	DF_LINES,//obsolate
+	DF_MEMTYPES, //obsolate
+	DF_SECTIONNAME,
+	DF_MEMORYMETA
 } tDbgFileBlockId;
 
 typedef struct {
 	unsigned int value;
 	unsigned int lineno;
+	unsigned short fileId;
 	unsigned char memtype;
+	unsigned char sectionid;
+	unsigned char symtype;
+	unsigned char symcontexts;
 	unsigned char len;
 	unsigned char name[MAXSYMBOLENAME];
 }tDbgFileSymbol;
@@ -118,6 +131,10 @@ Std_ReturnType gen_dbg(asmb_config_t *asmb_config)
 	Std_ReturnType ret = E_OK;
 	if (!asmb_config->enable_dbg) return ret;
 	if (asmb_config->name_o) {
+		//stat(asmb_config->fname_in, &g_filestat_asm);
+		__time64_t timeBin = g_filestat_bin.st_mtime;
+		//__time64_t timeAsm = g_filestat_asm.st_mtime;
+
 		FILE *f;
 		size_t len;
 		char b[MAXFNAMELEN];
@@ -132,22 +149,47 @@ Std_ReturnType gen_dbg(asmb_config_t *asmb_config)
 		dbgfile_wr(f, DF_VERSION, &v, 4);
 		dbgfile_wr(f, DF_NAME, asmb_config->name_o, strlen(asmb_config->name_o));
 		dbgfile_wr(f, DF_FNAME_BIN, asmb_config->fname_out_bin, strlen(asmb_config->fname_out_bin));
-		dbgfile_wr(f, DF_FNAME_ASM, asmb_config->fname_in, strlen(asmb_config->fname_in));
+		dbgfile_wr(f, DF_TIME_BIN, &timeBin, sizeof(timeBin));
+
+		int n = include_get_max();
+		for (int i = 0; i < n; i++) {
+			const char* fn = include_get(i); //asmb_config->fname_in and includes...
+			struct stat filestat;
+			stat(fn, &filestat);
+			__time64_t timeFile = filestat.st_mtime;
+			dbgfile_wr(f, DF_FNAME_ASM, fn, strlen(fn));
+			dbgfile_wr(f, DF_TIME_ASM, &timeFile, sizeof(timeFile));
+		}
+		
+		len = getMemorySectionNumbers();
+		for (unsigned int i = 0; i < len; i++) {
+			const char* name = getMemorySectionName(i);
+			dbgfile_wr(f, DF_SECTIONNAME, name, strlen(name) );
+		}
 		len = SymbolLength();
 		for (unsigned int i = 0; i < len; i++) {
 			tDbgFileSymbol sym;
-			
 			sym.value = SymbolValueByIndex(i);
-			sym.memtype = getMemoryType(sym.value);
-			sym.lineno = getMemoryLineNo(sym.value);
+			memoryMetaData_t* meta = getMemoryMeta(sym.value);
+			sym.memtype = meta->sectionType;  //getMemoryType(sym.value); // quasi mem section type
+			sym.sectionid = meta->sectionId; //getMemorySectionId(sym.value);
+			sym.symtype = getSymbolType(i);	//where was definied
+			sym.symcontexts = getSymbolContexts(i);
+			sym.fileId = meta->fileId;
+			sym.lineno = meta->line;  //getMemoryLineNo(sym.value);
+
 			const char* s = SymbolByIndex(i);
 			sym.len = strlen(s);
 			for (int j = 0; j < sym.len; j++) sym.name[j] = s[j];
 			
-			dbgfile_wr(f, DF_SYM, &sym, 5+ sym.len);
+			dbgfile_wr(f, DF_SYM, &sym, sizeof (tDbgFileSymbol ) - MAXSYMBOLENAME + sym.len);
 		}
-		dbgfile_wr(f, DF_LINES, lines, MAXMEMORY*4);
-		dbgfile_wr(f, DF_MEMTYPES, memoryTypes, MAXMEMORY * 4);
+#ifdef OBSOLATE_ENABLED
+		//dbgfile_wr(f, DF_LINES, lines, MAXMEMORY*4);
+		//dbgfile_wr(f, DF_MEMTYPES, memoryTypes, MAXMEMORY * 4);
+#endif
+
+		dbgfile_wr(f, DF_MEMORYMETA, memoryMeta, MAXMEMORY * sizeof(memoryMetaData_t));
 	}
 	return ret;
 }

@@ -46,8 +46,9 @@ Std_ReturnType gen_lst(asmb_config_t *asmb_config, int maxaddress, char* memory)
 		char buflst[BUFLEN];
 		char bufcom[BUFLEN];
 		for (i = 0; i < maxaddress; i++) {
+			memoryMetaData_t* meta = &memoryMeta[i];
 			int m = memory[i];
-			if (MT_data == memoryTypes[i]) {
+			if (MT_data == meta->sectionType) {
 				cols += snprintf(buflst + cols, BUFLEN - cols, "%03x  %x", i, m);
 			}
 			else {
@@ -87,11 +88,11 @@ Std_ReturnType gen_lst(asmb_config_t *asmb_config, int maxaddress, char* memory)
 					break;
 				}
 			}
-			while (fin_line <= lines[i]) {
+			while (fin_line <= meta->line) {
 
 				if (!feof(fin)) {
 					int colscom = 0;
-					if (fin_line == lines[i]) {
+					if (fin_line == meta->line) {
 						strncpy(bufcom, buflst, BUFLEN);
 						colscom = cols;
 						cols = 0;

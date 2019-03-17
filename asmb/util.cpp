@@ -3,13 +3,23 @@
 #include <string.h>
 #include <vector>
 
+#include "intrep.h"
+
 using std::vector;
 
 FILE* g_err_file = stdout;
 
+//asmb debug and verbosity classes
 static vector<const char*> debugKeys;
+
+//Internal representation of the symbols
 static vector<const char*> symbols;
 static vector<int> symbolValues;
+static vector<SType_e> symbolTypes;
+static vector<SContexts_t> symbolContext;
+static vector<const char*> sections;
+static vector<const char*> includes;
+
 static const int UTIL_BUFFERSIZE = 2048;
 
 int address = 0;
@@ -19,7 +29,7 @@ relocType_en actualRelocType = RT_OP4_12;
 static vector<const char*> reloc;
 static vector<int> relocAddress;
 static vector<relocType_en> relocType;
-
+static vector<SType_e> relocContext;
 
 static vector<GType_s> gStack;
 void stackPush(int t, const YYSTYPE* s) {
@@ -44,7 +54,7 @@ int ruleExp[] =
 	T_IntConstant, T_Void
 };
 
-int parse_exp(int t, GType_s* res) {
+int parse_exp(int t, GType_s* res, SType_e* pContext) {
 	int r = 0;
 	//int lval = 0;
 	//int op = 0;
@@ -63,7 +73,7 @@ int parse_exp(int t, GType_s* res) {
 			break;
 		case T_Identifier:
 			t = T_IntConstant; //rewrire
-			yylval.integerConstant = getSymbol(yylval.identifier);
+			yylval.integerConstant = getSymbol(yylval.identifier, pContext);
 			stackPush(t, &yylval);
 			break;
 		case T_IntConstant:
@@ -291,9 +301,10 @@ Std_ReturnType ParseCommandLine(int argc, char *argv[], asmb_config_t* cfg) {
 	}
 	if (cfg->enable_err) {
 		static char s[255];
-		sprintf(s, "%s.log", cfg->name_o);
+		sprintf_s(s, "%s.log", cfg->name_o);
 		cfg->fname_err = s; // todo: check if this is needed  really
-		g_err_file = fopen(s, "w+");
+		// g_err_file = fopen(s, "w+");
+		fopen_s(&g_err_file, s, "w+");
 		//this would be fine on unix,linux
 		freopen(s, "a+", stderr);
 		freopen(s, "a+", stdout); // not works with new windows crt lib
@@ -314,7 +325,12 @@ const char* SymbolByIndex(size_t index) {
 int SymbolValueByIndex(size_t index) {
 	return symbolValues[index];
 }
-
+SType_e getSymbolType(int index) {
+	return symbolTypes[index];
+}
+SContexts_t getSymbolContexts(int index) {
+	return symbolContext[index];
+}
 /*
 size_t RelocLength() {
 	return reloc.size();
@@ -328,25 +344,29 @@ int searchSymbol(const char *key) {
 
 	return -1;
 }
-void addReloc(const char* name, int addr, relocType_en rt) {
+void addReloc(const char* name, int addr, relocType_en rt, SType_e* pContext) {
 	reloc.push_back(UTIL_STRDUP(name));
 	relocAddress.push_back(addr);
 	relocType.push_back(rt);
+	relocContext.push_back(*pContext);
 }
 size_t getRelocs() {
 	return reloc.size();
 }
-int getReloc(int index, const char**name, int* adr, relocType_en* rt) {
+int getReloc(int index, const char**name, int* adr, relocType_en* rt, SType_e* pContext) {
 	*name = reloc[index];
 	*adr = relocAddress[index];
 	*rt = relocType[index];
+	*pContext = relocContext[index];
 	return 1;
 }
-void setSymbol(const char* name, int value) {
+void setSymbol(const char* name, int value, SType_e symbolType) {
 	int index = searchSymbol(name);
 	if (-1 == index) {
 		symbols.push_back(name);
 		symbolValues.push_back(value);
+		symbolTypes.push_back(symbolType);
+		symbolContext.push_back(1 << symbolType);
 	}else {
 		Failure("Symbol already declared");
 	}
@@ -354,11 +374,91 @@ void setSymbol(const char* name, int value) {
 void setRelocType(relocType_en rt) {
 	actualRelocType = rt;
 }
-int getSymbol(const char* name) {
+int getSymbol(const char* name, SType_e* pContext) {
 	int index = searchSymbol(name);
 	if (index < 0) {
-		addReloc(name, address, actualRelocType);
+		addReloc(name, address, actualRelocType, pContext);
 		return 0; //this will be added to resolved value at pass2, relocation.
 	}
+	symbolContext[index] |= 1 << *pContext;
 	return symbolValues[index];
+}
+int getMemorySectionNumbers() {
+	return sections.size();
+}
+const char* getMemorySectionName(int index) {
+	return sections[index];
+}
+void checkSection(char* secName) {
+	if (
+		(0 != strstr(secName, "code")) ||
+		(0 != strstr(secName, "text"))
+		)
+	{
+		sectionType = MT_code;
+	}
+	else {
+		sectionType = MT_data;
+	}
+	for (int i = 0; i < sections.size(); i++) {
+		if (strcmp(sections[i], secName) == 0) {
+			sectionId = i;
+			return;
+		}
+	}
+	//new section
+	sectionId = (int)sections.size();
+	sections.push_back(strdup(secName));
+}
+static int g_include_actual = 0;
+static vector<int> g_include_stack;		// fileId
+static vector<int> g_include_stack_line; // line nr yylinenr
+
+int include_actual_get()
+{
+	return g_include_actual;
+}
+int include_get_max() {
+	return includes.size();
+}
+const char* include_get(int index) {
+	return includes[index];
+}
+int include_search(const char* fname) {
+	int n = includes.size();
+	if (n < 1) return -1;
+	for (int i = 0; i < n; i++)
+	{
+		const char* a = includes[i];
+		if (0 == strcmp(a, fname)) {
+			return i;
+		}
+	}
+	return -2;
+}
+
+void include_add(const char* fname) {
+	int index = include_search(fname);
+	if (index < 0) {
+		//add it, this is the first appeareance
+		const char* fn = strdup(fname);
+		includes.push_back(fn);
+		index = includes.size()-1; // I hope :), this is the index.
+	}
+	g_include_stack.push_back(index);
+	g_include_stack_line.push_back(yylineno);
+	yylineno = 1;
+	g_include_actual = index;//g_include_stack.back();
+}
+
+void include_eof() {
+	g_include_stack.pop_back();
+	if (g_include_stack.size()) {
+		g_include_actual = g_include_stack.back(); //get previous;
+		yylineno= g_include_stack_line.back();
+	}
+	else {
+		g_include_actual = 0;
+	}
+	
 }

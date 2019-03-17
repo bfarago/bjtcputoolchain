@@ -4,6 +4,7 @@ class CidebDoc;
 class CSimulator;
 class CWorkspace;
 class CWorkspaceView;
+class CWorkspaceEvent;
 
 class CWorkspaceSingleton {
 public:
@@ -22,9 +23,7 @@ public:
 	virtual CStringArray* GetAsmFileList() = 0;
 	virtual const CString& GetTargetBinFileName()const = 0;
 	virtual void SetTargetBinFileName(const CString& s) = 0;
-	inline CidebDoc* GetProjectDocument(){
-			return reinterpret_cast<CidebDoc*>(this);
-	};
+	virtual CidebDoc* GetProjectDocument() = 0;
 	virtual CSimulator* GetSimulator() = 0;
 	virtual const CString& GetProjectName() = 0;
 	virtual void SetProjectName(const CString& s) = 0;
@@ -36,6 +35,8 @@ public:
 	virtual void RegisterView(CWorkspaceView* pV);
 	virtual void UnRegisterView(CWorkspaceView* pV);
 	virtual void Update();
+	virtual BOOL SendEvent(CWorkspaceEvent* pEvent, BOOL bBroadcast=TRUE);
+	virtual BOOL OnWorkspaceEvent(CWorkspaceEvent* pEvent) { return FALSE; }
 protected:
 	CArray<CWorkspaceView*> m_Views;
 };

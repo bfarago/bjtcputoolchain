@@ -50,3 +50,17 @@ void CWorkspace::Update()
 		pV->OnWorkspaceUpdate();
 	}
 }
+
+BOOL CWorkspace::SendEvent(CWorkspaceEvent * pEvent, BOOL bBroadcast)
+{
+	BOOL handled = FALSE;
+	OnWorkspaceEvent(pEvent);
+	for (int i = 0; i < m_Views.GetCount(); i++) {
+		CWorkspaceView* pV = m_Views.GetAt(i);
+		if (pV->OnWorkspaceEvent(pEvent)) {
+			handled = TRUE;
+			if (!bBroadcast)  break;
+		}
+	}
+	return handled;
+}

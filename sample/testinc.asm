@@ -7,3 +7,6 @@ uart_in0    equ uart_base+2
 uart_in1    equ uart_base+3
 
 	jmp $+4
+	jmp $+4
+	jmp $+4
+	jmp $+4

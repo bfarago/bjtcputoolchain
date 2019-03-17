@@ -1,22 +1,42 @@
+/** @file simulator.cpp
+*
+* @brief CSimulator model/controller implementation
+*
+* @par
+* COPYRIGHT NOTICE: (c) 2018 Barna Farago.  All rights reserved.
+*/
 #include "stdafx.h"
 #include "CSimulator.h"
 #include "idebdoc.h"
 
 #include "Resource.h"
 
-#define STARTX 16
-#define STARTY 16
-#define DISTANCEX 16
+//this defines are obsolate, will be removed soon
+#define OLD_TEXT_STARTX 16
+#define OLD_TEXT_STARTY 16
+#define OLD_TEXT_DISTANCEX 16
+
+//this defines used by OnDraw related codes
 #define DISTANCEY 16
 #define HEXDISTANCEX 8
 #define HEXDISTANCEY 17
 
+//these defines are used by simulated screen drawer code
+#define BM_SRT_Y (40) // start y (top) on the window
+#define BM_SRT_X (50) // start x (left) on the window
+#define BM_OFS_Y (13) // original height of a character in the bitmap in pixels
+#define BM_OFS_X (13) // original width of a character in the bitmap in pixels
+
+//textual representation of each instructions.
 static const TCHAR *gMnemonics[17] =
 { _T("mvi a,"),_T("sta"),_T("lda"),_T("ad0"),_T("ad1"),_T("adc"),_T("nand"),_T("nor"),_T("rrm"),_T("jmp"),_T("jc "),_T("jnc"),_T("jz "),_T("jnz"),_T("jm "),_T("jp "),_T("INVALID")};
 
+//textual representation of each internal states of the clock accurate simulator
 static const TCHAR *gSimStates[9] =
 { _T("Halt     "), _T("FetchOp  "), _T("FetchImm0"), _T("FetchImm1"), _T("FetchImm2"),
   _T("Decode   "), _T("Load     "), _T("Alu      "), _T("Store    ") };
+
+//CPU peripheral addresses
 enum {
 	ADDR_ARR =0xc00,
 	ADDR_RND,
@@ -40,14 +60,20 @@ cord_y	equ 3077
 ch_h	equ 3078
 ch_l	equ 3079
 */
+
+//SimScreen type: holds the all internal states of the video card.
 typedef struct {
 	char x, y;
 	char ch0, ch1;
 	unsigned char buf[16][16];
 	TCHAR fakeChar;
 } SimScreen_t;
+
+//SimScreen global singleton. Todo: move to class if we wana run multiple instances...
 SimScreen_t SimScreen;
 
+/**SimCode2Ascii global array to resolve the simulated video card character generator charset.
+*/
 TCHAR SimCode2Ascii[257] = _T(
 	"0123456789ABCDEF" // 0
 	"GHIJKLMNOPQRSTUV" // 1
@@ -66,6 +92,9 @@ TCHAR SimCode2Ascii[257] = _T(
 	"                " // e
 	"               ." // f
 );
+
+/**CSimulator constructor
+*/
 CSimulator::CSimulator()
 	:m_pDoc(0), m_MemorySizeLoaded(0), m_Pc(0),m_CpuHz(SIM_HZ),m_Time(0), m_ClockCount(0), m_State(ss_Halt),
 	m_UartFromCpuWr(0), m_CpuSnapshot_p(0), m_Stop(FALSE), m_DisplayMeasurement(TRUE), m_DisplayMemory(TRUE), m_DisplayDebugMonitor(TRUE),
@@ -83,6 +112,10 @@ CSimulator::CSimulator()
 		m_HeatWrite[i] = 0;
 		m_Memory[i] = 0;
 		m_Break[i] = 0;
+		m_MemoryMeta[i].sectionId = 0;
+		m_MemoryMeta[i].fileId = 0;
+		m_MemoryMeta[i].line = 0;
+		m_MemoryMeta[i].sectionType = MT_code;
 	}
 	m_CpuSnapshot_p = &m_CpuSnapshot; //TODO: implement a debug timeline possibility later
 	m_CpuSnapshot.op = 16;
@@ -127,29 +160,27 @@ inline void CSimulator::AddressBusDrive(SimAddress_t addr) {
 	m_CpuSnapshot_p->addr = addr;
 }
 
+//OnDrawHexDump: View part of the monitor functionality. Displays memory contents.
 int CSimulator::OnDrawHexDump(CDC* pDC, SimAddress_t aBegin, SimAddress_t aEnd, int sx, int sy) {
 	CRect r;
 	int y = sy;
 	TCHAR b[2];
 	b[1] = 0;
-
 	for (int i = aBegin; i < aEnd; i++) {
 		int offs = i - aBegin;
 		int x = offs & 0x3f;
-		y = (offs >> 6)+sy;
+		y = (offs >> 6) + sy;
 		COLORREF cBk = 0; 
-		if (m_Break[i])cBk= RGB(0xc0, 0, 0);
-		//COLORREF cBk = RGB(m_HeatPc[i], 0, 0); // m_HeatWrite[i]);
-		pDC->SetBkColor(cBk);
-		/*if (m_HeatPc[i] > 16) {
-			pDC->SetTextColor(RGB(255-m_HeatPc[i], 0x00, 0x00));
-		}
-		else
-		*/
+		
+		if (pDC->IsPrinting())
 		{
-			//unsigned char ct = m_HeatPc[i] > 128 ? 0x00 : 0xff;
-			//unsigned char ct = 0xff;
-			//pDC->SetTextColor(RGB(ct, ct, ct));
+			cBk = RGB(0xff, 0xff, 0xff);
+			pDC->SetBkColor(cBk);
+			pDC->SetTextColor(0);
+		}else
+		{
+			if (m_Break[i])cBk = RGB(0xc0, 0, 0);
+			pDC->SetBkColor(cBk);
 			pDC->SetTextColor(cBk ^ 0xffffff);
 		}
 		r.top = 2 + y * HEXDISTANCEY;
@@ -215,13 +246,17 @@ int CSimulator::OnDrawHexDump(CDC* pDC, SimAddress_t aBegin, SimAddress_t aEnd, 
 	}
 	return y;
 }
+
+/**OnDrawDisasm: View part of the monitor functionality, displays the disassembled list of a specific
+memory location. It is used from different perspectives, like project view and asm view classes. */
 SimAddress_t CSimulator::OnDrawDisasm(CDC* pDC, CRect& r, SimAddress_t a)
 {
 	CString s;
 	char op = m_Memory[a];
+	memoryMetaData_t* meta = &m_MemoryMeta[a];
 	memoryType_t mt = MT_code;
 	if (m_DbgFileLoaded) {
-		mt = m_MemoryType[a];
+		mt = meta->sectionType; //m_MemoryType[a];
 	}
 	if (MT_code == mt) {
 		short operand = m_Memory[a + 1];
@@ -275,6 +310,9 @@ SimAddress_t CSimulator::OnDrawDisasm(CDC* pDC, CRect& r, SimAddress_t a)
 	}
 	return a;
 }
+/**OnDraw: View part of the simulator, display the monitor functionality, like:
+screen, memory map, disasm list. This blocks visibility are switchable by member variables.
+*/
 void CSimulator::OnDraw(CDC* pDC, int mode) {
 	CRect r;
 	int sy = 0;
@@ -307,23 +345,22 @@ void CSimulator::OnDraw(CDC* pDC, int mode) {
 	TCHAR b[2];
 	b[1] = 0;
 	if (0) {
+		//This section is obsolate now. Draw textual view of the screen.
 		for (int y = 0; y < 16; y++) {
-			r.top = STARTY + y * DISTANCEY;
+			r.top = OLD_TEXT_STARTY + y * DISTANCEY;
 			r.bottom = r.top + DISTANCEY;
 			for (int x = 0; x < 16; x++) {
 				unsigned char code = SimScreen.buf[x][y];
-				r.left = STARTX + x * DISTANCEX;
-				r.right = r.left + DISTANCEX;
+				r.left = OLD_TEXT_STARTX + x * OLD_TEXT_DISTANCEX;
+				r.right = r.left + OLD_TEXT_DISTANCEX;
 				b[0] = SimCode2Ascii[code];
 				pDC->DrawTextW(b, &r, DT_TOP);
 			}
 		}
 	}
-#define BM_SRT_Y (40)
-#define BM_SRT_X (50)
-#define BM_OFS_Y (13)
-#define BM_OFS_X (13)
+
 	if (1) {
+		//This is the only used implementation of the screen emulator view part.
 		for (int y = 0; y < 16; y++) {
 			r.top = BM_SRT_Y + y * BM_OFS_Y;
 			r.bottom = r.top + BM_OFS_Y;
@@ -343,21 +380,25 @@ void CSimulator::OnDraw(CDC* pDC, int mode) {
 		r.right = r.left + (4+64)*HEXDISTANCEX+10;
 		r.top = 15;
 		r.bottom = r.top + (m_MemorySizeLoaded/64+2)*HEXDISTANCEY;
-		if (!dmcount) {
-			m_DCTmp.CreateCompatibleDC(pDC);
-			CPalette* pPalette = pDC->GetCurrentPalette();
-			m_BitmapTmp.CreateCompatibleBitmap(pDC, r.Width(), r.Height());
-			m_DCTmp.SelectObject(&m_BitmapTmp);
-			m_DCTmp.SelectObject(&m_FontMonospace);
-			sy = OnDrawHexDump(&m_DCTmp, 0, m_MemorySizeLoaded, 0, sy) + 1;
-			sy = OnDrawHexDump(&m_DCTmp, ADDR_ARR, ADDR_PERIPH_MAX, 0, sy) + 1;
+		if (pDC->IsPrinting()) {
+			sy = OnDrawHexDump(pDC, 0, m_MemorySizeLoaded, r.left, 1) + 1;
+			sy = OnDrawHexDump(pDC, ADDR_ARR, ADDR_PERIPH_MAX, r.left, sy) + 1;
 		}
-		pDC->BitBlt(r.left, r.top, r.Width(), r.Height(), &m_DCTmp, 0, 0, SRCCOPY);
-		dmcount++;
-		dmcount &= 3;
-		if (!dmcount) {
-			m_DCTmp.DeleteDC();
-			m_BitmapTmp.DeleteObject();
+		else {
+			if (!dmcount) {
+				m_DCTmp.CreateCompatibleDC(pDC);
+				CPalette* pPalette = pDC->GetCurrentPalette();
+				m_BitmapTmp.CreateCompatibleBitmap(pDC, r.Width(), r.Height());
+				m_DCTmp.SelectObject(&m_BitmapTmp);
+				m_DCTmp.SelectObject(&m_FontMonospace);
+				sy = OnDrawHexDump(&m_DCTmp, 0, m_MemorySizeLoaded, 0, sy) + 1;
+				sy = OnDrawHexDump(&m_DCTmp, ADDR_ARR, ADDR_PERIPH_MAX, 0, sy) + 1;
+			}
+			pDC->BitBlt(r.left, r.top, r.Width(), r.Height(), &m_DCTmp, 0, 0, SRCCOPY);
+			if (!dmcount) {
+				m_DCTmp.DeleteDC();
+				m_BitmapTmp.DeleteObject();
+			}
 		}
 		
 	}
@@ -380,7 +421,7 @@ void CSimulator::OnDraw(CDC* pDC, int mode) {
 		pDC->DrawTextW(s, &r, DT_TOP);
 		if (m_Time > 0) {
 			r.top += 15; r.bottom += 15;
-			int n = m_ClockCount / m_Time;
+			int n = (int)(m_ClockCount / m_Time);
 			s.Format(_T("MHz:%3.3f Instr/sec:%d"),
 				4*n/1000000.0, n);
 			pDC->DrawTextW(s, &r, DT_TOP);
@@ -397,7 +438,8 @@ void CSimulator::OnDraw(CDC* pDC, int mode) {
 			s.Format(_T("Tick: %08dus Time: %03.6fs"),
 				m_ClockCount, m_Time);
 			pDC->DrawTextW(s, &r, DT_TOP);
-		}//else
+		}
+
 		if (m_CpuSnapshot_p) {
 			CString s;
 			char op = m_Memory[m_Pc]; //m_CpuSnapshot_p->op;
@@ -421,11 +463,25 @@ void CSimulator::OnDraw(CDC* pDC, int mode) {
 					st, gSimStates[m_State], gMnemonics[op], operand);
 			}
 			else {
-				s.Format(_T("Tick: %08dus Time: %03.6fs PC: %03x Acc: %x +%d Op: %s 0x%x"),
+				memoryMetaData_t* pMeta = GetMemoryMetaData(m_Pc);
+				CString sSection;
+				CString sFile;
+				if (m_Sections.GetSize() > pMeta->sectionId) {
+					sSection= m_Sections[pMeta->sectionId];
+				}
+				if (m_pDoc)
+				if (m_pDoc->m_AsmFiles.GetSize() > pMeta->fileId) {
+					sFile = m_pDoc->m_AsmFiles[pMeta->fileId];
+				}
+				int line = pMeta->line -1; //todo: asnb line wrong
+				s.Format(_T("Tick: %08dus Time: %03.6fs PC: %03x Acc: %x +%d Op: %s 0x%x \t(%s) %s:%d"),
 					m_ClockCount, m_Time, m_Pc, m_CpuSnapshot_p->acc, m_CpuSnapshot_p->carry,
-					gMnemonics[op], operand);
+					gMnemonics[op], operand,
+					sSection, sFile, line
+					);
+
 			}
-			pDC->DrawTextW(s, &r, DT_TOP);
+			pDC->DrawTextW(s, &r, DT_TOP| DT_EXPANDTABS);
 			SimAddress_t a = m_Pc;
 			for (int row = 0; row < 32; row++) {
 				r.top = row * 16+16;
@@ -444,7 +500,7 @@ void CSimulator::OnDraw(CDC* pDC, int mode) {
 	ElapsedMicroseconds.QuadPart *= 1000000;
 	ElapsedMicroseconds.QuadPart /= Frequency.QuadPart;
 
-	m_DrawTimeActual = ElapsedMicroseconds.QuadPart;
+	m_DrawTimeActual = (int)ElapsedMicroseconds.QuadPart;
 	ProcessDrawMeasurement();
 
 
@@ -465,7 +521,11 @@ void CSimulator::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 }
 void CSimulator::OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
-	/*if (nChar == VK_UP) {
+	/*
+	//not used, better to acknowladge the keycode from cpu bus read operation, 
+	//rather than windows keyboard up event.
+	//Obviously a timeout will be also needed, if we want to base the keyup on this way...
+	if (nChar == VK_UP) {
 		m_Memory[ADDR_ARR] = 0;
 	}
 	if (nChar == VK_SPACE) {
@@ -572,35 +632,46 @@ inline BOOL CSimulator::OnPerifLoadStore(SimAddress_t addr, busDirection_t dir, 
 	}
 	return FALSE;
 }
+/**ProcessHeatMap:
+Call periodically to get the heat map aged.
+*/
 void CSimulator::ProcessHeatMaps() {
 	for (UINT i = 0; i < m_MemorySizeLoaded; i++) {
-		if (m_HeatRead[i]) m_HeatRead[i]--; //>>= 1; //--;
-		if (m_HeatWrite[i]) m_HeatWrite[i]--;// >>= 1; // --;
-		if (m_HeatPc[i]) m_HeatPc[i]--; //>>=1;
+		if (m_HeatRead[i]) m_HeatRead[i]--;
+		if (m_HeatWrite[i]) m_HeatWrite[i]--;
+		if (m_HeatPc[i]) m_HeatPc[i]--;
 	}
 	for (int i = ADDR_ARR; i < ADDR_PERIPH_MAX; i++) {
-		if (m_HeatRead[i]) m_HeatRead[i]--; //>>= 1; //--;
-		if (m_HeatWrite[i]) m_HeatWrite[i]--;// >>= 1; // --;
-		if (m_HeatPc[i]) m_HeatPc[i]--; //>>=1;
+		if (m_HeatRead[i]) m_HeatRead[i]--;
+		if (m_HeatWrite[i]) m_HeatWrite[i]--;
+		if (m_HeatPc[i]) m_HeatPc[i]--;
 	}
 }
 
+/**ProcessMeasurement: cyclic function of the measurement of the cpu simulation
+execution time.
+*/
 void CSimulator::ProcessMeasurement()
 {
 	if (m_ExecTimeActual < m_ExecTimeMin) m_ExecTimeMin = m_ExecTimeActual;
 	if (m_ExecTimeActual > m_ExecTimeMax) m_ExecTimeMax = m_ExecTimeActual;
 	m_ExecTimeSum += m_ExecTimeActual;
 	m_ExecTimeSum -= m_ExecTimeAvg;
-	m_ExecTimeAvg = m_ExecTimeSum >> 8;
+	m_ExecTimeAvg = (int)(m_ExecTimeSum >> 8);
 }
+
+/**ProcessDrawMeasurement: cyclic function of the measurement of the screen simulation
+execution time.
+*/
 void CSimulator::ProcessDrawMeasurement()
 {
 	if (m_DrawTimeActual < m_DrawTimeMin) m_DrawTimeMin = m_DrawTimeActual;
 	if (m_DrawTimeActual > m_DrawTimeMax) m_DrawTimeMax = m_DrawTimeActual;
 	m_DrawTimeSum += m_DrawTimeActual;
 	m_DrawTimeSum -= m_DrawTimeAvg;
-	m_DrawTimeAvg = m_DrawTimeSum >> 8;
+	m_DrawTimeAvg = (int)( m_DrawTimeSum >> 8);
 }
+
 void CSimulator::ResetMeasurement() {
 	m_ExecTimeMin = m_DrawTimeMin = 999999;
 	m_ExecTimeMax = 0;
@@ -610,24 +681,33 @@ void CSimulator::ResetMeasurement() {
 	m_DrawTimeAvg = m_DrawTimeActual;
 	m_DrawTimeSum = m_DrawTimeAvg << 8;
 }
-SimAddress_t CSimulator::SearchLine(int line)
+
+/**SearchLine: additional dbg file contains detailed informations, like
+original asm file source line numbers, which related to the binary content.
+This function iterates through the list, and return by the line number.
+*/
+SimAddress_t CSimulator::SearchLine(int line, int fileId)
 {
 	line += 1;
 	if (line < 0) line = 2; //TODO: bugfix in asmb ??
 	for (SimAddress_t i = 0; i < SIM_MAXMEMORYSIZE; i++) {
-		if (m_MemoryLine[i] == line) {
+		if ((m_MemoryMeta[i].line == line)
+			&& (m_MemoryMeta[i].fileId == fileId))
+		{
 			return i;
 		}
 	}
 	return SimAddress_t(-1);
 }
+
+//TODO: obsolate or can be used somewhere?
 BOOL CSimulator::GetDisAsm(SimAddress_t addr, CString & s)
 {
 	s = L"-";
 	char op = m_Memory[addr];
 	memoryType_t mt = MT_code;
 	if (m_DbgFileLoaded) {
-		mt = m_MemoryType[addr];
+		mt = m_MemoryMeta[addr].sectionType;
 	}
 	if (MT_code == mt) {
 		//m_DbgFileLoaded
@@ -646,6 +726,8 @@ BOOL CSimulator::GetDisAsm(SimAddress_t addr, CString & s)
 	else return FALSE;
 	return TRUE;
 }
+
+//DataBusRead: simulation of the cpu's data bus read.
 inline SimData_t CSimulator::DataBusRead()
 {
 	if (!m_CpuSnapshot_p) return 0;
@@ -661,6 +743,8 @@ inline SimData_t CSimulator::DataBusRead()
 	}
 	return  m_Memory[m_CpuSnapshot_p->addr];
 }
+
+//DataBusDrive: simulation of the cpu's data bus write (drive the bus).
 inline void CSimulator::DataBusDrive(SimData_t data)
 {
 	if (m_CpuSnapshot_p->addr > SIM_MAXMEMORYSIZE) {
@@ -676,15 +760,29 @@ inline void CSimulator::DataBusDrive(SimData_t data)
 	m_Memory[m_CpuSnapshot_p->addr] = data;
 }
 
+//AluSetAccumulator: simulation of the cpu's ALU operation, when Accumulator register will be written.
 inline void CSimulator::AluSetAccumulator(SimData_t data) {
 	m_CpuSnapshot_p->acc = data; //can be wider than 4 bit
 	m_CpuSnapshot_p->carry = (m_CpuSnapshot_p->acc >= 0x10) ? 1 : 0; //store carry
 	m_CpuSnapshot_p->acc &= 0x0f; //remove carry
 }
+memoryMetaData_t*  CSimulator::GetMemoryMetaData(SimAddress_t a) {
+	return &m_MemoryMeta[a];
+}
+int CSimulator::GetLine(SimAddress_t a)
+{
+	int l = m_MemoryMeta[a].line - 2;
+	if (l < 0) l = 0;
+	return l;
+}
+
+//BrakePC: brakes the cpu simulation, when PC reach the same location next time.
 void CSimulator::BrakePC(BOOL isSet)
 {
 	SetBrakePC(m_Pc);
 }
+
+//SetBrakePC: toggles the PC brakepoint on the specific address.
 BOOL CSimulator::SetBrakePC(SimAddress_t pc)
 {
 	if (!m_Break[pc] & 1) {
@@ -695,10 +793,14 @@ BOOL CSimulator::SetBrakePC(SimAddress_t pc)
 	}
 	return m_Break[pc];
 }
+
+//IsBreakPC: is it a PC breakpoint active on the specific address ?
 BOOL CSimulator::IsBreakPC(SimAddress_t pc) const
 {
 	return (m_Break[pc]) ? TRUE : FALSE;
 }
+
+//Step: Clock simulation step.
 BOOL CSimulator::Step()
 {
 	BOOL ret = TRUE;
@@ -821,7 +923,10 @@ BOOL CSimulator::Step()
 	return ret;
 }
 
+//RunQuick: not clock accurate, instruction simulation step. (vast faster)
 BOOL CSimulator::RunQuick() {
+	//if (!m_CpuSnapshot_p) m_CpuSnapshot_p = &m_CpuSnapshot;
+	ASSERT(m_CpuSnapshot_p);
 	m_ClockCount++;
 	m_Time += 1 / (double)m_CpuHz;
 	if (!(m_ClockCount%SIM_HEATMAP_PERIOD)) {
@@ -839,7 +944,8 @@ BOOL CSimulator::RunQuick() {
 	SimData_t op = m_Memory[m_Pc];
 	SimData_t data = m_Memory[m_Pc + 1];
 	SimAddress_t imm = data | (m_Memory[m_Pc + 2]<<4)| (m_Memory[m_Pc + 3]<<8);
-	SimData_t acc = m_CpuSnapshot_p->acc;
+	SimData_t acc = 0;
+	acc=m_CpuSnapshot_p->acc;
 	m_Pc += (op) ? 4 : 2;
 	if ((2 <= op)&&(op<=8))//lda..rrm
 	{
@@ -875,6 +981,18 @@ BOOL CSimulator::RunQuick() {
 	if (m_Break[m_Pc]) return FALSE;
 	return TRUE;
 }
+
+void CSimulator::ResetPeriph() {
+	//these are needed beacuase of the simulation doesn't release the keyboard...
+	m_Memory[ADDR_ARR] = 0;
+	m_Memory[ADDR_KEY1] = 0;
+	m_Memory[ADDR_KEY0] = 0;
+	//screen maybe also requres a reset, but it is not documented how the reset
+	//takes effect on the video card... So, we dont reset the screen now. 
+	//We reset only the simulator...
+}
+
+//Reset: resets the cpu simulator
 void CSimulator::Reset()
 {
 	m_Pc = 0;
@@ -884,8 +1002,10 @@ void CSimulator::Reset()
 	m_State = m_Stop? ss_Halt: ss_FetchOp;
 	ClearHeatMap();
 	ResetMeasurement();
+	ResetPeriph();
 }
 
+//ClearHeatMap: forget all of the heatmaps informations.
 void CSimulator::ClearHeatMap()
 {
 	for (int i = 0; i < SIM_MAXMEMORYSIZE; i++) {
@@ -895,6 +1015,7 @@ void CSimulator::ClearHeatMap()
 	}
 }
 
+//TODO: maybe obsolate
 void CSimulator::SetStop(BOOL isStop)
 {
 	m_Stop = isStop;
@@ -904,28 +1025,41 @@ void CSimulator::SetStop(BOOL isStop)
 	//TODO: halt vs stop
 	// m_State = m_Stop ? ss_Halt : ss_FetchOp;
 }
+////////////////////////////////////////////////////
+// Internal Representation file format
 //todo: separate to a lib > internal representation
+
+//tDbgFileBlockId enum. IDs for the Dbg file blocks.
 typedef enum {
 	DF_VERSION,
 	DF_NAME,
 	DF_FNAME_BIN,
+	DF_TIME_BIN,
 	DF_FNAME_ASM,
+	DF_TIME_ASM,
 	DF_SYM,
-	DF_LINES,
-	DF_MEMTYPES
+	DF_LINES,//obsolate
+	DF_MEMTYPES, //obsolate
+	DF_SECTIONNAME,
+	DF_MEMORYMETA
 } tDbgFileBlockId;
-#define MAXSYMBOLENAME 255
+
+
 typedef enum {
 	E_OK,
     E_NOT_OK
 }Std_ReturnType;
-typedef struct {
-	unsigned int value;
-	unsigned int lineno;
-	unsigned char memtype;
-	unsigned char len;
-	unsigned char name[MAXSYMBOLENAME];
-}tDbgFileSymbol;
+
+
+/**dbgfile_rd: reads one block from the file.
+Blocks are in common format. Each block starts with the block header, then content are follows.
+Header:
+from 0 to 4bytes long: id in little endian format, or first byte is the id and rest of the 3 bytes are reserved.
+from 4 to 4bytes long: size of the payload.
+from 8 to nbytes long: payload
+When b buffer pointer is NULL, then payload will be not read by this function, that will be loaded consecutively
+from the caller code.
+*/
 Std_ReturnType dbgfile_rd(CFile*f, tDbgFileBlockId& id, void* b, int& len) {
 	unsigned int r=4;
 	if (f->Read(&id, r) != r) return E_NOT_OK;
@@ -935,9 +1069,49 @@ Std_ReturnType dbgfile_rd(CFile*f, tDbgFileBlockId& id, void* b, int& len) {
 	}
 	return E_OK;
 }
+
+void CSimulator::ClearSymbolTable() {
+	m_Symbols.RemoveAll();
+}
+
+void CSimulator::LoadSymbol(int len, CFile& f ) {
+	tDbgFileSymbol sym;
+	sym.memtype = MT_undef;
+	sym.symtype = ST_Unknown;
+	sym.sectionid = 0;
+	sym.symcontexts = 0;
+	sym.fileId = 0;
+	sym.lineno = 0;
+	sym.name[0] = '-';
+	sym.name[1] = 0;
+	sym.len = 1;
+	if (len > sizeof(tDbgFileSymbol)) {
+		//error
+		f.Seek(len, CFile::current);
+		return;
+	}
+	f.Read(&sym, len);
+	if (sym.len >= MAXSYMBOLENAME) {
+		//to long symbol name
+		sym.len = MAXSYMBOLENAME - 1;
+	}
+	sym.name[sym.len] = 0;
+	sym.lineno -= 2;//TODO: bugfix in asmb ??
+	if (sym.lineno < 0)sym.lineno = 0;
+
+	m_Symbols.Add(sym);
+}
+/**LoadBinToMemory
+First step, It loads the .bin file to the operative memory of the simulator.
+Then, it tries to open the .dbg file as well.
+TODO: add more informations to the .dbg file, like: compiler warnings and additional symbole related things.
+*/
 void CSimulator::LoadBinToMemory()
 {
 	if (!m_pDoc) return;
+	m_Symbols.RemoveAll();
+	m_Sections.RemoveAll();
+
 	CString s;
 	s.Format(L"%s%s", m_pDoc->m_AsmbDirOut, m_pDoc->m_SimTargetBinFileName);
 	CFile f;
@@ -948,7 +1122,13 @@ void CSimulator::LoadBinToMemory()
 		TRACE(_T("File could not be opened %d\n"), e.m_cause);
 	}
 	m_MemorySizeLoaded = f.Read((void*)m_Memory, SIM_MAXMEMORYSIZE);
+	CFileStatus status;
+	if (f.GetStatus(status))
+	{
+		m_TimeBinFIle = status.m_mtime;
+	}
 	f.Close();
+	
 	Reset();
 	for (int y = 0; y < 16; y++) {
 		for (int x = 0; x < 16; x++) {
@@ -965,6 +1145,11 @@ void CSimulator::LoadBinToMemory()
 		{
 			TRACE(_T("File could not be opened %d\n"), e.m_cause);
 		}
+		if (f.GetStatus(status))
+		{
+			m_TimeDbgFIle = status.m_mtime;
+		}
+
 		int len = 0;
 		int id = 0;
 		int r = 4;
@@ -973,6 +1158,9 @@ void CSimulator::LoadBinToMemory()
 		//f.GetStatus(&fs);
 		int DbgFormatVersion;
 		BOOL process = TRUE;
+		ClearSymbolTable();
+		CStringArray* asmFileList = m_pDoc->GetAsmFileList();
+		asmFileList->RemoveAll();
 		while (process) {
 			tDbgFileBlockId id;
 			int len;
@@ -989,16 +1177,62 @@ void CSimulator::LoadBinToMemory()
 						process = FALSE;
 					}
 					break;
-				case DF_MEMTYPES:
-					f.Read(m_MemoryType, len);
+				case DF_MEMORYMETA:
+					f.Read(m_MemoryMeta, len);
 					break;
-				case DF_LINES:
-					f.Read(m_MemoryLine, len);
+				case DF_SYM:
+					LoadSymbol(len,f);
+					break;
+				case DF_SECTIONNAME:
+					{
+						char secName[MAXSYMBOLENAME];
+						if (len > MAXSYMBOLENAME) {
+							f.Seek(len, CFile::current); //error
+						} else {
+							CString s;
+							f.Read(secName, len);
+							secName[len] = 0;
+							s.Format(L"%S", secName);
+							m_Sections.Add(s);
+						}
+					}
 					break;
 				case DF_NAME:
-				case DF_FNAME_BIN:
+					{
+						char aName[MAXSYMBOLENAME];
+						CString s;
+						f.Read(aName, len);
+						aName[len] = 0;
+						s.Format(L"%S", aName);
+						m_pDoc->SetProjectName(s);
+					}
+					break;
 				case DF_FNAME_ASM:
-				case DF_SYM:
+					{
+						char aName[MAXSYMBOLENAME];
+						CString s;
+						f.Read(aName, len);
+						aName[len] = 0;
+						s.Format(L"%S", aName);
+						if (s.GetLength() > 4) {
+							asmFileList->Add(s);
+						}
+					}
+					break;
+				case DF_FNAME_BIN:
+					{
+						char aName[MAXSYMBOLENAME];
+						CString s;
+						f.Read(aName, len);
+						aName[len] = 0;
+						s.Format(L"%S", aName);
+						m_pDoc->SetTargetBinFileName(s);
+					}
+					break;
+				case DF_MEMTYPES:	//obsolate
+				case DF_LINES:		//obsolate
+				case DF_TIME_BIN:	//not yet implemented
+				case DF_TIME_ASM:	//not yet implemented
 				default:
 					f.Seek(len, CFile::current);
 					break;

@@ -51,9 +51,20 @@ typedef struct {
 	YYSTYPE s;
 } GType_s;
 
+typedef enum {
+	ST_Unknown,
+	ST_Label,
+	ST_EQU,
+	ST_DB,
+	ST_JMP,
+	ST_LOAD,
+	ST_STORE
+} SType_e;
+typedef unsigned char SContexts_t;
+
 void stackPush(int t, const YYSTYPE* s);
 
-int parse_exp(int t, GType_s* res);
+int parse_exp(int t, GType_s* res, SType_e* context);
 /**
  * Function: Failure()
  * Usage: Failure("Out of memory!");
@@ -148,13 +159,26 @@ const char* SymbolByIndex(size_t index);
 int SymbolValueByIndex(size_t index);
 
 int searchSymbol(const char *key);
-void setSymbol(const char* name, int value);
-int getSymbol(const char* name);
-int getReloc(int index, const char**name, int* adr, relocType_en* rt);
+void setSymbol(const char* name, int value, SType_e symbolType);
+int getSymbol(const char* name, SType_e* pContext);
+SType_e getSymbolType(int index);
+SContexts_t getSymbolContexts(int index);
+int getReloc(int index, const char**name, int* adr, relocType_en* rt, SType_e* context);
 size_t getRelocs();
 
 void setRelocType(relocType_en rt);
 int yywrap();
+
+int getMemorySectionNumbers();
+const char* getMemorySectionName(int index);
+void checkSection(char* secName);
+
+int include_actual_get();
+void include_add(const char* fname);
+void include_eof();
+
+int include_get_max();
+const char* include_get(int index);
 
 #ifdef __cplusplus
 }

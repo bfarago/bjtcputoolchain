@@ -94,7 +94,7 @@ include             BEGIN(incl);
         include_stack[include_stack_ptr++] =
             YY_CURRENT_BUFFER;
 
-        yyin = fopen( yylval.stringConstant, "r" );
+        yyin = include_fopen( yylval.stringConstant, "r" );
 
         if ( ! yyin )
             Failure( "File not found");
@@ -181,6 +181,7 @@ include             BEGIN(incl);
 
         else
             {
+			include_eof();
             yy_delete_buffer( YY_CURRENT_BUFFER );
             yy_switch_to_buffer(
                  include_stack[include_stack_ptr] );

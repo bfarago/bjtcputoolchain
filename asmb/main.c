@@ -29,11 +29,12 @@ void relocation() {
 		const char* name;
 		int addr;
 		relocType_en relocType;
-		getReloc((int)i, &name, &addr, &relocType);
+		SType_e context = ST_Unknown;
+		getReloc((int)i, &name, &addr, &relocType, &context);
 		int ix = searchSymbol(name);
 		Debug("rel", "%i. %s relocated %x %i", i, name, addr, ix);
 		if (ix >= 0) {
-			int v = getSymbol(name);
+			int v = getSymbol(name, &context);
 			if (0 == v) {
 				Debug("ext", "extern %s relocate %x", name, addr);
 			}
@@ -85,12 +86,14 @@ int main(int argc, char** argv)
 		else {
 			yyin = fin;
 		}
+		include_add(asmb_config.fname_in);
 	}else{
 		// pipe was used, there was no input filename specified
 		fin= stdin;
 	}
 
 	// Start parsing, Pass#1
+	
 	parseFile(yyin);
 
 	// End of Pass#1, close input file, if there was opened one

@@ -45,6 +45,7 @@ yyltype Join(yyltype first, yyltype last);
  */
 yyltype Joinp(yyltype *firstPtr, yyltype *lastPtr);
 
+FILE* include_fopen(const char* fname, const char* mode);
 
 #endif
 

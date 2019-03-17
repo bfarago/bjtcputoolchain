@@ -60,12 +60,7 @@ int parse_section() {
 		return false;
 		break;
 	}
-	if (0 != strstr(section, "code")) {
-		sectionType = MT_code;
-	}
-	else {
-		sectionType = MT_data;
-	}
+	checkSection(section);
 	return 0;
 }
 
@@ -110,7 +105,8 @@ int parse_nibles() {
 int parse_db() {
 	int t = yylex();
 	GType_s grm;
-	t = parse_exp(t, &grm);
+	SType_e context = ST_DB;
+	t = parse_exp(t, &grm, &context);
 	if (grm.t != S_Exp) {
 		Debug("grm", "Expression not found: db expression");
 		Failure("Expression not found:");
@@ -124,25 +120,26 @@ int parse_db() {
 //grammar for identifiers
 int parse_identifier() {
 	char* name = UTIL_STRDUP(yylval.identifier);
-
+	SType_e context = ST_Unknown;
 	int t = yylex();
 	switch (t) {
 	case ':':
 		t = 0;
-		setSymbol(name, address);
+		setSymbol(name, address, ST_Label);
 		Debug("pse", "%s: label %s", __FUNCTION__, name);
 		break;
 	case T_Equ:
 		Debug("pse", "%s: %s equ", __FUNCTION__, name);
 		t = yylex();
 		GType_s grm;
-		t = parse_exp(t, &grm);
+		context = ST_EQU;
+		t = parse_exp(t, &grm, &context);
 		if (grm.t != S_Exp) {
 			Debug("grm", "Expression not found: equ");
 			Failure("Expression not found: equ");
 		}
 		else {
-			setSymbol(name, grm.s.integerConstant);
+			setSymbol(name, grm.s.integerConstant, ST_EQU);
 		}
 		break;
 	default:
@@ -157,15 +154,16 @@ int parse_identifier() {
 int parse_Op4_4(int mnemonic) {
 	int v = 0;
 	int opc = 0;
+	SType_e symContext = ST_Unknown;
 	setRelocType(RT_OP4_4);
 	switch (mnemonic) {
 #undef TOK
-#define TOK(x, xop) case x: opc=xop; break;
-		TOK(T_mvi, 0)
+#define TOK(x, xop, context) case x: opc=xop; symContext= context; break;
+		TOK(T_mvi, 0, ST_LOAD)
 	}
 	int t = yylex();
 	GType_s grm;
-	t = parse_exp(t, &grm);
+	t = parse_exp(t, &grm, &symContext);
 	if (grm.t != S_Exp) {
 		Debug("grm", "Expression not found: mvi a,expression");
 		Failure("Expression not found: op 4,4");
@@ -181,28 +179,30 @@ int parse_Op4_12(int mnemonic) {
 	int t = yylex();
 	int v = 0;
 	int opc = 0;
+	SType_e symContext = ST_Unknown;
+
 	setRelocType(RT_OP4_12);
 	switch (mnemonic) {
 		//#undef TOK
-#define TOK(x, xop) case x: opc=xop; break;
-		TOK(T_sta, 1)
-		TOK(T_lda, 2)
-		TOK(T_ad0, 3)
-		TOK(T_ad1, 4)
-		TOK(T_adc, 5)
-		TOK(T_nand, 6)
-		TOK(T_nor, 7)
-		TOK(T_rrm, 8)
-		TOK(T_jmp, 9)
-		TOK(T_jc, 10)
-		TOK(T_jnc, 11)
-		TOK(T_jz, 12)
-		TOK(T_jnz, 13)
-		TOK(T_jm, 14)
-		TOK(T_jp, 15)
+#define TOK(x, xop, context) case x: opc=xop; symContext= context; break;
+		TOK(T_sta, 1, ST_STORE)
+		TOK(T_lda, 2, ST_LOAD)
+		TOK(T_ad0, 3, ST_LOAD)
+		TOK(T_ad1, 4, ST_LOAD)
+		TOK(T_adc, 5, ST_LOAD)
+		TOK(T_nand, 6, ST_LOAD)
+		TOK(T_nor, 7, ST_LOAD)
+		TOK(T_rrm, 8, ST_LOAD)
+		TOK(T_jmp, 9, ST_JMP)
+		TOK(T_jc, 10, ST_JMP)
+		TOK(T_jnc, 11, ST_JMP)
+		TOK(T_jz, 12, ST_JMP)
+		TOK(T_jnz, 13, ST_JMP)
+		TOK(T_jm, 14, ST_JMP)
+		TOK(T_jp, 15, ST_JMP)
 	}
 	GType_s grm;
-	t = parse_exp(t, &grm);
+	t = parse_exp(t, &grm, &symContext);
 	if (grm.t != S_Exp) {
 		Debug("grm", "Expression not found: mvi a,expression");
 		Failure("Expression not found: op 4,12");
@@ -227,7 +227,8 @@ int parseFile(FILE* f) {
 	while (inside) {
 		//if (feof(yyin)) break;
 		if (!t) t = yylex();
-		if (t >= T_Void) Debug("grm", "endterm: '%s'\n", gTokenNames[t - T_Void]);
+		if (t >= T_Void)
+			Debug("grm", "endterm: '%s'\n", gTokenNames[t - T_Void]);
 		switch (t) {
 		case T_NewLine: t = 0; break;
 		case T_Org: t = parse_org(); break;
