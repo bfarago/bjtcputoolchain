@@ -1,7 +1,15 @@
 
 #DEBUG=-g -O0
 DEBUG=-O2
+
+ifeq ($(OS), Windows_NT)
+export PATH := g:\prg\SysGCC\Raspberry\bin\;$(PATH)
+CC=arm-linux-gnueabihf-gcc.exe
+else
 CC=gcc
+endif
+
+
 INCLUDE=-I.
 DEFS=-DDEBUG
 CFLAGS= $(DEBUG) $(DEFS) -Wformat=2 -Wall -Wextra -Winline $(INCLUDE) -pipe -fPIC

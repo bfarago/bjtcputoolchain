@@ -21,6 +21,7 @@ public:
 	CWorkspace();
 	~CWorkspace();
 	virtual CStringArray* GetAsmFileList() = 0;
+	virtual const CString& GetToolchainDir()const = 0;
 	virtual const CString& GetTargetBinFileName()const = 0;
 	virtual void SetTargetBinFileName(const CString& s) = 0;
 	virtual CidebDoc* GetProjectDocument() = 0;

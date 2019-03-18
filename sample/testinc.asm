@@ -1,5 +1,6 @@
 ; This is a test include asm file
 ; for BJT CPU.
+section .code1
 uart_base   equ 0xc00
 uart_h  	equ uart_base+0
 uart_l  	equ uart_base+1

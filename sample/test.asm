@@ -1,6 +1,7 @@
 ; This is a test asm file
 ; for BJT CPU.
 include "testinc.asm"
+section .code
 perif   equ 0xc00
 offs1	equ 3
 h_uart  equ perif+0
@@ -42,7 +43,7 @@ loop3:  ad0 m1_addr
         jnz delay
         jmp start			;ret
 halt:   jmp halt
-
+include "testinc2.asm"
 section .data
 db_er:  0,1,2,3,4,5,6,7,8,9
 db_len: db $-db_er

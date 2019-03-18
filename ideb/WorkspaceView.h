@@ -6,7 +6,8 @@ public:
 	enum {
 		GoToSourceLine,
 		EnsureSourceLineVisible,
-		OpenDocumentAsm
+		OpenDocumentAsm,
+		Reload
 	}EventType;
 	//For SourceLine
 	int Line;

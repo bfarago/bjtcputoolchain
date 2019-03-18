@@ -191,10 +191,6 @@ protected:
 	SimData_t m_HeatRead[SIM_MAXMEMORYSIZE];
 	SimData_t m_HeatWrite[SIM_MAXMEMORYSIZE];
 	SimData_t m_Break[SIM_MAXMEMORYSIZE];
-	//obsolate
-	//memoryType_t m_MemoryType[SIM_MAXMEMORYSIZE];
-	//int m_MemoryLine[SIM_MAXMEMORYSIZE];
-	//new
 	memoryMetaData_t m_MemoryMeta[SIM_MAXMEMORYSIZE];
 	UINT m_MemorySizeLoaded;
 	DWORD m_CpuHz;
