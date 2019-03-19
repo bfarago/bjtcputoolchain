@@ -34,6 +34,18 @@ int parse_identifier();
 //grammar of the org syntax
 int parse_org() {
 	int t = yylex();
+	GType_s grm;
+	SType_e context = ST_Label; // theres no org in contexts, and no rewriter is possible
+	t = parse_exp(t, &grm, &context);
+	if (grm.t != S_Exp) {
+		Debug("grm", "Expression not found: org");
+		Failure("Expression not found: org");
+	}
+	else {
+		setAddress(grm.s.integerConstant);
+	}
+	/*
+	int t = yylex();
 	switch (t) {
 	case T_IntConstant:
 		setAddress(yylval.integerConstant);
@@ -41,8 +53,8 @@ int parse_org() {
 	default:
 		Failure("syntax error: org 0x1234");
 		break;
-	}
-	return 0;
+	}*/
+	return t;
 }
 
 //grammer for the section syntax
@@ -100,7 +112,80 @@ int parse_nibles() {
 	}
 	return t;
 }
-
+int convertAscii2BJTChar(int c) {
+	if ((c >= '0') && (c <= '9')) {c=(c - '0'); }
+	else if ((c >= 'A') && (c <= 'Z')) { c= (c - 'A' + 10); }
+	else {
+		switch (c) {
+		case  '.': c = 0x24; break;
+		case  ',': c = 0x25; break;
+		case  ':': c = 0x26; break;
+		case  ';': c = 0x27; break;
+		case  '!': c = 0x28; break;
+		case  '?': c = 0x29; break;
+		case  '>': c = 0x2A; break;
+		case  '<': c = 0x2B; break;
+		case  '=': c = 0x2C; break;
+		case  '+': c = 0x2D; break;
+		case  '-': c = 0x2E; break;
+		case  '/': c = 0x2F; break;
+		case  '\\': c = 0x30; break;
+		case  '(': c = 0x31; break;
+		case  ')': c = 0x32; break;
+		case  '#': c = 0x33; break;
+		case  '@': c = 0x34; break;
+		case  '': c = 0x35; break;
+		case  '$': c = 0x36; break;
+		case  '"': c = 0x37; break; //use "": instead of \"
+		case  '|': c = 0x38; break;
+		case  '_': c = 0x39; break;
+		case  '[': c = 0x3A; break;
+		case L'Ú': c = 0x3B; break;
+		case L'¿': c = 0x3C; break;
+		case L'Ù': c = 0x3D; break;
+		case L'À': c = 0x3E; break;
+		case  'l': c = 0x3F; break;
+		case  L'È': c = 0x40; break;
+		case  '{': c = 0x41; break;
+		case  '}': c = 0x42; break;
+		case  'o': c = 0x43; break;
+		case  ' ': c = 0xFF; break;
+		}
+	}
+	return c;
+}
+int parse_string() {
+	int t = yylex();
+	bool bHig = true;
+	bool bLow = true;
+	bool bQuo = false;
+	if (t == ':') {
+		t = yylex();
+		bQuo = true;
+	}else if (t == '+') {
+		t = yylex();
+		bLow = false;
+	}else if (t == '-') {
+		t = yylex();
+		bHig = false;
+	}
+	int n = strlen(yylval.stringConstant);
+	if (bLow)
+	for (int i = 0; i < n; i++) {
+		int c = yylval.stringConstant[i];
+		c = convertAscii2BJTChar(c);
+		if (bQuo) if (c == 0x26) c = 0x37;
+		addMemory(c);
+	}
+	if (bHig)
+	for (int i = 0; i < n; i++) {
+		int c = yylval.stringConstant[i];
+		c = convertAscii2BJTChar(c);
+		if (bQuo) if (c == 0x26) c = 0x37;
+		addMemory(c >> 4);
+	}
+	return t;
+}
 //grammar for db syntax
 int parse_db() {
 	int t = yylex();
@@ -231,6 +316,7 @@ int parseFile(FILE* f) {
 			Debug("grm", "endterm: '%s'\n", gTokenNames[t - T_Void]);
 		switch (t) {
 		case T_NewLine: t = 0; break;
+		case T_StringConstant: t=parse_string(); break;
 		case T_Org: t = parse_org(); break;
 		case T_Section: t = parse_section(); break;
 		case T_Global: t = parse_global(); break;

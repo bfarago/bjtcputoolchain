@@ -109,7 +109,7 @@ p_rest_vram:	sta db_vram0
 	sta p_rest_dvram+cy
 	jnc p_rest_dvram
 	;at the end the manipulated addresses overflow to 0, so we don't need to reinit them
-	jmp v_start	;restoring VRAM is needed after game over. It's unconditional to make things easier
+	jmp v_start;restoring VRAM is needed after game over. It's unconditional to make things easier
 	;TODO: jumps over the db_* section
 
 section .data
@@ -363,8 +363,9 @@ l_collision:	lda p_plsprite2+cy	;already modified with the delta
 	;if char is not 0, v_gstart should be 0
 p_collision:	lda db_vram9+6
 	jz p_plsprite1
+	jmp l_gameover
 	mvi a,0
-	sta v_gstart+1
+	;sta v_gstart+1
 ;draw player sprite
 p_plsprite1:	lda db_dvram9+5
 p_plsprite2:	sta db_vram9+5
@@ -396,4 +397,69 @@ p_plsprite4:	sta db_vram9+6
 	sta p_plsprite3+cy
 	sta p_plsprite1+cy
 	jmp p_draw
+l_gameover:
+	jmp l_gameover2  ; skip the lame code now
+	mvi a, 1
+	sta cord_x 
+	sta cord_y
+	sta ch_h
+	mvi a,0
+	sta v_gstart+1
+	sta ch_l	;G
+	mvi a, 3
+	sta cord_x
+	mvi a,6
+	sta ch_l	;M
+	sta cord_x
+	mvi a,8
+	sta ch_l	;O
+	mvi a, 7
+	sta cord_x
+	mvi a,15
+	sta ch_l	;V
+	mvi a, 9
+	sta cord_x
+	mvi a,11
+	sta ch_l	;R
+	mvi a, 0
+	sta ch_h
+	mvi a, 2
+	sta cord_x
+	mvi a,0x0A
+	sta ch_l	;A
+	mvi a, 4
+	sta cord_x
+	mvi a,0x0e
+	sta ch_l	;E
+	mvi a, 8
+	sta cord_x
+	mvi a,0x0e
+	sta ch_l	;E
+	jmp v_gstart	
+	
+section code_game_over
+l_gameover2:
+	mvi a,1
+	sta cord_y
+	mvi a,0
+	sta v_gstart+1
+l_gameover_loop0:
+	sta l_gameover_loop1+1
+	sta l_gameover_loop2+1
+	sta cord_x
+l_gameover_loop1:	
+	lda v_text+16
+	sta ch_h
+l_gameover_loop2:	
+	lda v_text
+	sta ch_l
+	lda l_gameover_loop1+1
+	ad0 db_1
+	jnz l_gameover_loop0
+	jmp v_gstart
+section data org $+16>>4<<4
+v_text:
+ "GAME OVER |_[   "
+ "GAME OVER       "
+ 
 	end

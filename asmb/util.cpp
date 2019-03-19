@@ -44,13 +44,14 @@ void stackClear() {
 }
 int ruleExp[] = 
 {
-	T_IntConstant, '+', T_IntConstant, T_Void,
-	T_IntConstant, '-', T_IntConstant, T_Void,
+	T_IntConstant, '+', T_IntConstant, T_Void, 
+	T_IntConstant, '-', T_IntConstant, T_Void, 
 	T_IntConstant, '*', T_IntConstant, T_Void,
 	T_IntConstant, '/', T_IntConstant, T_Void,
 	T_IntConstant, T_Ror, T_IntConstant, T_Void,
 	T_IntConstant, T_Rol, T_IntConstant, T_Void,
 	T_IntConstant, T_At, T_IntConstant, T_Void,
+	// T_IntConstant, '&', T_IntConstant, T_Void,
 	T_IntConstant, T_Void
 };
 
@@ -91,54 +92,83 @@ int parse_exp(int t, GType_s* res, SType_e* pContext) {
 		if (!r) t = yylex();
 	}
 	size_t len = gStack.size();
-	int sp = 0;
-	size_t rule = 0;
-	for (size_t i = 0; i < sizeof(ruleExp)/sizeof(int); i++) {
-		if (T_Void == ruleExp[i]) break;
-		if ( (i-rule) < len) {
-			GType_s& s = gStack[top + sp];
-			if (s.t == ruleExp[i]) {
-				//accept next
-				sp++;
-				continue;
+	do{
+		int sp = 0;
+		size_t rule = 0;
+		size_t ruleNr = 0;
+		for (size_t i = 0; i < sizeof(ruleExp) / sizeof(int); i++) {
+			if (T_Void == ruleExp[i]) break;
+			if ((i - rule) < (len-top)) {
+				GType_s& s = gStack[top + sp];
+				if (s.t == ruleExp[i]) {
+					//accept next
+					sp++;
+					continue;
+				}
 			}
+			//search next rule
+			sp = 0;
+			while (T_Void != ruleExp[i]) i++;
+			rule = i + 1;
+			ruleNr++;
 		}
-		//search next rule
-		sp = 0;
-		while (T_Void != ruleExp[i]) i++;
-		rule = i+1;
-		
-	}
-	res->t = S_Exp;
-	switch (rule) {
-	case 0: // exp= exp + exp
-		res->s.integerConstant = gStack[top+0].s.integerConstant + gStack[top+2].s.integerConstant;
-		break;
-	case 4: // exp= exp - exp
-		res->s.integerConstant = gStack[top + 0].s.integerConstant - gStack[top + 2].s.integerConstant;
-		break;
-	case 8: // exp= exp * exp
-		res->s.integerConstant = gStack[top + 0].s.integerConstant * gStack[top + 2].s.integerConstant;
-		break;
-	case 12: // exp= exp / exp
-		res->s.integerConstant = gStack[top + 0].s.integerConstant / gStack[top + 2].s.integerConstant;
-		break;
-	case 16: // exp= exp >> exp
-		res->s.integerConstant = gStack[top + 0].s.integerConstant >> gStack[top + 2].s.integerConstant;
-		break;
-	case 20: // exp= exp << exp
-		res->s.integerConstant = gStack[top + 0].s.integerConstant << gStack[top + 2].s.integerConstant;
-		break;
-	case 24: // exp= exp @ exp
-		res->s.integerConstant = gStack[top + 0].s.integerConstant >> (4* gStack[top + 2].s.integerConstant);
-		break;
-	case 28: // exp = i
-		res->s.integerConstant = gStack[top+0].s.integerConstant;
-		break;
-	default:
-		res->t = T_Void;
-		break;
-	}
+		res->t = S_Exp;
+		switch (ruleNr) {
+		//case 0: // exp= exp + 1  @ exp
+		//	res->s.integerConstant = (gStack[top + 0].s.integerConstant + gStack[top + 2].s.integerConstant) >> (4 * gStack[top + 4].s.integerConstant);
+		//	top += 4;
+		//	gStack[top].s.integerConstant = res->s.integerConstant;
+		//	break;
+		case 0: // exp= exp + exp
+			res->s.integerConstant = gStack[top + 0].s.integerConstant + gStack[top + 2].s.integerConstant;
+			top += 2;
+			gStack[top].s.integerConstant = res->s.integerConstant;
+			break;
+		case 1: // exp= exp - exp
+			res->s.integerConstant = gStack[top + 0].s.integerConstant - gStack[top + 2].s.integerConstant;
+			top += 2;
+			gStack[top].s.integerConstant = res->s.integerConstant;
+			break;
+		case 2: // exp= exp * exp
+			res->s.integerConstant = gStack[top + 0].s.integerConstant * gStack[top + 2].s.integerConstant;
+			top += 2;
+			gStack[top].s.integerConstant = res->s.integerConstant;
+			break;
+		case 3: // exp= exp / exp
+			res->s.integerConstant = gStack[top + 0].s.integerConstant / gStack[top + 2].s.integerConstant;
+			top += 2;
+			gStack[top].s.integerConstant = res->s.integerConstant;
+			break;
+		case 4: // exp= exp >> exp
+			res->s.integerConstant = gStack[top + 0].s.integerConstant >> gStack[top + 2].s.integerConstant;
+			top += 2;
+			gStack[top].s.integerConstant = res->s.integerConstant;
+			break;
+		case 5: // exp= exp << exp
+			res->s.integerConstant = gStack[top + 0].s.integerConstant << gStack[top + 2].s.integerConstant;
+			top += 2;
+			gStack[top].s.integerConstant = res->s.integerConstant;
+			break;
+		case 6: // exp= exp @ exp
+			res->s.integerConstant = gStack[top + 0].s.integerConstant >> (4 * gStack[top + 2].s.integerConstant);
+			top += 2;
+			gStack[top].s.integerConstant = res->s.integerConstant;
+			break;
+		//case 7: // exp= exp & exp
+		//	res->s.integerConstant = gStack[top + 0].s.integerConstant & (4 * gStack[top + 2].s.integerConstant);
+		//	top += 2;
+		//	gStack[top].s.integerConstant = res->s.integerConstant;
+		//	break;
+		case 7: // exp = i
+			res->s.integerConstant = gStack[top + 0].s.integerConstant;
+			top++;
+			break;
+		default:
+			res->t = T_Void;
+			top++;
+			break;
+		}
+	}	while (top < len);
 	stackClear();
 	return r;
 }
@@ -151,7 +181,7 @@ void Failure(const char *format, ...) {
   va_end(args);
   fflush(stdout); //TODO: check if it is needed anymore
   //fprintf(stderr,"\n*** Failure in line:%d: %s '%s'\n\n", yylineno, errbuf, yytext);
-  fprintf(g_err_file, "\n*** Failure in line:%d: %s '%s'\n\n", yylineno, errbuf, yytext);
+  fprintf(g_err_file, "\n*** Failure in %s line:%d: %s '%s'\n\n", include_get(include_actual_get()), yylineno, errbuf, yytext);
   
   abort();
 }
@@ -436,6 +466,7 @@ int include_search(const char* fname) {
 	}
 	return -2;
 }
+
 
 void include_add(const char* fname) {
 	int index = include_search(fname);

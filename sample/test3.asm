@@ -1,5 +1,7 @@
 ; This is a test asm file
 ; for BJT CPU.
+; The codes below are only for a collection of the
+; possible usecases and syntax.
 const1  equ 0xc00	; 12 bit wide constant
 const2	equ 3		; 4bit wide constant
 const3  equ const1	; symbols must be declared before use in const syntax
@@ -101,4 +103,30 @@ long1:	db long_len>>8	;then store  highest 4 bits
 long2:	db long_len@2	;the same but other format
 		db long_len@1
 		db long_len@0
+
+org $+16>>4<<4			; alignment to 16
+v_text:		; lets define a 16 character long ascii string, 
+ "GAME OVER |_[   "
+ ; it stores 16 lows and 16 highs nibbles.
+ ; first n nibbles are the low, then n nibbles for high part.
+ "0123456789"		; this defines 10*2 nibbles all highs are 0.
+ ; and 
+ "HELLO"	;5*2 datas: 2E55810111
+ "HELLO WORLD!" ; 12*2 data: 2E558F08B5D8 10111F211102
+ ;actual abc / ascii conversion works for this letters:
+ "0123456789ABCDEF"
+ "GHIJKLMNOPQRSTUV"
+ "WXYZ.,:;!?><=+-/" ; signs... But actually, there is quote possible:
+ "\()#@ü$ |_[┌┐┘└l" ; the \ is a normal char. Therefore no \" possible.
+ "╚{}o"	;last known graphical characters.
+ " " ; space is ff. If you quote all letters, then low and high 
+ ;or alternate value syntax
+ "H""E""L""O" ; nibbles are alternating: 20e0515181
+ ;one nibble syntax
+ "HE"+	; only high nibbles: 10
+ "HE"-	; only low nibbles: 1e
+ ;special character
+ ":THIS:":	; replace : to " character.
+ 
+
         end

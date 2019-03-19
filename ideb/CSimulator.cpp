@@ -262,7 +262,7 @@ SimAddress_t CSimulator::OnDrawDisasm(CDC* pDC, CRect& r, SimAddress_t a)
 		short operand = m_Memory[a + 1];
 		if (op) {
 			operand |= m_Memory[a + 2] << 4 | m_Memory[a + 3] << 8;
-			s.Format(_T("%03x %s 0x%x"), a, gMnemonics[op], operand);
+			s.Format(_T("%03x %s 0x%03x"), a, gMnemonics[op], operand);
 		}
 		else {
 			s.Format(_T("%03x %s0x%x"), a, gMnemonics[op], operand);
