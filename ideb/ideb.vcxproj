@@ -186,6 +186,7 @@
     <ClInclude Include="ChildFrmAsm.h" />
     <ClInclude Include="ClassView.h" />
     <ClInclude Include="CSimulator.h" />
+    <ClInclude Include="DNewProject.h" />
     <ClInclude Include="FileView.h" />
     <ClInclude Include="ideb.h" />
     <ClInclude Include="idebDoc.h" />
@@ -210,6 +211,7 @@
     <ClCompile Include="ChildFrmAsm.cpp" />
     <ClCompile Include="ClassView.cpp" />
     <ClCompile Include="CSimulator.cpp" />
+    <ClCompile Include="DNewProject.cpp" />
     <ClCompile Include="FileView.cpp" />
     <ClCompile Include="ideb.cpp" />
     <ClCompile Include="idebDoc.cpp" />

@@ -336,7 +336,7 @@ Std_ReturnType ParseCommandLine(int argc, char *argv[], asmb_config_t* cfg) {
 		// g_err_file = fopen(s, "w+");
 		fopen_s(&g_err_file, s, "w+");
 		//this would be fine on unix,linux
-		freopen(s, "a+", stderr);
+		//freopen(s, "a+", stderr);
 		freopen(s, "a+", stdout); // not works with new windows crt lib
 	}
 	printf("Output name prefix:%s\n", cfg->name_o);
