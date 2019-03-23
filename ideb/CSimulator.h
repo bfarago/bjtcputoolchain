@@ -127,6 +127,14 @@ typedef struct {
 	int line;				// 32 bits
 } memoryMetaData_t;
 
+#define MAX_ERROR_LEN (255)
+typedef struct {
+	unsigned int lineNr;
+	unsigned short fileId;
+	unsigned short errorCode;
+	char errorText[MAX_ERROR_LEN];
+}tErrorRecord;
+
 //CSimulator: implements the cpu and screen simulator.
 class CSimulator
 {
@@ -150,6 +158,7 @@ public:
 	BOOL GetStop()const { return m_Stop; }
 	void ClearSymbolTable();
 	void LoadSymbol(int len, CFile& f);
+	void LoadError(int len, CFile & f);
 	void LoadBinToMemory();
 	void OnDraw(CDC * pDC, int mode);
 	void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
@@ -214,6 +223,7 @@ public: //temporary
 	BOOL m_DisplayMemory;
 	BOOL m_DisplayDebugMonitor;
 	CArray<tDbgFileSymbol> m_Symbols;
+	CArray<tErrorRecord> m_Errors;
 	CStringArray m_Sections;
 protected:
 	ULONG64 m_ExecTimeSum;

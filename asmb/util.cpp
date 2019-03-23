@@ -30,6 +30,7 @@ static vector<const char*> reloc;
 static vector<int> relocAddress;
 static vector<relocType_en> relocType;
 static vector<SType_e> relocContext;
+static vector<int> relocLine;
 
 static vector<GType_s> gStack;
 void stackPush(int t, const YYSTYPE* s) {
@@ -74,7 +75,7 @@ int parse_exp(int t, GType_s* res, SType_e* pContext) {
 			break;
 		case T_Identifier:
 			t = T_IntConstant; //rewrire
-			yylval.integerConstant = getSymbol(yylval.identifier, pContext);
+			yylval.integerConstant = getSymbol(yylval.identifier, pContext, yylineno);
 			stackPush(t, &yylval);
 			break;
 		case T_IntConstant:
@@ -172,20 +173,68 @@ int parse_exp(int t, GType_s* res, SType_e* pContext) {
 	stackClear();
 	return r;
 }
+vector<tErrorRecord> g_ErrorList;
+int getErrorListLength() { return g_ErrorList.size(); }
+const tErrorRecord* getErrorListItem(int index) { return &g_ErrorList[index]; }
 
+void AddError(int errCode, short fileId, int line, char* errbuf, char* quote)
+{
+	tErrorRecord e;
+	const char* fileName;
+	e.fileId = fileId;
+	fileName = include_get(fileId);
+	e.lineNr = line;
+	e.errorCode = errCode;
+	if (quote)
+		snprintf(e.errorText, MAXFNAMELEN, "Failure in %s line:%d: %s '%s'", fileName, e.lineNr, errbuf, quote);
+	else
+		snprintf(e.errorText, MAXFNAMELEN, "Failure in %s line:%d: %s", fileName, e.lineNr, errbuf);
+	for (int i = 0; i < strlen(e.errorText); i++) {
+		if (e.errorText[i] == 0x0a) e.errorText[i] = 0x20; //replace new line to space
+	}
+	g_ErrorList.push_back(e);
+	fprintf(g_err_file, "\n*** %s\n\n", e.errorText);
+}
 void Failure(const char *format, ...) {
   va_list args;
   char errbuf[UTIL_BUFFERSIZE];
   va_start(args, format);
   vsnprintf(errbuf, UTIL_BUFFERSIZE, format, args);
   va_end(args);
-  fflush(stdout); //TODO: check if it is needed anymore
-  //fprintf(stderr,"\n*** Failure in line:%d: %s '%s'\n\n", yylineno, errbuf, yytext);
-  fprintf(g_err_file, "\n*** Failure in %s line:%d: %s '%s'\n\n", include_get(include_actual_get()), yylineno, errbuf, yytext);
   
-  abort();
+  AddError(0, include_actual_get(), yylineno, errbuf, yytext);
 }
+void WrongToken(int t, const char *format, ...) {
+	va_list args;
+	char errbufIn[UTIL_BUFFERSIZE];
+	char errbufOut[UTIL_BUFFERSIZE];
+	va_start(args, format);
+	vsnprintf(errbufIn, UTIL_BUFFERSIZE, format, args);
+	va_end(args);
+	int lineno = yylineno;
+	const char* tokname=0;
+	if (t>=T_Void)
+		tokname= gTokenNames[t - T_Void];
 
+	switch (t) {
+	case T_NewLine:
+		lineno--;
+		snprintf(errbufOut, MAXFNAMELEN, "Syntax error before end of line %s", errbufIn);
+		break;
+	case T_Identifier:
+		snprintf(errbufOut, MAXFNAMELEN, "Syntax error Identifier '%s', %s ", yylval.identifier, errbufIn );
+		break;
+	default:
+		if (tokname) {
+			snprintf(errbufOut, MAXFNAMELEN, "Syntax error %s : %s", tokname, errbufIn);
+		}
+		else {
+			snprintf(errbufOut, MAXFNAMELEN, "Syntax error %s", errbufIn);
+		}
+		break;
+	}
+	AddError(1, include_actual_get(), lineno, errbufOut, yytext);
+}
 int IndexOf(const char *key) {
   for (unsigned int i = 0; i < debugKeys.size(); i++)
     if (!strcmp(debugKeys[i], key)) 
@@ -374,20 +423,22 @@ int searchSymbol(const char *key) {
 
 	return -1;
 }
-void addReloc(const char* name, int addr, relocType_en rt, SType_e* pContext) {
+void addReloc(const char* name, int addr, relocType_en rt, SType_e* pContext, int line) {
 	reloc.push_back(UTIL_STRDUP(name));
 	relocAddress.push_back(addr);
 	relocType.push_back(rt);
 	relocContext.push_back(*pContext);
+	relocLine.push_back(line);
 }
 size_t getRelocs() {
 	return reloc.size();
 }
-int getReloc(int index, const char**name, int* adr, relocType_en* rt, SType_e* pContext) {
+int getReloc(int index, const char**name, int* adr, relocType_en* rt, SType_e* pContext, int *line) {
 	*name = reloc[index];
 	*adr = relocAddress[index];
 	*rt = relocType[index];
 	*pContext = relocContext[index];
+	*line = relocLine[index];
 	return 1;
 }
 void setSymbol(const char* name, int value, SType_e symbolType) {
@@ -404,10 +455,10 @@ void setSymbol(const char* name, int value, SType_e symbolType) {
 void setRelocType(relocType_en rt) {
 	actualRelocType = rt;
 }
-int getSymbol(const char* name, SType_e* pContext) {
+int getSymbol(const char* name, SType_e* pContext, int line) {
 	int index = searchSymbol(name);
 	if (index < 0) {
-		addReloc(name, address, actualRelocType, pContext);
+		addReloc(name, address, actualRelocType, pContext, line);
 		return 0; //this will be added to resolved value at pass2, relocation.
 	}
 	symbolContext[index] |= 1 << *pContext;

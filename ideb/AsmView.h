@@ -77,6 +77,7 @@ protected:
 	afx_msg void OnContextMenu(CWnd* pWnd, CPoint point);
 	DECLARE_MESSAGE_MAP()
 	HICON hIconBreak;
+	HICON hWarning;
 	int m_CurX;
 	int m_CurY;
 	int m_CurXWish;

@@ -84,8 +84,9 @@ init screen memory, chargen table, call pwm hal.
 */
 Std_ReturnType VideoDrv_Init(void* p) {
 	int ch = 0;
-	for (int y = 0; y < 16; y++) {
-		for (int x = 0; x < 16; x++) {
+	int y,x;
+	for (y = 0; y < 16; y++) {
+		for (x = 0; x < 16; x++) {
 			unsigned char code = 0xff;
 			SimScreen.buf[x][y] = code;
 		}

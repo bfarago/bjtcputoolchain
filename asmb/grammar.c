@@ -39,7 +39,7 @@ int parse_org() {
 	t = parse_exp(t, &grm, &context);
 	if (grm.t != S_Exp) {
 		Debug("grm", "Expression not found: org");
-		Failure("Expression not found: org");
+		WrongToken(grm.t, "Should be an expression. Expression not found in org syntax.");
 	}
 	else {
 		setAddress(grm.s.integerConstant);
@@ -68,7 +68,7 @@ int parse_section() {
 		strncpy(section, yylval.stringConstant, MAXSECTIONNAME);
 		break;
 	default:
-		Failure("syntax error: section .code");
+		WrongToken(t, "section .code");
 		return false;
 		break;
 	}
@@ -84,7 +84,7 @@ int parse_global() {
 		// strncpy(section, yylval.identifier);
 		break;
 	default:
-		Failure("syntax error: global identifier");
+		WrongToken(t, "Should be an identifier after global.");
 		break;
 	}
 	return 0;
@@ -155,6 +155,8 @@ int convertAscii2BJTChar(int c) {
 	return c;
 }
 int parse_string() {
+	char * str = strdup(yylval.stringConstant); //assume T_StringConstant
+
 	int t = yylex();
 	bool bHig = true;
 	bool bLow = true;
@@ -169,22 +171,23 @@ int parse_string() {
 		t = yylex();
 		bHig = false;
 	}
-	int n = strlen(yylval.stringConstant);
+	int n = strlen(str); //yylval.stringConstant
 	if (bLow)
 	for (int i = 0; i < n; i++) {
-		int c = yylval.stringConstant[i];
+		int c = str[i]; //yylval.stringConstant
 		c = convertAscii2BJTChar(c);
 		if (bQuo) if (c == 0x26) c = 0x37;
 		addMemory(c);
 	}
 	if (bHig)
 	for (int i = 0; i < n; i++) {
-		int c = yylval.stringConstant[i];
+		int c = str[i]; //yylval.stringConstant
 		c = convertAscii2BJTChar(c);
 		if (bQuo) if (c == 0x26) c = 0x37;
 		addMemory(c >> 4);
 	}
-	return t;
+	free(str);
+	return t; //next token will be parsed first at the caller
 }
 //grammar for db syntax
 int parse_db() {
@@ -194,13 +197,14 @@ int parse_db() {
 	t = parse_exp(t, &grm, &context);
 	if (grm.t != S_Exp) {
 		Debug("grm", "Expression not found: db expression");
-		Failure("Expression not found:");
+		WrongToken(t,"Expression not found after db.");
 	}
 	else {
 		addMemory(grm.s.integerConstant);
 	}
 	return t;
 }
+extern char* yy_c_buf_p;
 
 //grammar for identifiers
 int parse_identifier() {
@@ -221,14 +225,14 @@ int parse_identifier() {
 		t = parse_exp(t, &grm, &context);
 		if (grm.t != S_Exp) {
 			Debug("grm", "Expression not found: equ");
-			Failure("Expression not found: equ");
+			WrongToken(grm.t, "Expression not found after equ.");
 		}
 		else {
 			setSymbol(name, grm.s.integerConstant, ST_EQU);
 		}
 		break;
 	default:
-		Failure("syntax error: identifier:"); // or identifier equ 0xff
+		WrongToken(t, "Comma or equ not found after identifier: '%s'", yylval.identifier); // or identifier equ 0xff
 		return false;
 		break;
 	}
@@ -251,9 +255,12 @@ int parse_Op4_4(int mnemonic) {
 	t = parse_exp(t, &grm, &symContext);
 	if (grm.t != S_Exp) {
 		Debug("grm", "Expression not found: mvi a,expression");
-		Failure("Expression not found: op 4,4");
+		WrongToken(t, "Expression not found: op 4,4 : mvi a, expression.");
 	}
 	v = grm.s.integerConstant;
+	if (v > 15) {
+		WrongToken(t, "Expression overflown in mvi a, (4bit): 0x%03x",v);
+	}
 	addMemory(opc);
 	addMemory(v);
 	return t;
@@ -289,8 +296,8 @@ int parse_Op4_12(int mnemonic) {
 	GType_s grm;
 	t = parse_exp(t, &grm, &symContext);
 	if (grm.t != S_Exp) {
-		Debug("grm", "Expression not found: mvi a,expression");
-		Failure("Expression not found: op 4,12");
+		Debug("grm", "Expression not found: mnemonic expression");
+		WrongToken(t, "Expression not found: op 4,12");
 	}
 	v = grm.s.integerConstant;
 	addMemory(opc);
@@ -352,7 +359,7 @@ int parseFile(FILE* f) {
 			inside = 0;
 			break;
 		default:
-			Failure("syntax?");
+			WrongToken(t, ", unknown token?");
 			t = 0;
 			break;
 		}

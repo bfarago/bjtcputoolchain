@@ -250,7 +250,9 @@
     <Image Include="res\fileview_hc.bmp" />
     <Image Include="res\file_view.ico" />
     <Image Include="res\file_view_hc.ico" />
+    <Image Include="res\icon_bre.ico" />
     <Image Include="res\icon_break.ico" />
+    <Image Include="res\icon_warn.ico" />
     <Image Include="res\ideb.ico" />
     <Image Include="res\idebDoc.ico" />
     <Image Include="res\menuimages.bmp" />

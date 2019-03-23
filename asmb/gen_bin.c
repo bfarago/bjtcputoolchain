@@ -102,7 +102,8 @@ typedef enum {
 	DF_LINES,//obsolate
 	DF_MEMTYPES, //obsolate
 	DF_SECTIONNAME,
-	DF_MEMORYMETA
+	DF_MEMORYMETA,
+	DF_ERROR
 } tDbgFileBlockId;
 
 typedef struct {
@@ -188,7 +189,13 @@ Std_ReturnType gen_dbg(asmb_config_t *asmb_config)
 		//dbgfile_wr(f, DF_LINES, lines, MAXMEMORY*4);
 		//dbgfile_wr(f, DF_MEMTYPES, memoryTypes, MAXMEMORY * 4);
 #endif
+		len = getErrorListLength();
+		for (int i = 0; i < len; i++) {
+			const tErrorRecord* pE = getErrorListItem(i);
+			int slen = strlen( pE->errorText);
+			dbgfile_wr(f, DF_ERROR, pE, sizeof(tErrorRecord) - MAX_ERROR_LEN + slen);
 
+		}
 		dbgfile_wr(f, DF_MEMORYMETA, memoryMeta, MAXMEMORY * sizeof(memoryMetaData_t));
 	}
 	return ret;

@@ -1041,7 +1041,8 @@ typedef enum {
 	DF_LINES,//obsolate
 	DF_MEMTYPES, //obsolate
 	DF_SECTIONNAME,
-	DF_MEMORYMETA
+	DF_MEMORYMETA,
+	DF_ERROR
 } tDbgFileBlockId;
 
 
@@ -1092,7 +1093,7 @@ void CSimulator::LoadSymbol(int len, CFile& f ) {
 	}
 	f.Read(&sym, len);
 	if (sym.len >= MAXSYMBOLENAME) {
-		//to long symbol name
+		//too long symbol name
 		sym.len = MAXSYMBOLENAME - 1;
 	}
 	sym.name[sym.len] = 0;
@@ -1101,19 +1102,45 @@ void CSimulator::LoadSymbol(int len, CFile& f ) {
 
 	m_Symbols.Add(sym);
 }
+#include "MainFrm.h"
+#include "OutputWnd.h"
+void CSimulator::LoadError(int len, CFile& f) {
+	tErrorRecord err;
+	err.lineNr = 0;
+	err.fileId = 0;
+	err.errorCode = 0;
+	if (len > sizeof(tErrorRecord)) {
+		//error
+		f.Seek(len, CFile::current);
+		return;
+	}
+	f.Read(&err, len);
+	int slen = len - (sizeof(tErrorRecord) - MAX_ERROR_LEN);
+	if (slen >= MAX_ERROR_LEN) {
+		//too long symbol name
+		slen = MAX_ERROR_LEN - 1;
+	}
+	err.errorText[slen] = 0;
+
+	if (err.lineNr < 0) err.lineNr = 0;
+	int index= m_Errors.Add(err);
+	CString e;
+	e.Format(L"%S", err.errorText);
+	COutputWnd* ow = ((CMainFrame*)AfxGetMainWnd())->GetOutputWnd();
+	ow->AddError(m_Errors.GetAt(index));
+}
 /**LoadBinToMemory
 First step, It loads the .bin file to the operative memory of the simulator.
 Then, it tries to open the .dbg file as well.
 TODO: add more informations to the .dbg file, like: compiler warnings and additional symbole related things.
 */
-#include "MainFrm.h"
-#include "OutputWnd.h"
+
 void CSimulator::LoadBinToMemory()
 {
 	if (!m_pDoc) return;
 	m_Symbols.RemoveAll();
 	m_Sections.RemoveAll();
-
+	m_Errors.RemoveAll();
 	CString s;
 	s.Format(L"%s%s", m_pDoc->m_AsmbDirOut, m_pDoc->m_SimTargetBinFileName);
 	CFile f;
@@ -1195,6 +1222,9 @@ void CSimulator::LoadBinToMemory()
 					break;
 				case DF_SYM:
 					LoadSymbol(len,f);
+					break;
+				case DF_ERROR:
+					LoadError(len, f);
 					break;
 				case DF_SECTIONNAME:
 					{

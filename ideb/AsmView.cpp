@@ -67,6 +67,8 @@ CAsmView::CAsmView()
 	m_FontMonospace.CreateStockObject(SYSTEM_FIXED_FONT); //ANSI_FIXED_FONT);
 	hIconBreak = (HICON) ::LoadImage(::AfxGetResourceHandle(), MAKEINTRESOURCE(IDI_ICON_BREAK),
 		IMAGE_ICON, 16, 16, 0);
+	hWarning = (HICON) ::LoadImage(::AfxGetResourceHandle(), MAKEINTRESOURCE(IDI_ICON_WARNING),
+		IMAGE_ICON, 16, 16, 0);
 	m_BreakpointsAreaVisible = TRUE;
 	m_LineNrAreaVisible = TRUE;
 	m_WarningAreaVisible = TRUE;
@@ -141,6 +143,7 @@ void CAsmView::OnDraw(CDC* pDC)
 	BOOL DisAsmAreaVisible;
 	BOOL WarningAreaVisible;
 	int firstX = 0;
+	int firstXWarning = 0;
 	int firstXLineNr = 0;
 	int firstXDisAsm = 0;
 	int lastXLineNr = 0;
@@ -226,6 +229,7 @@ void CAsmView::OnDraw(CDC* pDC)
 		pDCTmp->FillSolidRect(&tr, crLineNrAreaBk);
 	}
 	if (WarningAreaVisible) {
+		firstXWarning = firstX;
 		firstX += 16;
 		tr.top = 0; tr.bottom = r.bottom;
 		tr.left = lastXLineNr; tr.right = firstX;
@@ -288,7 +292,17 @@ void CAsmView::OnDraw(CDC* pDC)
 				}
 			}
 		}
-
+		if (WarningAreaVisible) {
+			if (!pDC->IsPrinting()) {
+				int ne = pSimulator->m_Errors.GetCount();
+				for (int ie = 0; ie < ne; ie++) {
+					const tErrorRecord& rErr = pSimulator->m_Errors.GetAt(ie);
+					if (rErr.lineNr == ld->number) {
+						pDCTmp->DrawIcon(firstXWarning - 16, tr.top - 8, hWarning);
+					}
+				}
+			}
+		}
 		if (LineNrAreaVisible) {
 			//display the actual lines number
 			CString s;

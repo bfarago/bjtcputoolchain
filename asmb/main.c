@@ -28,15 +28,17 @@ void relocation() {
 	for (i = 0; i < n; i++) {
 		const char* name;
 		int addr;
+		int line;
 		relocType_en relocType;
 		SType_e context = ST_Unknown;
-		getReloc((int)i, &name, &addr, &relocType, &context);
+		getReloc((int)i, &name, &addr, &relocType, &context, &line);
 		int ix = searchSymbol(name);
 		Debug("rel", "%i. %s relocated %x %i", i, name, addr, ix);
 		if (ix >= 0) {
-			int v = getSymbol(name, &context);
+			int v = getSymbol(name, &context, -1);
 			if (0 == v) {
 				Debug("ext", "extern %s relocate %x", name, addr);
+				AddError(3, 0, line, "extern", name);
 			}
 			int c;
 			//todo: feature: reloctype can encode operation too
@@ -62,6 +64,7 @@ void relocation() {
 			//not found, external
 			Debug("ext", "extern %s relocate %x", name, addr);
 			printf("Warning: Missing symbol declaration %s. Memory location 0x%03x will be set as 0.\n",  name, addr);
+			AddError(2, 0, line, "extern", name);
 		}
 	}
 }

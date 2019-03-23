@@ -12,6 +12,8 @@
 #include <stdio.h>
 #include <stdbool.h>
 
+#define MAX_ERROR_LEN (255)
+
 //Eliminate warning in VisualStudio
 #if defined(_WIN32) || defined(WIN32)
 #define UTIL_STRDUP(x) _strdup(x)
@@ -76,7 +78,8 @@ int parse_exp(int t, GType_s* res, SType_e* context);
  */
 
 void Failure(const char *format, ...);
-
+void AddError(int errCode, short fileId, int line, char* errbuf, char* quote);
+void WrongToken(int t, const char *format, ...);
 /**
  * Macro: Assert()
  * Usage: Assert(num > 0);
@@ -140,6 +143,16 @@ typedef struct {
 	unsigned char enable_dbg;
 }asmb_config_t;
 
+typedef struct {
+	unsigned int lineNr;
+	unsigned short fileId;
+	unsigned short errorCode;
+	char errorText[MAX_ERROR_LEN];
+}tErrorRecord;
+
+int getErrorListLength();
+const tErrorRecord* getErrorListItem(int index);
+
 /**
 * Function: InitConfig
 * Default config.
@@ -160,10 +173,10 @@ int SymbolValueByIndex(size_t index);
 
 int searchSymbol(const char *key);
 void setSymbol(const char* name, int value, SType_e symbolType);
-int getSymbol(const char* name, SType_e* pContext);
+int getSymbol(const char* name, SType_e* pContext, int line);
 SType_e getSymbolType(int index);
 SContexts_t getSymbolContexts(int index);
-int getReloc(int index, const char**name, int* adr, relocType_en* rt, SType_e* context);
+int getReloc(int index, const char**name, int* adr, relocType_en* rt, SType_e* context, int* line);
 size_t getRelocs();
 
 void setRelocType(relocType_en rt);
