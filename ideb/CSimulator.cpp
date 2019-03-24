@@ -97,8 +97,9 @@ TCHAR SimCode2Ascii[257] = _T(
 */
 CSimulator::CSimulator()
 	:m_pDoc(0), m_MemorySizeLoaded(0), m_Pc(0),m_CpuHz(SIM_HZ),m_Time(0), m_ClockCount(0), m_State(ss_Halt),
-	m_UartFromCpuWr(0), m_CpuSnapshot_p(0), m_Stop(FALSE), m_DisplayMeasurement(TRUE), m_DisplayMemory(TRUE), m_DisplayDebugMonitor(TRUE),
-	m_ExecTimeActual(0), m_DrawTimeActual(0)
+	m_UartFromCpuWr(0), m_CpuSnapshot_p(0), m_Stop(FALSE),
+	m_DisplayMeasurement(TRUE), m_DisplayMemory(TRUE), m_DisplayDebugMonitor(TRUE), m_DisplayTimeLine(FALSE),
+	m_ExecTimeActual(0), m_DrawTimeActual(0), m_TracePcPos(0), m_TracePcYNum(0), m_TraceShiftR(SIM_TRACESHIFTR)
 {
 	for (int y = 0; y < 16; y++) {
 		for (int x = 0; x < 16; x++) {
@@ -116,6 +117,11 @@ CSimulator::CSimulator()
 		m_MemoryMeta[i].fileId = 0;
 		m_MemoryMeta[i].line = 0;
 		m_MemoryMeta[i].sectionType = MT_code;
+	}
+	for (int i = 0; i < SIM_MAXTRACE; i++) {
+		m_TracePc[i].pc = 0;
+		m_TracePc[i].timestamp = 0;
+		m_TracePcY[i] = 0;
 	}
 	m_CpuSnapshot_p = &m_CpuSnapshot; //TODO: implement a debug timeline possibility later
 	m_CpuSnapshot.op = 16;
@@ -153,6 +159,12 @@ void CSimulator::SetDocument(CidebDoc * pDoc)
 void CSimulator::SetPc(SimAddress_t pc)
 {
 	m_Pc = pc; //TODO: next pc or change state to fetch ?
+	m_TracePc[m_TracePcPos].pc = pc;
+	m_TracePc[m_TracePcPos].timestamp = m_ClockCount;
+	m_TracePcPos++;
+	if (m_TracePcPos >= SIM_MAXTRACE) {
+		m_TracePcPos = 0;
+	}
 }
 
 inline void CSimulator::AddressBusDrive(SimAddress_t addr) {
@@ -338,7 +350,7 @@ void CSimulator::OnDraw(CDC* pDC, int mode) {
 		sx += 310;
 	}
 	if (m_DisplayMemory) {
-		sx+= (4 + 64)*HEXDISTANCEX + 10;
+		sx += (4 + 64)*HEXDISTANCEX + 10;
 	}
 	firstXDisasm = sx;
 	pDC->SetTextColor(COLORREF(0));
@@ -374,12 +386,12 @@ void CSimulator::OnDraw(CDC* pDC, int mode) {
 			}
 		}
 	}
-	if (m_DisplayMemory){
+	if (m_DisplayMemory) {
 		static int dmcount = 0;
 		r.left = 310;
-		r.right = r.left + (4+64)*HEXDISTANCEX+10;
+		r.right = r.left + (4 + 64)*HEXDISTANCEX + 10;
 		r.top = 15;
-		r.bottom = r.top + (m_MemorySizeLoaded/64+2)*HEXDISTANCEY;
+		r.bottom = r.top + (m_MemorySizeLoaded / 64 + 2)*HEXDISTANCEY;
 		if (pDC->IsPrinting()) {
 			sy = OnDrawHexDump(pDC, 0, m_MemorySizeLoaded, r.left, 1) + 1;
 			sy = OnDrawHexDump(pDC, ADDR_ARR, ADDR_PERIPH_MAX, r.left, sy) + 1;
@@ -400,34 +412,34 @@ void CSimulator::OnDraw(CDC* pDC, int mode) {
 				m_BitmapTmp.DeleteObject();
 			}
 		}
-		
+
 	}
 	if (m_DisplayMeasurement) {
 		CString s;
 		r.top = 300;
-		r.bottom = r.top+15;
+		r.bottom = r.top + 15;
 		r.left = 0;
 		r.right = 900;
 		s.Format(_T("Draw period:%dms Refresh rate:%03.3f"),
-			SIM_REFRESH_TIMER, 1000.0/ SIM_REFRESH_TIMER);
+			SIM_REFRESH_TIMER, 1000.0 / SIM_REFRESH_TIMER);
 		pDC->DrawTextW(s, &r, DT_TOP);
 		r.top += 15; r.bottom += 15;
 		s.Format(_T("Exec[ms]:%03.3f Min:%03.3f Max:%03.3f"),
-			m_ExecTimeAvg /1000.0, m_ExecTimeMin /1000.0, m_ExecTimeMax /1000.0);
+			m_ExecTimeAvg / 1000.0, m_ExecTimeMin / 1000.0, m_ExecTimeMax / 1000.0);
 		pDC->DrawTextW(s, &r, DT_TOP);
 		r.top += 15; r.bottom += 15;
 		s.Format(_T("Draw[ms]:%03.3f Min:%03.3f Max:%03.3f"),
-			m_DrawTimeAvg /1000.0, m_DrawTimeMin /1000.0, m_DrawTimeMax /1000.0);
+			m_DrawTimeAvg / 1000.0, m_DrawTimeMin / 1000.0, m_DrawTimeMax / 1000.0);
 		pDC->DrawTextW(s, &r, DT_TOP);
 		if (m_Time > 0) {
 			r.top += 15; r.bottom += 15;
 			int n = (int)(m_ClockCount / m_Time);
 			s.Format(_T("MHz:%3.3f Instr/sec:%d"),
-				4*n/1000000.0, n);
+				4 * n / 1000000.0, n);
 			pDC->DrawTextW(s, &r, DT_TOP);
 		}
 	}
-	
+
 	if (m_DisplayDebugMonitor) {
 		r.top = 0;
 		r.bottom = 15;
@@ -467,33 +479,121 @@ void CSimulator::OnDraw(CDC* pDC, int mode) {
 				CString sSection;
 				CString sFile;
 				if (m_Sections.GetSize() > pMeta->sectionId) {
-					sSection= m_Sections[pMeta->sectionId];
+					sSection = m_Sections[pMeta->sectionId];
 				}
 				if (m_pDoc)
-				if (m_pDoc->m_AsmFiles.GetSize() > pMeta->fileId) {
-					sFile = m_pDoc->m_AsmFiles[pMeta->fileId];
-				}
-				int line = pMeta->line -1; //todo: asnb line wrong
+					if (m_pDoc->m_AsmFiles.GetSize() > pMeta->fileId) {
+						sFile = m_pDoc->m_AsmFiles[pMeta->fileId];
+					}
+				int line = pMeta->line - 1; //todo: asnb line wrong
 				s.Format(_T("Tick: %08dus Time: %03.6fs PC: %03x Acc: %x +%d Op: %s 0x%x \t(%s) %s:%d"),
 					m_ClockCount, m_Time, m_Pc, m_CpuSnapshot_p->acc, m_CpuSnapshot_p->carry,
 					gMnemonics[op], operand,
 					sSection, sFile, line
-					);
+				);
 
 			}
-			pDC->DrawTextW(s, &r, DT_TOP| DT_EXPANDTABS);
+			pDC->DrawTextW(s, &r, DT_TOP | DT_EXPANDTABS);
 			SimAddress_t a = m_Pc;
-			for (int row = 0; row < 32; row++) {
-				r.top = row * 16+16;
+			for (int row = 0; row < 29; row++) {
+				r.top = row * 16 + 16;
 				r.bottom = r.top + 15;
 				r.left = firstXDisasm + 10;//870+10;
 				r.right = r.left + 130;
 				if (m_Break[a]) {
 					pDC->DrawIcon(r.left - 28, r.top - 8, hIconBreak);
 				}
-				a=OnDrawDisasm(pDC, r, a);
+				a = OnDrawDisasm(pDC, r, a);
 			}
 		}
+	}
+	if (m_DisplayTimeLine){
+		int firsty = 280;
+		if (m_DisplayMeasurement || m_DisplayMemory || m_DisplayDebugMonitor) {
+			firsty = 500;
+		}
+		int m = m_TracePcPos - 1;
+		if (m < 0) m = SIM_MAXTRACE;
+		int firstTs = m_TracePc[m].timestamp;
+
+		for (int i = 0; i < SIM_MAXTRACE; i++) {
+			tTraceJump &r1 = m_TracePc[i];
+			bool hit = false;
+			for (int j = 0; j < m_TraceLabels.GetCount(); j++) {
+				if (m_TraceLabels[j].address == r1.pc) {
+					m_TracePcY[i] = j;
+					hit = true;
+					break;
+				}
+			}
+			if (!hit) {
+				tTraceLabel tl;
+				tl.address = r1.pc;
+				tl.index = GetLabelForPc(r1.pc); //get from symbols
+				m_TracePcY[i] = m_TraceLabels.Add(tl);
+			}
+		}
+
+		for (int i = 0; i < m_TraceLabels.GetCount(); i++) {
+			int index = m_TraceLabels[i].index;
+			if (index >= 0) {
+				CString s;
+				s.Format(L"%03x %S", m_Symbols[index].value, m_Symbols[index].name);
+				r.top = i * 16 + firsty;
+				r.bottom = r.top + 16;
+				r.left = 0; r.right = 150;
+				pDC->DrawText(s, r, DT_TOP | DT_LEFT);
+			}
+		}
+		for (int i = 0; i < 1500000; i += 100*(1<< m_TraceShiftR)) {
+			CString s;
+			int tx = i>> m_TraceShiftR;
+			s.Format(L"%d",  i);
+			r.top = firsty;
+			r.bottom = r.top + 16;
+			r.left = 150+tx; r.right = r.left+ 50;
+			pDC->DrawText(s, r, DT_TOP | DT_LEFT);
+			if (tx > 1024) break;
+		}
+		bool bFirst = true;
+		if (m > 0) {
+			for (int i = m; i > 0; i--)
+			{
+				tTraceJump &r1 = m_TracePc[i];
+				tTraceJump &r2 = m_TracePc[i - 1];
+				int t1 = ((firstTs - r1.timestamp) >> m_TraceShiftR) + 150;
+				int t2 = ((firstTs - r2.timestamp) >> m_TraceShiftR) + 150;
+				if (t2 > 1500)break;
+				int y = m_TracePcY[i] * 16 + firsty + 8;
+				if (y >= 0) {
+					if (bFirst)
+						pDC->MoveTo(t1, y);
+					else
+						pDC->LineTo(t1, y);
+					pDC->LineTo(t2, y);
+					bFirst = false;
+				}
+				
+			}
+		}
+		for (int i = (SIM_MAXTRACE - 1); i > m_TracePcPos; i--)
+		{
+			tTraceJump &r1 = m_TracePc[i];
+			tTraceJump &r2 = m_TracePc[i - 1];
+			int t1 = ((firstTs - r1.timestamp) >> m_TraceShiftR) + 150;
+			int t2 = ((firstTs - r2.timestamp) >> m_TraceShiftR) + 150;
+			if (t2 > 1500)break;
+			int y = m_TracePcY[i] * 16 + firsty + 8;
+			if (y >= 0) {
+				if (bFirst)
+					pDC->MoveTo(t1, y);
+				else
+					pDC->LineTo(t1, y);
+				pDC->LineTo(t2, y);
+				bFirst = false;
+			}
+		}
+		
 	}
 	QueryPerformanceCounter(&EndingTime);
 	ElapsedMicroseconds.QuadPart = EndingTime.QuadPart - StartingTime.QuadPart;
@@ -923,6 +1023,7 @@ BOOL CSimulator::Step()
 	return ret;
 }
 
+
 //RunQuick: not clock accurate, instruction simulation step. (vast faster)
 BOOL CSimulator::RunQuick() {
 	//if (!m_CpuSnapshot_p) m_CpuSnapshot_p = &m_CpuSnapshot;
@@ -965,13 +1066,13 @@ BOOL CSimulator::RunQuick() {
 		TOK(T_nor, 7) AluSetAccumulator(~(acc | data));	break;
 		TOK(T_rrm, 8) AluSetAccumulator(data >> 1); break;
 
-		TOK(T_jmp, 9) m_Pc = imm;	break;
-		TOK(T_jc, 10) if (m_CpuSnapshot_p->carry) m_Pc = imm;	break;
-		TOK(T_jnc, 11) if (!m_CpuSnapshot_p->carry) m_Pc = imm; break;
-		TOK(T_jz, 12)  if (!m_CpuSnapshot_p->acc) m_Pc = imm; break;
-		TOK(T_jnz, 13) if (m_CpuSnapshot_p->acc) m_Pc = imm; break;
-		TOK(T_jm, 14) if (m_CpuSnapshot_p->acc & 0x8) m_Pc = imm; break;
-		TOK(T_jp, 15) if (!(m_CpuSnapshot_p->acc & 0x8)) m_Pc = imm; break;
+		TOK(T_jmp, 9) SetPc(imm);	break;
+		TOK(T_jc, 10) if (m_CpuSnapshot_p->carry) SetPc(imm);	break;
+		TOK(T_jnc, 11) if (!m_CpuSnapshot_p->carry) SetPc(imm); break;
+		TOK(T_jz, 12)  if (!m_CpuSnapshot_p->acc) SetPc(imm); break;
+		TOK(T_jnz, 13) if (m_CpuSnapshot_p->acc) SetPc(imm); break;
+		TOK(T_jm, 14) if (m_CpuSnapshot_p->acc & 0x8) SetPc(imm); break;
+		TOK(T_jp, 15) if (!(m_CpuSnapshot_p->acc & 0x8)) SetPc(imm); break;
 	}
 	if (1 == op)//sta
 	{
@@ -1074,7 +1175,15 @@ Std_ReturnType dbgfile_rd(CFile*f, tDbgFileBlockId& id, void* b, int& len) {
 void CSimulator::ClearSymbolTable() {
 	m_Symbols.RemoveAll();
 }
-
+int CSimulator::GetLabelForPc(int pc) {
+	int n = m_Symbols.GetCount();
+	for (int i = 0; i < n; i++) {
+		if (m_Symbols[i].value == pc) {
+			return i;
+		}
+	}
+	return -1;
+}
 void CSimulator::LoadSymbol(int len, CFile& f ) {
 	tDbgFileSymbol sym;
 	sym.memtype = MT_undef;
@@ -1141,6 +1250,7 @@ void CSimulator::LoadBinToMemory()
 	m_Symbols.RemoveAll();
 	m_Sections.RemoveAll();
 	m_Errors.RemoveAll();
+	m_TraceLabels.RemoveAll();
 	CString s;
 	s.Format(L"%s%s", m_pDoc->m_AsmbDirOut, m_pDoc->m_SimTargetBinFileName);
 	CFile f;

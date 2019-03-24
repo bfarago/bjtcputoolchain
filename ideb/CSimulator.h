@@ -135,6 +135,17 @@ typedef struct {
 	char errorText[MAX_ERROR_LEN];
 }tErrorRecord;
 
+typedef struct {
+	unsigned int timestamp;
+	unsigned short pc;
+}tTraceJump;
+typedef struct {
+	unsigned int address;
+	int index;
+}tTraceLabel;
+#define SIM_MAXTRACE (64*1024)
+#define SIM_TRACESHIFTR (0)
+
 //CSimulator: implements the cpu and screen simulator.
 class CSimulator
 {
@@ -157,6 +168,7 @@ public:
 	void SetStop(BOOL isStop);
 	BOOL GetStop()const { return m_Stop; }
 	void ClearSymbolTable();
+	int GetLabelForPc(int pc);
 	void LoadSymbol(int len, CFile& f);
 	void LoadError(int len, CFile & f);
 	void LoadBinToMemory();
@@ -188,6 +200,7 @@ private:
 	CFont m_FontMonospace;
 	CDC m_DCTmp;
 	CBitmap m_BitmapTmp;
+
 protected:
 	CidebDoc * m_pDoc;
 	CTime m_TimeBinFIle;
@@ -195,12 +208,15 @@ protected:
 
 	SimAddress_t m_Pc;
 	SimData_t m_Memory[SIM_MAXMEMORYSIZE];
-
 	SimData_t m_HeatPc[SIM_MAXMEMORYSIZE];
 	SimData_t m_HeatRead[SIM_MAXMEMORYSIZE];
 	SimData_t m_HeatWrite[SIM_MAXMEMORYSIZE];
 	SimData_t m_Break[SIM_MAXMEMORYSIZE];
 	memoryMetaData_t m_MemoryMeta[SIM_MAXMEMORYSIZE];
+	unsigned int m_TracePcPos;
+	tTraceJump m_TracePc[SIM_MAXTRACE];
+	unsigned int m_TracePcYNum;
+	int m_TracePcY[SIM_MAXTRACE];
 	UINT m_MemorySizeLoaded;
 	DWORD m_CpuHz;
 	DWORD m_ClockCount;
@@ -222,9 +238,12 @@ public: //temporary
 	BOOL m_DisplayMeasurement;
 	BOOL m_DisplayMemory;
 	BOOL m_DisplayDebugMonitor;
+	BOOL m_DisplayTimeLine;
 	CArray<tDbgFileSymbol> m_Symbols;
 	CArray<tErrorRecord> m_Errors;
 	CStringArray m_Sections;
+	CArray<tTraceLabel> m_TraceLabels;
+	int m_TraceShiftR;
 protected:
 	ULONG64 m_ExecTimeSum;
 	int m_ExecTimeAvg;

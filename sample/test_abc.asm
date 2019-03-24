@@ -81,8 +81,10 @@ start_delay:
 		sta v_delay4		;init delay last nibble (outer loop number) to wait n* 2^16 
 delay1:
 		mvi a,0
+delay2:
 		ad0 plus+1			; 2*tick (0x02)
-		jnc $-4				; inner loop. Jump back one 4_12 instruction, which is 4 nibble long. 
+		jnc delay2
+		;jnc $-4			; inner loop. Jump back one 4_12 instruction, which is 4 nibble long. 
 							; time= 1+16*2 tick = 33 (=2<<4+1)
 		v_delay1 equ $+1	; this variable will be on immediate of the next mvi instruction
 		mvi a, 0
