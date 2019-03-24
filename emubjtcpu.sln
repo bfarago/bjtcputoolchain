@@ -11,6 +11,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ideb", "ideb\ideb.vcxproj",
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "raspberry", "emub\raspberry\raspberry.vcxproj", "{8A1BE174-C046-4929-AD8E-9A2D5EE381AE}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libbjtcpu", "libbjtcpu\libbjtcpu.vcxproj", "{5F3767FA-CAD9-4580-AB8A-F637641C318B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -51,6 +53,14 @@ Global
 		{8A1BE174-C046-4929-AD8E-9A2D5EE381AE}.Release|x64.Build.0 = Release|x64
 		{8A1BE174-C046-4929-AD8E-9A2D5EE381AE}.Release|x86.ActiveCfg = Release|Win32
 		{8A1BE174-C046-4929-AD8E-9A2D5EE381AE}.Release|x86.Build.0 = Release|Win32
+		{5F3767FA-CAD9-4580-AB8A-F637641C318B}.Debug|x64.ActiveCfg = Debug|x64
+		{5F3767FA-CAD9-4580-AB8A-F637641C318B}.Debug|x64.Build.0 = Debug|x64
+		{5F3767FA-CAD9-4580-AB8A-F637641C318B}.Debug|x86.ActiveCfg = Debug|Win32
+		{5F3767FA-CAD9-4580-AB8A-F637641C318B}.Debug|x86.Build.0 = Debug|Win32
+		{5F3767FA-CAD9-4580-AB8A-F637641C318B}.Release|x64.ActiveCfg = Release|x64
+		{5F3767FA-CAD9-4580-AB8A-F637641C318B}.Release|x64.Build.0 = Release|x64
+		{5F3767FA-CAD9-4580-AB8A-F637641C318B}.Release|x86.ActiveCfg = Release|Win32
+		{5F3767FA-CAD9-4580-AB8A-F637641C318B}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

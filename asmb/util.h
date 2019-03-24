@@ -12,6 +12,8 @@
 #include <stdio.h>
 #include <stdbool.h>
 
+#include "libbjtcpu.h"
+
 #define MAX_ERROR_LEN (255)
 
 //Eliminate warning in VisualStudio
@@ -22,10 +24,10 @@
 #define _fileno fileno
 #endif
 
-typedef enum {
-	E_OK,
-	E_NOT_OK
-}Std_ReturnType;
+//typedef enum {
+//	E_OK,
+//	E_NOT_OK
+//}Std_ReturnType;
 
 #ifdef __cplusplus
 extern "C" {
@@ -52,7 +54,7 @@ typedef struct {
 	int t;
 	YYSTYPE s;
 } GType_s;
-
+/*
 typedef enum {
 	ST_Unknown,
 	ST_Label,
@@ -62,7 +64,7 @@ typedef enum {
 	ST_LOAD,
 	ST_STORE
 } SType_e;
-typedef unsigned char SContexts_t;
+typedef unsigned char SContexts_t;*/
 
 void stackPush(int t, const YYSTYPE* s);
 
@@ -78,7 +80,7 @@ int parse_exp(int t, GType_s* res, SType_e* context);
  */
 
 void Failure(const char *format, ...);
-void AddError(int errCode, short fileId, int line, char* errbuf, char* quote);
+void AddError(int errCode, short fileId, int line, char* errbuf, const char* quote);
 void WrongToken(int t, const char *format, ...);
 /**
  * Macro: Assert()
@@ -142,13 +144,13 @@ typedef struct {
 	unsigned char enable_err;
 	unsigned char enable_dbg;
 }asmb_config_t;
-
+/*
 typedef struct {
 	unsigned int lineNr;
 	unsigned short fileId;
 	unsigned short errorCode;
 	char errorText[MAX_ERROR_LEN];
-}tErrorRecord;
+}tErrorRecord;*/
 
 int getErrorListLength();
 const tErrorRecord* getErrorListItem(int index);

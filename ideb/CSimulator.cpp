@@ -11,11 +11,6 @@
 
 #include "Resource.h"
 
-//this defines are obsolate, will be removed soon
-#define OLD_TEXT_STARTX 16
-#define OLD_TEXT_STARTY 16
-#define OLD_TEXT_DISTANCEX 16
-
 //this defines used by OnDraw related codes
 #define DISTANCEY 16
 #define HEXDISTANCEX 8
@@ -26,40 +21,6 @@
 #define BM_SRT_X (50) // start x (left) on the window
 #define BM_OFS_Y (13) // original height of a character in the bitmap in pixels
 #define BM_OFS_X (13) // original width of a character in the bitmap in pixels
-
-//textual representation of each instructions.
-static const TCHAR *gMnemonics[17] =
-{ _T("mvi a,"),_T("sta"),_T("lda"),_T("ad0"),_T("ad1"),_T("adc"),_T("nand"),_T("nor"),_T("rrm"),_T("jmp"),_T("jc "),_T("jnc"),_T("jz "),_T("jnz"),_T("jm "),_T("jp "),_T("INVALID")};
-
-//textual representation of each internal states of the clock accurate simulator
-static const TCHAR *gSimStates[9] =
-{ _T("Halt     "), _T("FetchOp  "), _T("FetchImm0"), _T("FetchImm1"), _T("FetchImm2"),
-  _T("Decode   "), _T("Load     "), _T("Alu      "), _T("Store    ") };
-
-//CPU peripheral addresses
-enum {
-	ADDR_ARR =0xc00,
-	ADDR_RND,
-	ADDR_KEY0,
-	ADDR_KEY1,
-	ADDR_SCREEN_X,	//mask:0xc04
-	ADDR_SCREEN_Y,
-	ADDR_SCREEN_CH1, //High
-	ADDR_SCREEN_CH0, //Low
-	ADDR_UART_H,   // mask:0xc08
-	ADDR_UART_L,
-	ADDR_PERIPH_MAX
-};
-/*
-arr		equ 3072
-rnd		equ 3073
-key0	equ 3074
-key1	equ 3075
-cord_x	equ 3076
-cord_y	equ 3077
-ch_h	equ 3078
-ch_l	equ 3079
-*/
 
 //SimScreen type: holds the all internal states of the video card.
 typedef struct {
@@ -97,7 +58,7 @@ TCHAR SimCode2Ascii[257] = _T(
 */
 CSimulator::CSimulator()
 	:m_pDoc(0), m_MemorySizeLoaded(0), m_Pc(0),m_CpuHz(SIM_HZ),m_Time(0), m_ClockCount(0), m_State(ss_Halt),
-	m_UartFromCpuWr(0), m_CpuSnapshot_p(0), m_Stop(FALSE),
+	m_UartFromCpuWr(0), m_CpuSnapshot_p(0), m_Stop(FALSE), m_DisplayScreen(TRUE),
 	m_DisplayMeasurement(TRUE), m_DisplayMemory(TRUE), m_DisplayDebugMonitor(TRUE), m_DisplayTimeLine(FALSE),
 	m_ExecTimeActual(0), m_DrawTimeActual(0), m_TracePcPos(0), m_TracePcYNum(0), m_TraceShiftR(SIM_TRACESHIFTR)
 {
@@ -158,7 +119,7 @@ void CSimulator::SetDocument(CidebDoc * pDoc)
 
 void CSimulator::SetPc(SimAddress_t pc)
 {
-	m_Pc = pc; //TODO: next pc or change state to fetch ?
+	m_Pc = pc;
 	m_TracePc[m_TracePcPos].pc = pc;
 	m_TracePc[m_TracePcPos].timestamp = m_ClockCount;
 	m_TracePcPos++;
@@ -219,8 +180,7 @@ int CSimulator::OnDrawHexDump(CDC* pDC, SimAddress_t aBegin, SimAddress_t aEnd, 
 			b[0] = 0x30 + d;
 			pDC->DrawTextW(b, &r, DT_TOP);
 		}
-		//pDC->SetBkColor(RGB(0xff, 0xff, 0xff));
-		//pDC->SetTextColor(COLORREF(0));
+
 		if (m_Pc == i) {
 			CPen penPc;
 			penPc.CreatePen(PS_SOLID, 2, RGB(0xFF, 0x7F, 0x4f));
@@ -354,24 +314,8 @@ void CSimulator::OnDraw(CDC* pDC, int mode) {
 	}
 	firstXDisasm = sx;
 	pDC->SetTextColor(COLORREF(0));
-	TCHAR b[2];
-	b[1] = 0;
-	if (0) {
-		//This section is obsolate now. Draw textual view of the screen.
-		for (int y = 0; y < 16; y++) {
-			r.top = OLD_TEXT_STARTY + y * DISTANCEY;
-			r.bottom = r.top + DISTANCEY;
-			for (int x = 0; x < 16; x++) {
-				unsigned char code = SimScreen.buf[x][y];
-				r.left = OLD_TEXT_STARTX + x * OLD_TEXT_DISTANCEX;
-				r.right = r.left + OLD_TEXT_DISTANCEX;
-				b[0] = SimCode2Ascii[code];
-				pDC->DrawTextW(b, &r, DT_TOP);
-			}
-		}
-	}
 
-	if (1) {
+	if (m_DisplayScreen) {
 		//This is the only used implementation of the screen emulator view part.
 		for (int y = 0; y < 16; y++) {
 			r.top = BM_SRT_Y + y * BM_OFS_Y;
@@ -386,6 +330,7 @@ void CSimulator::OnDraw(CDC* pDC, int mode) {
 			}
 		}
 	}
+
 	if (m_DisplayMemory) {
 		static int dmcount = 0;
 		r.left = 310;
@@ -530,7 +475,7 @@ void CSimulator::OnDraw(CDC* pDC, int mode) {
 				tTraceLabel tl;
 				tl.address = r1.pc;
 				tl.index = GetLabelForPc(r1.pc); //get from symbols
-				m_TracePcY[i] = m_TraceLabels.Add(tl);
+				m_TracePcY[i] = (int)m_TraceLabels.Add(tl);
 			}
 		}
 
@@ -576,7 +521,7 @@ void CSimulator::OnDraw(CDC* pDC, int mode) {
 				
 			}
 		}
-		for (int i = (SIM_MAXTRACE - 1); i > m_TracePcPos; i--)
+		for (unsigned int i = (SIM_MAXTRACE - 1); i > m_TracePcPos; i--)
 		{
 			tTraceJump &r1 = m_TracePc[i];
 			tTraceJump &r2 = m_TracePc[i - 1];
@@ -602,9 +547,8 @@ void CSimulator::OnDraw(CDC* pDC, int mode) {
 
 	m_DrawTimeActual = (int)ElapsedMicroseconds.QuadPart;
 	ProcessDrawMeasurement();
-
-
 }
+
 void CSimulator::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
 	BOOL hit = FALSE;
@@ -634,6 +578,7 @@ void CSimulator::OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
 	}
 	*/
 }
+
 inline BOOL CSimulator::OnScreenLoadStore(SimAddress_t addr, busDirection_t dir, SimData_t* data) {
 	BOOL processed = TRUE;
 	if (bd_Write == dir) {
@@ -732,6 +677,7 @@ inline BOOL CSimulator::OnPerifLoadStore(SimAddress_t addr, busDirection_t dir, 
 	}
 	return FALSE;
 }
+
 /**ProcessHeatMap:
 Call periodically to get the heat map aged.
 */
@@ -866,9 +812,11 @@ inline void CSimulator::AluSetAccumulator(SimData_t data) {
 	m_CpuSnapshot_p->carry = (m_CpuSnapshot_p->acc >= 0x10) ? 1 : 0; //store carry
 	m_CpuSnapshot_p->acc &= 0x0f; //remove carry
 }
+
 memoryMetaData_t*  CSimulator::GetMemoryMetaData(SimAddress_t a) {
 	return &m_MemoryMeta[a];
 }
+
 int CSimulator::GetLine(SimAddress_t a)
 {
 	int l = m_MemoryMeta[a].line - 2;
@@ -1126,32 +1074,6 @@ void CSimulator::SetStop(BOOL isStop)
 	//TODO: halt vs stop
 	// m_State = m_Stop ? ss_Halt : ss_FetchOp;
 }
-////////////////////////////////////////////////////
-// Internal Representation file format
-//todo: separate to a lib > internal representation
-
-//tDbgFileBlockId enum. IDs for the Dbg file blocks.
-typedef enum {
-	DF_VERSION,
-	DF_NAME,
-	DF_FNAME_BIN,
-	DF_TIME_BIN,
-	DF_FNAME_ASM,
-	DF_TIME_ASM,
-	DF_SYM,
-	DF_LINES,//obsolate
-	DF_MEMTYPES, //obsolate
-	DF_SECTIONNAME,
-	DF_MEMORYMETA,
-	DF_ERROR
-} tDbgFileBlockId;
-
-
-typedef enum {
-	E_OK,
-    E_NOT_OK
-}Std_ReturnType;
-
 
 /**dbgfile_rd: reads one block from the file.
 Blocks are in common format. Each block starts with the block header, then content are follows.
@@ -1176,7 +1098,7 @@ void CSimulator::ClearSymbolTable() {
 	m_Symbols.RemoveAll();
 }
 int CSimulator::GetLabelForPc(int pc) {
-	int n = m_Symbols.GetCount();
+	int n = (int)m_Symbols.GetCount();
 	for (int i = 0; i < n; i++) {
 		if (m_Symbols[i].value == pc) {
 			return i;
@@ -1211,6 +1133,7 @@ void CSimulator::LoadSymbol(int len, CFile& f ) {
 
 	m_Symbols.Add(sym);
 }
+
 #include "MainFrm.h"
 #include "OutputWnd.h"
 void CSimulator::LoadError(int len, CFile& f) {
@@ -1232,18 +1155,18 @@ void CSimulator::LoadError(int len, CFile& f) {
 	err.errorText[slen] = 0;
 
 	if (err.lineNr < 0) err.lineNr = 0;
-	int index= m_Errors.Add(err);
+	int index= (int) m_Errors.Add(err);
 	CString e;
 	e.Format(L"%S", err.errorText);
 	COutputWnd* ow = ((CMainFrame*)AfxGetMainWnd())->GetOutputWnd();
 	ow->AddError(m_Errors.GetAt(index));
 }
+
 /**LoadBinToMemory
 First step, It loads the .bin file to the operative memory of the simulator.
 Then, it tries to open the .dbg file as well.
 TODO: add more informations to the .dbg file, like: compiler warnings and additional symbole related things.
 */
-
 void CSimulator::LoadBinToMemory()
 {
 	if (!m_pDoc) return;
@@ -1397,6 +1320,5 @@ void CSimulator::LoadBinToMemory()
 		m_DbgFileLoaded = TRUE;
 		// m_MemorySizeLoaded = f.Read((void*)m_Memory, SIM_MAXMEMORYSIZE);
 		f.Close();
-
 	}
 }

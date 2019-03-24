@@ -81,7 +81,7 @@ void CIpcComSE::StartExecute()
     m_inst=si.hInstApp;
     m_hChild=si.hProcess;
 	// warning C4311, and warning C4302 are normal. Should check if microsoft provides a clear way to get the err code...
-    INT_PTR se=(int)(m_inst); //ptr or error code
+    INT_PTR se=(INT_PTR)(m_inst); //ptr or error code
     switch (se){
         case SE_ERR_FNF:    //File not found
             break;
@@ -142,7 +142,7 @@ bool CIpcComSE::ReadString(CString &s){
         }
         switch (c){
            case '\n':
-               //break;
+               //break; //no, handle together with \r
            case '\r':
                bEnd=true;
                break;

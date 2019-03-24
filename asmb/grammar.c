@@ -155,7 +155,7 @@ int convertAscii2BJTChar(int c) {
 	return c;
 }
 int parse_string() {
-	char * str = strdup(yylval.stringConstant); //assume T_StringConstant
+	char * str = _strdup(yylval.stringConstant); //assume T_StringConstant
 
 	int t = yylex();
 	bool bHig = true;
@@ -171,16 +171,16 @@ int parse_string() {
 		t = yylex();
 		bHig = false;
 	}
-	int n = strlen(str); //yylval.stringConstant
+	size_t n = strlen(str); //yylval.stringConstant
 	if (bLow)
-	for (int i = 0; i < n; i++) {
+	for (size_t i = 0; i < n; i++) {
 		int c = str[i]; //yylval.stringConstant
 		c = convertAscii2BJTChar(c);
 		if (bQuo) if (c == 0x26) c = 0x37;
 		addMemory(c);
 	}
 	if (bHig)
-	for (int i = 0; i < n; i++) {
+	for (size_t i = 0; i < n; i++) {
 		int c = str[i]; //yylval.stringConstant
 		c = convertAscii2BJTChar(c);
 		if (bQuo) if (c == 0x26) c = 0x37;

@@ -9,25 +9,10 @@
 #include "util.h"
 
 //Actual section type
-memoryType sectionType = MT_code;
+memoryType_t sectionType = MT_code;
 
 //this holds all of the meta data for each memory location
 memoryMetaData_t memoryMeta[MAXMEMORY];
-
-
-//#define OBSOLATE_ENABLED
-
-#ifdef OBSOLATE_ENABLED
-
-//Holds memory type for all the location (to be easier)
-memoryType memoryTypes[MAXMEMORY];
-
-//section ids
-int memorySectionId[MAXMEMORY];
-
-//holds the input source line numbers
-int lines[MAXMEMORY];
-#endif
 
 //Actual section name
 char section[MAXSECTIONNAME];
@@ -62,32 +47,18 @@ void addMemory(int data) {
 	
 	pMeta->sectionType = sectionType;
 	pMeta->fileId = include_actual_get();
-#ifdef OBSOLATE_ENABLED
-	lines[address] = yylineno;
-	memoryTypes[address] = sectionType;
-	memorySectionId[address] = sectionId;
-#endif
 	memory[address++] = data & 0xf;
 	chkAddress(address);
 }
 
 int getMemoryType(int address) {
-#ifdef OBSOLATE_ENABLED
-	return memoryTypes[address];
-#endif
 	return memoryMeta[address].sectionType;
 }
 
 int getMemorySectionId(int address) {
-#ifdef OBSOLATE_ENABLED
-	return memorySectionId[address]; 
-#endif
 	return memoryMeta[address].sectionId;
 }
 int getMemoryLineNo(int address) {
-#ifdef OBSOLATE_ENABLED
-	return lines[address];
-#endif
 	return memoryMeta[address].line;
 }
 memoryMetaData_t* getMemoryMeta(int address) {

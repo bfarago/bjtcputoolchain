@@ -75,7 +75,7 @@ typedef enum {
 	T_End,
 	S_Exp,
     T_NumTokenTypes
-} TokenType;
+} TokenType_e;
 #undef TOK
 
 /* Global variable gTokenNames: 

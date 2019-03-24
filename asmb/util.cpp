@@ -1,8 +1,14 @@
-#include "util.h"
+/** @file util.cpp
+*
+* @brief Lexer/Scanner and grammar utility module.
+*
+* @par
+* COPYRIGHT NOTICE: (c) 2018 Barna Farago.  All rights reserved.
+*/
 #include <stdarg.h>
 #include <string.h>
 #include <vector>
-
+#include "util.h"
 #include "intrep.h"
 
 using std::vector;
@@ -19,7 +25,6 @@ static vector<SType_e> symbolTypes;
 static vector<SContexts_t> symbolContext;
 static vector<const char*> sections;
 static vector<const char*> includes;
-
 static const int UTIL_BUFFERSIZE = 2048;
 
 int address = 0;
@@ -31,8 +36,12 @@ static vector<int> relocAddress;
 static vector<relocType_en> relocType;
 static vector<SType_e> relocContext;
 static vector<int> relocLine;
-
 static vector<GType_s> gStack;
+vector<tErrorRecord> g_ErrorList;
+static int g_include_actual = 0;
+static vector<int> g_include_stack;		// fileId
+static vector<int> g_include_stack_line; // line nr yylinenr
+
 void stackPush(int t, const YYSTYPE* s) {
 	GType_s p ;
 	p.t = t;
@@ -52,14 +61,12 @@ int ruleExp[] =
 	T_IntConstant, T_Ror, T_IntConstant, T_Void,
 	T_IntConstant, T_Rol, T_IntConstant, T_Void,
 	T_IntConstant, T_At, T_IntConstant, T_Void,
-	// T_IntConstant, '&', T_IntConstant, T_Void,
+	// T_IntConstant, '&', T_IntConstant, T_Void,	//TODO: Lexer doesn't forwards the and sign
 	T_IntConstant, T_Void
 };
 
 int parse_exp(int t, GType_s* res, SType_e* pContext) {
 	int r = 0;
-	//int lval = 0;
-	//int op = 0;
 	size_t top = gStack.size();
 	Debug("pse", __FUNCTION__);
 	while (0 == r) {
@@ -173,11 +180,11 @@ int parse_exp(int t, GType_s* res, SType_e* pContext) {
 	stackClear();
 	return r;
 }
-vector<tErrorRecord> g_ErrorList;
-int getErrorListLength() { return g_ErrorList.size(); }
+
+int getErrorListLength() { return (int)g_ErrorList.size(); }
 const tErrorRecord* getErrorListItem(int index) { return &g_ErrorList[index]; }
 
-void AddError(int errCode, short fileId, int line, char* errbuf, char* quote)
+void AddError(int errCode, short fileId, int line, char* errbuf, const char* quote)
 {
 	tErrorRecord e;
 	const char* fileName;
@@ -465,7 +472,7 @@ int getSymbol(const char* name, SType_e* pContext, int line) {
 	return symbolValues[index];
 }
 int getMemorySectionNumbers() {
-	return sections.size();
+	return (int)sections.size();
 }
 const char* getMemorySectionName(int index) {
 	return sections[index];
@@ -489,24 +496,21 @@ void checkSection(char* secName) {
 	}
 	//new section
 	sectionId = (int)sections.size();
-	sections.push_back(strdup(secName));
+	sections.push_back(_strdup(secName));
 }
-static int g_include_actual = 0;
-static vector<int> g_include_stack;		// fileId
-static vector<int> g_include_stack_line; // line nr yylinenr
 
 int include_actual_get()
 {
 	return g_include_actual;
 }
 int include_get_max() {
-	return includes.size();
+	return (int)includes.size();
 }
 const char* include_get(int index) {
 	return includes[index];
 }
 int include_search(const char* fname) {
-	int n = includes.size();
+	int n = (int)includes.size();
 	if (n < 1) return -1;
 	for (int i = 0; i < n; i++)
 	{
@@ -523,9 +527,9 @@ void include_add(const char* fname) {
 	int index = include_search(fname);
 	if (index < 0) {
 		//add it, this is the first appeareance
-		const char* fn = strdup(fname);
+		const char* fn = _strdup(fname);
 		includes.push_back(fn);
-		index = includes.size()-1; // I hope :), this is the index.
+		index = (int)includes.size()-1; // I hope :), this is the index.
 	}
 	g_include_stack.push_back(index);
 	g_include_stack_line.push_back(yylineno);

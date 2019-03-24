@@ -91,35 +91,10 @@ Std_ReturnType gen_map(asmb_config_t *asmb_config)
 	}
 	return ret;
 }
-typedef enum {
-	DF_VERSION,
-	DF_NAME,
-	DF_FNAME_BIN,
-	DF_TIME_BIN,
-	DF_FNAME_ASM,
-	DF_TIME_ASM,
-	DF_SYM,
-	DF_LINES,//obsolate
-	DF_MEMTYPES, //obsolate
-	DF_SECTIONNAME,
-	DF_MEMORYMETA,
-	DF_ERROR
-} tDbgFileBlockId;
 
-typedef struct {
-	unsigned int value;
-	unsigned int lineno;
-	unsigned short fileId;
-	unsigned char memtype;
-	unsigned char sectionid;
-	unsigned char symtype;
-	unsigned char symcontexts;
-	unsigned char len;
-	unsigned char name[MAXSYMBOLENAME];
-}tDbgFileSymbol;
 
-Std_ReturnType dbgfile_wr(FILE*f, tDbgFileBlockId id, const void* b, unsigned int len) {
-	unsigned int v;
+Std_ReturnType dbgfile_wr(FILE*f, tDbgFileBlockId id, const void* b, size_t len) {
+	size_t v;
 	v = id;
 	fwrite(&v, 4, 1, f);
 	v = len;
@@ -173,14 +148,17 @@ Std_ReturnType gen_dbg(asmb_config_t *asmb_config)
 			sym.value = SymbolValueByIndex(i);
 			memoryMetaData_t* meta = getMemoryMeta(sym.value);
 			sym.memtype = meta->sectionType;  //getMemoryType(sym.value); // quasi mem section type
-			sym.sectionid = meta->sectionId; //getMemorySectionId(sym.value);
+			if (meta->sectionId > 255) {
+				//too mutch section
+			}
+			sym.sectionid = (unsigned char) meta->sectionId; //getMemorySectionId(sym.value);
 			sym.symtype = getSymbolType(i);	//where was definied
 			sym.symcontexts = getSymbolContexts(i);
 			sym.fileId = meta->fileId;
 			sym.lineno = meta->line;  //getMemoryLineNo(sym.value);
 
 			const char* s = SymbolByIndex(i);
-			sym.len = strlen(s);
+			sym.len = (unsigned char) strlen(s);
 			for (int j = 0; j < sym.len; j++) sym.name[j] = s[j];
 			
 			dbgfile_wr(f, DF_SYM, &sym, sizeof (tDbgFileSymbol ) - MAXSYMBOLENAME + sym.len);
@@ -192,7 +170,7 @@ Std_ReturnType gen_dbg(asmb_config_t *asmb_config)
 		len = getErrorListLength();
 		for (int i = 0; i < len; i++) {
 			const tErrorRecord* pE = getErrorListItem(i);
-			int slen = strlen( pE->errorText);
+			size_t slen = strlen( pE->errorText);
 			dbgfile_wr(f, DF_ERROR, pE, sizeof(tErrorRecord) - MAX_ERROR_LEN + slen);
 
 		}
