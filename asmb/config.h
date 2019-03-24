@@ -24,5 +24,14 @@
 #define MAXFNAMELEN 255
 
 
+#ifndef _WIN32
+#define _strdup strdup
+#define strncpy_s(DST, DSI, SRC, SSI) strncpy(DST, SRC, SSI)
+#define sprintf_s sprintf
+#define snprintf_s snprintf
+#define fopen_s(PTR, FN, FM)  *(PTR) = fopen(FN, FM)
+#endif
+
+
 
 #endif

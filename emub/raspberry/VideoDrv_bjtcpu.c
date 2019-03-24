@@ -103,8 +103,8 @@ Std_ReturnType VideoDrv_Init(void* p) {
 			SimChargen[ch] = i + 1;
 		}
 	}
-	uint8 ch = SimScreen.buf[g_x][g_y];
-	g_SimPos = SimChargen[ch];
+	uint8 chi = SimScreen.buf[g_x][g_y];
+	g_SimPos = SimChargen[chi];
 	return Pwm_SetData(&g_data); 
 }
 

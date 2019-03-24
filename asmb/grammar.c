@@ -140,12 +140,16 @@ int convertAscii2BJTChar(int c) {
 		case  '|': c = 0x38; break;
 		case  '_': c = 0x39; break;
 		case  '[': c = 0x3A; break;
+		
+		#ifdef _WIN32
 		case L'Ú': c = 0x3B; break;
 		case L'¿': c = 0x3C; break;
 		case L'Ù': c = 0x3D; break;
 		case L'À': c = 0x3E; break;
-		case  'l': c = 0x3F; break;
 		case  L'È': c = 0x40; break;
+		#endif
+		
+		case  'l': c = 0x3F; break;
 		case  '{': c = 0x41; break;
 		case  '}': c = 0x42; break;
 		case  'o': c = 0x43; break;

@@ -196,7 +196,7 @@ void AddError(int errCode, short fileId, int line, char* errbuf, const char* quo
 		snprintf(e.errorText, MAXFNAMELEN, "Failure in %s line:%d: %s '%s'", fileName, e.lineNr, errbuf, quote);
 	else
 		snprintf(e.errorText, MAXFNAMELEN, "Failure in %s line:%d: %s", fileName, e.lineNr, errbuf);
-	for (int i = 0; i < strlen(e.errorText); i++) {
+	for (size_t i = 0; i < strlen(e.errorText); i++) {
 		if (e.errorText[i] == 0x0a) e.errorText[i] = 0x20; //replace new line to space
 	}
 	g_ErrorList.push_back(e);
@@ -488,7 +488,7 @@ void checkSection(char* secName) {
 	else {
 		sectionType = MT_data;
 	}
-	for (int i = 0; i < sections.size(); i++) {
+	for (size_t i = 0; i < sections.size(); i++) {
 		if (strcmp(sections[i], secName) == 0) {
 			sectionId = i;
 			return;

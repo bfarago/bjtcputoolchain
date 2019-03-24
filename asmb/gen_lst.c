@@ -12,6 +12,12 @@
 #include "config.h"
 #include "intrep.h"
 
+#ifndef _WIN32
+#define FORMAT_PCHAR "s"
+#else
+#define FORMAT_PCHAR "S"
+#endif
+
 Std_ReturnType gen_lst(asmb_config_t *asmb_config, int maxaddress, char* memory)
 {
 	char bfname[MAXFNAMELEN];
@@ -52,7 +58,7 @@ Std_ReturnType gen_lst(asmb_config_t *asmb_config, int maxaddress, char* memory)
 #undef TOK
 #define TOK(x,opc) case opc:
 					TOK(T_mvi, 0)
-						cols += snprintf(buflst + cols, BUFLEN - cols, "%03x  %x %x      %S 0x%x",
+						cols += snprintf(buflst + cols, BUFLEN - cols, "%03x  %x %x      %" FORMAT_PCHAR " 0x%x",
 							i,
 							m, memory[i + 1],
 							gMnemonics[m], memory[i + 1]);
@@ -73,7 +79,7 @@ Std_ReturnType gen_lst(asmb_config_t *asmb_config, int maxaddress, char* memory)
 						TOK(T_jnz, 13)
 						TOK(T_jm, 14)
 						TOK(T_jp, 15)
-						cols += snprintf(buflst + cols, BUFLEN - cols, "%03x  %x %x %x %x  %S 0x%x%x%x",
+						cols += snprintf(buflst + cols, BUFLEN - cols, "%03x  %x %x %x %x  %" FORMAT_PCHAR " 0x%x%x%x",
 							i,
 							m, memory[i + 1], memory[i + 2], memory[i + 3],
 							gMnemonics[m], memory[i + 3], memory[i + 2], memory[i + 1]);

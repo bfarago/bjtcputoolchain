@@ -6,6 +6,7 @@
 * COPYRIGHT NOTICE: (c) 2018 Barna Farago.  All rights reserved.
 */
 #ifndef YYLTYPE
+#include <stdio.h>
 
 /* Typedef: yyltype
  * Defines the struct type that is used by the scanner to store

@@ -1,4 +1,7 @@
+#ifdef _WIN32
 #include "stdafx.h"
+#endif
+
 #include "libbjtcpu_cfg.h"
 #include "libbjtcpu.h"
 

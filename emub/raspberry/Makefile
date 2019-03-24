@@ -12,7 +12,7 @@ endif
 
 INCLUDE=-I.
 DEFS=-DDEBUG
-CFLAGS= $(DEBUG) $(DEFS) -Wformat=2 -Wall -Wextra -Winline $(INCLUDE) -pipe -fPIC
+CFLAGS= $(DEBUG) $(DEFS) -Wformat=2 -Wall -Wextra -Winline $(INCLUDE) -pipe -fPIC -std=c99
 LIBS=-lm -lpthread -lwiringPi
 
 SRC= Pwm.c PwmDrv_raspi.c VideoDrv_bjtcpu.c \

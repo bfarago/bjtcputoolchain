@@ -13,6 +13,12 @@
 #include "intrep.h"
 #include <sys/stat.h>
 
+#ifndef _WIN32
+typedef __time_t __time64_t;
+#define fprintf_s fprintf
+#include <string.h>
+#endif
+
 struct stat g_filestat_bin;
 //struct stat g_filestat_asm;
 
@@ -50,6 +56,7 @@ Std_ReturnType gen_bin(asmb_config_t *asmb_config, int maxaddress, char* memory)
 Std_ReturnType gen_map(asmb_config_t *asmb_config)
 {
 	Std_ReturnType ret = E_OK;
+	unsigned int i;
 	if (!asmb_config->enable_map) return ret;
 	if (asmb_config->name_o) {
 		FILE *f;
@@ -63,7 +70,7 @@ Std_ReturnType gen_map(asmb_config_t *asmb_config)
 			return E_NOT_OK;
 		}
 		len=SymbolLength();
-		for (unsigned int i = 0; i < len; i++) {
+		for (i = 0; i < len; i++) {
 			const char* s = SymbolByIndex(i);
 			fprintf_s(f, "0x%03x %s\n", SymbolValueByIndex(i) , s);
 		}
@@ -110,7 +117,6 @@ Std_ReturnType gen_dbg(asmb_config_t *asmb_config)
 		//stat(asmb_config->fname_in, &g_filestat_asm);
 		__time64_t timeBin = g_filestat_bin.st_mtime;
 		//__time64_t timeAsm = g_filestat_asm.st_mtime;
-
 		FILE *f;
 		size_t len;
 		char b[MAXFNAMELEN];
@@ -168,7 +174,7 @@ Std_ReturnType gen_dbg(asmb_config_t *asmb_config)
 		//dbgfile_wr(f, DF_MEMTYPES, memoryTypes, MAXMEMORY * 4);
 #endif
 		len = getErrorListLength();
-		for (int i = 0; i < len; i++) {
+		for (size_t i = 0; i < len; i++) {
 			const tErrorRecord* pE = getErrorListItem(i);
 			size_t slen = strlen( pE->errorText);
 			dbgfile_wr(f, DF_ERROR, pE, sizeof(tErrorRecord) - MAX_ERROR_LEN + slen);
