@@ -144,8 +144,17 @@ typedef enum {
 }Std_ReturnType;
 
 #ifdef _UNICODE
+
 #ifndef TCHAR
 #include <wtypes.h>
 #include <tchar.h>
 #endif
+
+#else
+
+#ifndef TCHAR
+#define TCHAR char
+#define _T
+#endif
+
 #endif
