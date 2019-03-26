@@ -97,7 +97,9 @@
     <ClCompile Include="playb.c" />
     <ClCompile Include="Pwm.c" />
     <ClCompile Include="PwmDrv_raspi.c" />
+    <ClCompile Include="VideoDrv.c" />
     <ClCompile Include="VideoDrv_bjtcpu.c" />
+    <ClCompile Include="VideoDrv_fb.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Det.h" />
@@ -105,7 +107,10 @@
     <ClInclude Include="PwmDrv.h" />
     <ClInclude Include="Pwm_Types.h" />
     <ClInclude Include="Std_Types.h" />
+    <ClInclude Include="vcio.h" />
+    <ClInclude Include="VideoDrv.h" />
     <ClInclude Include="VideoDrv_bjtcpu.h" />
+    <ClInclude Include="VideoDrv_fb.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />

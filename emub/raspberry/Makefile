@@ -1,6 +1,6 @@
 
 #DEBUG=-g -O0
-DEBUG=-O2
+DEBUG=-O2 -ggdb
 
 ifeq ($(OS), Windows_NT)
 export PATH := g:\prg\SysGCC\Raspberry\bin\;$(PATH)
@@ -15,7 +15,7 @@ DEFS=-DDEBUG
 CFLAGS= $(DEBUG) $(DEFS) -Wformat=2 -Wall -Wextra -Winline $(INCLUDE) -pipe -fPIC -std=c99
 LIBS=-lm -lpthread -lwiringPi
 
-SRC= Pwm.c PwmDrv_raspi.c VideoDrv_bjtcpu.c \
+SRC= Pwm.c PwmDrv_raspi.c VideoDrv_bjtcpu.c VideoDrv_fb.c VideoDrv.c \
 		Det.c  \
 		playb.c
 

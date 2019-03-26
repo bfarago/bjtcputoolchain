@@ -82,7 +82,7 @@ uint8 g_y = 0;
 /**VideoDrv_Init
 init screen memory, chargen table, call pwm hal.
 */
-Std_ReturnType VideoDrv_Init(void* p) {
+Std_ReturnType VideoDrv_BjtCpu_Init(void* p) {
 	int ch = 0;
 	int y,x;
 	for (y = 0; y < 16; y++) {
@@ -108,13 +108,13 @@ Std_ReturnType VideoDrv_Init(void* p) {
 	return Pwm_SetData(&g_data); 
 }
 
-void VideoDrv_MainFunctionDiagnostics(void){}
-void VideoDrv_MainFunctionTest(void){}
+void VideoDrv_BjtCpu_MainFunctionDiagnostics(void){}
+void VideoDrv_BjtCpu_MainFunctionTest(void){}
 
 /**VideoDrv_MainFunction
 Cyclical main function
 */
-void VideoDrv_MainFunction(void){
+void VideoDrv_BjtCpu_MainFunction(void){
 	Pwm_WritePos(g_SimPos);
 	g_SimPos++;
 	if ((g_SimPos >= SAMPLE_LEN)

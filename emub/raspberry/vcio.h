@@ -101,8 +101,8 @@ enum {
 	VCMSG_SET_TRANSFORM              = 0x0004800d,
 };
 
-extern int /*rc*/ bcm_mailbox_read(unsigned chan, uint32_t *data28);
-extern int /*rc*/ bcm_mailbox_write(unsigned chan, uint32_t data28);
+extern int /*rc*/ bcm_mailbox_read(unsigned chan, uint32 *data28);
+extern int /*rc*/ bcm_mailbox_write(unsigned chan, uint32 data28);
 extern int /*rc*/ bcm_mailbox_property(void *data, int size);
 
 #include <linux/ioctl.h>

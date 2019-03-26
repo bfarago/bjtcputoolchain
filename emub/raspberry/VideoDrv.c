@@ -16,7 +16,7 @@ Std_ReturnType VideoDrv_Init(void* p) {
 }
 Std_ReturnType VideoDrv_DeInit(){
 	Std_ReturnType ret=E_OK;
-	//if (VideoDrv_Enable_ScopeOut) ret= VideoDrv_BjtCpu_Init(p);
+	//if (VideoDrv_Enable_ScopeOut) ret= VideoDrv_BjtCpu_DeInit(p);
 	if (VideoDrv_Enable_FbOut) ret= VideoDrv_Fb_DeInit();
 	return ret;
 }

@@ -8,9 +8,9 @@ typedef struct {
 	uint8 buf[16][16];
 } SimScreen_t;
 
-Std_ReturnType VideoDrv_Init(void*);
-void VideoDrv_MainFunctionDiagnostics(void);
-void VideoDrv_MainFunctionTest(void);
-void VideoDrv_MainFunction(void);
+Std_ReturnType VideoDrv_BjtCpu_Init(void*);
+void VideoDrv_BjtCpu_MainFunctionDiagnostics(void);
+void VideoDrv_BjtCpu_MainFunctionTest(void);
+void VideoDrv_BjtCpu_MainFunction(void);
 
 #endif

@@ -1,6 +1,9 @@
-#ifdef _WIN32
+/*
+*/
+
+//#ifdef _WIN32
 #include "stdafx.h"
-#endif
+//#endif
 
 #include "libbjtcpu_cfg.h"
 #include "libbjtcpu.h"
