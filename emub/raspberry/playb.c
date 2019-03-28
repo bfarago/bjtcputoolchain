@@ -15,7 +15,7 @@ uint8 g_KeepRunning = 1;
 void sig_handler(int signo)
 {
 	if (signo == SIGINT) {
-		printf("received SIGINT\n");
+		printf("\nreceived SIGINT\n");
 		g_KeepRunning = 0;
 	}
 }
@@ -27,6 +27,10 @@ int main (void)
 	if (signal(SIGINT, sig_handler) == SIG_ERR) {
 		printf("Signal handler init error\n");
 	}
+	//this is a try, on console the sigint is not enought.
+	signal(SIGHUP, sig_handler);
+	signal(SIGTERM, sig_handler);
+
 	uint16 counter=0;
 	if (VideoDrv_Enable_ScopeOut) {
 		printf("Raspberry Pi PWM\n");
@@ -65,7 +69,8 @@ int main (void)
 	if (VideoDrv_Enable_ScopeOut) {
 		Pwm_DeInit();
 	}
-	VideoDrv_DeInit();
 	Keyboard_DeInit();
+	VideoDrv_DeInit();
+	
   return 0 ;
 }

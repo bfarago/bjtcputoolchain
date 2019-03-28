@@ -5,8 +5,11 @@
 
 typedef enum {
 	Key_Esc,
+	Key_Space,
 	Key_Up,
 	Key_Dn,
+	Key_Left,
+	Key_Right,
 	Key_Last
 }Keyboard_scan_e;
 
