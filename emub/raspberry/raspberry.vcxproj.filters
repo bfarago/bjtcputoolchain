@@ -36,6 +36,9 @@
     <ClCompile Include="VideoDrv_fb.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Keyboard.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Det.h">
@@ -63,6 +66,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="VideoDrv_fb.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Keyboard.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
