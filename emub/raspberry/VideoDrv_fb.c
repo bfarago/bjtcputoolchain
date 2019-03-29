@@ -9,7 +9,7 @@
 #include <sys/mman.h>
 #include <sys/ioctl.h>
 
-#define VCIO_ENABLED
+// #define VCIO_ENABLED
 #ifdef VCIO_ENABLED
 #include "vcio.h"
 #endif

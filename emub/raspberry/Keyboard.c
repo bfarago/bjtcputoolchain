@@ -20,7 +20,7 @@ typedef enum {
 } Keyboard_Mode_e;
 Keyboard_Mode_e Keyboard_Mode = KM_Scan; // KM_Standard;
 
-
+uint8 Keyboard_Debug = 0;
 uint8 Key_Pressed[Key_Last];
 
 Std_ReturnType Keyboard_Check(Keyboard_scan_e scan) {
@@ -161,11 +161,11 @@ void Keyboard_ReadScan(void)
 			break;
 		case 27:
 			c = getchar();
-			printf("%02x ", c);
+			if (Keyboard_Debug) printf("%02x ", c);
 			switch (c) {
 			case 0x5b:
 				c = getchar();
-				printf("%02x ", c);
+				if (Keyboard_Debug) printf("%02x ", c);
 				switch (c) {
 				case 0x41:
 					Key_Pressed[Key_Up] = 1;
@@ -192,35 +192,33 @@ void Keyboard_ReadScan(void)
 	}
 	else
 	{
+		static uint8 was9c = 0;
 		// read scan code is possible
 		res = read(0, &buf[0], 1);
 		// keep reading til there's no more
 		while (res >= 0) {
-			//printf("%02x ", buf[0]);
-			switch (buf[0]) {
+			if (Keyboard_Debug) printf("%02x ", buf[0]);
+			uint8 c = buf[0] & 0x7F;
+			uint8 b = !(buf[0] >> 7);
+			switch (c) {
+			case 0x39:
+				Key_Pressed[Key_Space]=b;
+				break;
+			case 0x67:
+				Key_Pressed[Key_Up] = b;
+				break;
 			case 0x01:
 				// escape was pressed
-				Keyboard_Escape = 1;
+				Keyboard_Escape = b;
+				Key_Pressed[Key_Esc] = b;
 				break;
-			case 0x81:
-				// escape was released
-				Keyboard_Escape = 0;
-				break;
-			case 0x9c:
+			case 0x9c: //more than 80 actually
+				was9c = 1;
 				// 9c 67 e7
 				// 6c ec
-
+				//9c 39 b9
 				res = read(0, &buf[0], 1);
-				switch (buf[0]) {
-				case 0x67:
-					res = read(0, &buf[0], 1);
-					switch (buf[0]) {
-					case 0xe7:
-						Key_Pressed[Key_Up] = 1;
-						break;
-					}
-					break;
-				}
+				if (Keyboard_Debug) printf("%02x ", buf[0]);
 				break;
 			}
 			res = read(0, &buf[0], 1);

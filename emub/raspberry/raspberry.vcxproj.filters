@@ -39,6 +39,9 @@
     <ClCompile Include="Keyboard.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Sim.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Det.h">
@@ -69,6 +72,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Keyboard.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Sim.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

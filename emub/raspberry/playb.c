@@ -2,6 +2,11 @@
 #include <memory.h>
 #include <unistd.h>
 #include <signal.h>
+#include <inttypes.h>
+#include <math.h>
+// #include <time.h>
+#include <sys/time.h>
+
 
 #define delay(ms) usleep( (ms)*1000)
 
@@ -9,8 +14,18 @@
 #include "Pwm.h"
 #include "VideoDrv.h"
 #include "Keyboard.h"
+#include "Sim.h"
 
 uint8 g_KeepRunning = 1;
+uint8 run = 0;
+
+long long current_timestamp() {
+	struct timeval te;
+	gettimeofday(&te, NULL); // get current time
+	long long milliseconds = te.tv_sec * 1000LL + te.tv_usec / 1000; // calculate milliseconds
+//	printf("milliseconds: %lld\n", milliseconds);
+	return milliseconds;
+}
 
 void sig_handler(int signo)
 {
@@ -20,10 +35,15 @@ void sig_handler(int signo)
 	}
 }
 
-int main (void)
+int main(int argc, char** argv)
 {
 	Std_ReturnType ret;
-
+	if (argc > 1) {
+		FILE *f = fopen(argv[1], "rb");
+		fread(Sim_Memory, 1 << 12, 1, f);
+		fclose(f);
+		run = 1;
+	}
 	if (signal(SIGINT, sig_handler) == SIG_ERR) {
 		printf("Signal handler init error\n");
 	}
@@ -63,6 +83,16 @@ int main (void)
 		Keyboard_ReadScan();
 		if (Keyboard_IsEscapePressed()) {
 			g_KeepRunning = 0;
+		}
+		if (run) {
+			static long long next_run = 0;
+			long long now = current_timestamp();
+			if (now > next_run) {
+				next_run = now + 10;
+				Sim_OnKeyDown();
+				for (int i = 0; i < 5000; i++)
+					Sim_Step();
+			}
 		}
 	}
 

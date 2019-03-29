@@ -136,6 +136,7 @@
     <ClCompile Include="playb.c" />
     <ClCompile Include="Pwm.c" />
     <ClCompile Include="PwmDrv_raspi.c" />
+    <ClCompile Include="Sim.c" />
     <ClCompile Include="VideoDrv.c" />
     <ClCompile Include="VideoDrv_bjtcpu.c" />
     <ClCompile Include="VideoDrv_fb.c" />
@@ -146,6 +147,7 @@
     <ClInclude Include="Pwm.h" />
     <ClInclude Include="PwmDrv.h" />
     <ClInclude Include="Pwm_Types.h" />
+    <ClInclude Include="Sim.h" />
     <ClInclude Include="Std_Types.h" />
     <ClInclude Include="vcio.h" />
     <ClInclude Include="VideoDrv.h" />

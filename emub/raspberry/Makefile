@@ -18,7 +18,7 @@ LIBS=-lm -lpthread -lwiringPi
 SRC= Pwm.c PwmDrv_raspi.c VideoDrv_bjtcpu.c VideoDrv_fb.c VideoDrv.c \
 		Keyboard.c \
 		Det.c  \
-		playb.c
+		playb.c Sim.c
 
 OBJ= $(SRC:.c=.o)
 

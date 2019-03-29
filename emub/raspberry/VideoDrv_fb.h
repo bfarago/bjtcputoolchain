@@ -7,6 +7,7 @@ void VideoDrv_Fb_MainFunctionDiagnostics(void);
 void VideoDrv_Fb_MainFunctionTest(void);
 void VideoDrv_Fb_MainFunction(void);
 
+extern uint8 VideoDrv_ScreenBuf[16][16];
 
 void VideoDrv_Fb_PutPixel_8(int x, int y, int c);
 void VideoDrv_Fb_Copy_8(char* src, int sx, int sy, int sw, int sh, int sl, int dx, int dy);
