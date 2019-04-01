@@ -60,6 +60,6 @@ Planned...  The goal is to be able to download the binary to real hw, and able t
 3) raspberry
 
 On progress... Actually the video card simulator is under development. Two PWMs are used for x/y output. The following screenshot shows how the real rpi pins was measured by Analog Discovery2 card, when the playb ran on raspberry...
-![fpga model](doc/ssrpi1.png?raw=true "simulator1")
+![raspberry measurement](doc/ssrpi1.png?raw=true "simulator1")
 And bitmap mode graphics is also ported to raspberry:
-![fpga model](doc/ssrpi2.png?raw=true "simulator2")
+![raspberry screenshot](doc/ssrpi2.jpg?raw=true "simulator2")
