@@ -703,13 +703,14 @@ Std_ReturnType VideoDrv_Fb_Init(void* p) {
 		ret = E_NOT_OK;
 	}
 	else {
-		VideoDrv_Fb_TestScreen();
+		// VideoDrv_Fb_TestScreen();
 	}
 	for (int y = 0; y < 16; y++) {
 		for (int x = 0; x < 16; x++) {
 			VideoDrv_ScreenBuf[y][x] = (y<<4) + x;
 		}
 	}
+
 	printf("Load images\n");
 	VideoDrv_Fb_LoadBmp("bkg2.bmp", &VideoDrv_BmpBkg);
 	VideoDrv_Fb_LoadBmp("abc2.bmp", &VideoDrv_BmpAbc);
