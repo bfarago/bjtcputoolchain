@@ -2,7 +2,7 @@
 */
 
 #ifdef _WIN32
-#include "stdafx.h"
+//#include "stdafx.h"
 #endif
 
 #include "libbjtcpu_cfg.h"

@@ -20,7 +20,7 @@ extern memoryMetaData_t memoryMeta[MAXMEMORY];
 
 //Actual section type
 extern memoryType_t sectionType;
-extern int sectionId;
+extern size_t sectionId;
 
 //Actual section name
 extern char section[MAXSECTIONNAME];

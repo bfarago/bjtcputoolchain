@@ -46,7 +46,7 @@ Std_ReturnType gen_lst(asmb_config_t *asmb_config, int maxaddress, char* memory)
 			fin = 0;
 		}
 		int fin_line = 2;
-		int cols = 0;
+		unsigned int cols = 0;
 		char buflst[BUFLEN];
 		char bufcom[BUFLEN];
 		for (i = 0; i < maxaddress; i++) {
@@ -118,8 +118,10 @@ Std_ReturnType gen_lst(asmb_config_t *asmb_config, int maxaddress, char* memory)
 				if (fin_line > 100000) break; //prevent endless
 			}
 			if (cols) {
-				buflst[cols] = 0;
-				fprintf(f, "%s\n", buflst);
+				if (cols < BUFLEN) {
+					buflst[cols] = 0;
+					fprintf(f, "%s\n", buflst);
+				}
 				cols = 0;
 			}
 		}

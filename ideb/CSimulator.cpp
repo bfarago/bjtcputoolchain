@@ -722,10 +722,10 @@ void CSimulator::ResetMeasurement() {
 	m_ExecTimeMin = m_DrawTimeMin = 999999;
 	m_ExecTimeMax = 0;
 	m_ExecTimeAvg = m_ExecTimeActual;
-	m_ExecTimeSum = m_ExecTimeAvg << 8;
+	m_ExecTimeSum = (ULONG64)m_ExecTimeAvg << 8U;
 	m_DrawTimeMax = 0;
 	m_DrawTimeAvg = m_DrawTimeActual;
-	m_DrawTimeSum = m_DrawTimeAvg << 8;
+	m_DrawTimeSum = (ULONG64)m_DrawTimeAvg << 8U;
 }
 
 /**SearchLine: additional dbg file contains detailed informations, like

@@ -5,6 +5,9 @@
 * @par
 * COPYRIGHT NOTICE: (c) 2018 Barna Farago.  All rights reserved.
 */
+#ifdef _WIN32
+#define _CRT_SECURE_NO_WARNINGS
+#endif
 #include <stdarg.h>
 #include <string.h>
 #include <vector>
@@ -393,7 +396,10 @@ Std_ReturnType ParseCommandLine(int argc, char *argv[], asmb_config_t* cfg) {
 		fopen_s(&g_err_file, s, "w+");
 		//this would be fine on unix,linux
 		//freopen(s, "a+", stderr);
-		freopen(s, "a+", stdout); // not works with new windows crt lib
+		FILE* rf=freopen(s, "a+", stdout); // not works with new windows crt lib
+		if (rf != stdout) {
+			printf("reopen may be failed.\n");
+		}
 	}
 	printf("Output name prefix:%s\n", cfg->name_o);
 	return E_OK;

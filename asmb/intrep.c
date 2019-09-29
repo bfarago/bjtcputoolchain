@@ -17,7 +17,7 @@ memoryMetaData_t memoryMeta[MAXMEMORY];
 //Actual section name
 char section[MAXSECTIONNAME];
 //Actual section id
-int sectionId = 0;
+size_t sectionId = 0u;
 
 //holds memory content
 char memory[MAXMEMORY];
@@ -43,7 +43,11 @@ void chkAddress(int a) {
 void addMemory(int data) {
 	memoryMetaData_t* pMeta = &memoryMeta[address];
 	pMeta->line= yylineno;
-	pMeta->sectionId = sectionId;
+	if (sectionId > MAXSHORT) {
+		//error
+		sectionId = MAXSHORT;
+	}
+	pMeta->sectionId = (short)sectionId;
 	
 	pMeta->sectionType = sectionType;
 	pMeta->fileId = include_actual_get();

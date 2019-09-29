@@ -175,7 +175,7 @@ Std_ReturnType gen_dbg(asmb_config_t *asmb_config)
 #endif
 		len = getErrorListLength();
 		for (size_t i = 0; i < len; i++) {
-			const tErrorRecord* pE = getErrorListItem(i);
+			const tErrorRecord* pE = getErrorListItem((int)i);
 			size_t slen = strlen( pE->errorText);
 			dbgfile_wr(f, DF_ERROR, pE, sizeof(tErrorRecord) - MAX_ERROR_LEN + slen);
 
