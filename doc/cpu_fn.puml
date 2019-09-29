@@ -1,0 +1,45 @@
+@startuml
+start
+partition Initialization {
+	:set pc to 000;
+}
+
+  while (is powered?)
+   ->yes;
+   if (is clocked?) then (yes)
+partition Running {
+    :bus drive addres=pc;
+    :bus read opcode=data;
+    :bus drive addres=pc+1;
+    :bus read operand1=data;
+    if (opcode == 0) then (mvi a,)
+     :acc=operand1;
+     :pc+=2;
+    else (other)
+     :bus drive addres=pc+2;
+     :bus read operand2=data;
+     :bus drive addres=pc+3;
+     :bus read operand3=data;
+     if (opcode == 1) then (sta)
+        :bus drive address= operand;
+        :bus write data= acc;
+        :pc+=4;
+     elseif (opcode == 2) then (lda)
+        :bus drive address= operand;
+        :bus read operand1=data;
+        :carry=0;
+        :pc+=4;
+     elseif (opcode ==3) then (ad0)
+        :bus drive address= operand;
+        :bus read operand1=data;
+        :acc+=operand1;
+        :carry=0;
+        :pc+=4;
+     endif
+    endif
+}
+   endif
+  endwhile
+
+stop
+@enduml
