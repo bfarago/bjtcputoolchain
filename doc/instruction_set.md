@@ -48,6 +48,8 @@ Examples, description:
   jz 0x123
   
   jnz 0x123
+  
+![CPU functional diagram](http://www.plantuml.com/plantuml/proxy?src=https://raw.github.com/bfarago/bjtcputoolchain/master/doc/cpu_fn.puml)
 
   etc...
   See the test files in sample folder.
