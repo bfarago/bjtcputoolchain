@@ -19,7 +19,10 @@ typedef enum {
 	KM_Ev  //not implemented
 } Keyboard_Mode_e;
 Keyboard_Mode_e Keyboard_Mode = KM_Scan; // KM_Standard;
-
+/*
+Todo: better design, take a look on this: Event based touch screen handling:
+https://github.com/mwilliams03/Pi-Touchscreen-basic/blob/master/touch.c
+*/
 uint8 Keyboard_Debug = 0;
 uint8 Key_Pressed[Key_Last];
 
