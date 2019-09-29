@@ -48,6 +48,8 @@ partition Running {
         :acc+=operand1 + carry;
         :carry=0;
         :pc+=4;
+     else (other opcodes)
+        :etc;
      endif
     endif
 }
