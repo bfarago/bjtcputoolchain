@@ -152,7 +152,6 @@ Std_ReturnType Keyboard_DeInit(void) {
 void Keyboard_ReadScan(void)
 {
 	char buf[1];
-	int res;
 	if (KM_Standard ==Keyboard_Mode)
 	{
 		//ONLY standard mode is possible
@@ -195,9 +194,9 @@ void Keyboard_ReadScan(void)
 	}
 	else
 	{
-		static uint8 was9c = 0;
+		//static uint8 was9c = 0;
 		// read scan code is possible
-		res = read(0, &buf[0], 1);
+		int res = read(0, &buf[0], 1);
 		// keep reading til there's no more
 		while (res >= 0) {
 			if (Keyboard_Debug) printf("%02x ", buf[0]);
@@ -216,7 +215,7 @@ void Keyboard_ReadScan(void)
 				Key_Pressed[Key_Esc] = b;
 				break;
 			case 0x9c: //more than 80 actually
-				was9c = 1;
+				//was9c = 1;
 				// 9c 67 e7
 				// 6c ec
 				//9c 39 b9

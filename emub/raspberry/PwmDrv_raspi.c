@@ -1,16 +1,18 @@
+#define _BSD_SOURCE
 #include "PwmDrv.h"
 // #include <memory.h>
-// #include <unistd.h>
+#include <unistd.h>
+#include <time.h>
 #include "Det.h"
 #include <wiringPi.h>
 
 PwmDrv_ConfigType PwmDrv_Default_Config={
-	/*.gpioX= */1, //GPIO18, PWM1, pin12, Wiring Pi pin 1 ??
-	/*.gpioY= */23, //GPIO13, PWM2, pin33, Wiring Pi pin 23 ??
-	/*.initValueX=*/ 0,
-	/*.initValueY=*/ 0,
-	/*,clockId=*/2,
-	/*,range=*/256
+	/*.gpioX= */1u, //GPIO18, PWM1, pin12, Wiring Pi pin 1 ??
+	/*.gpioY= */23u, //GPIO13, PWM2, pin33, Wiring Pi pin 23 ??
+	/*.initValueX=*/ 0u,
+	/*.initValueY=*/ 0u,
+	/*,clockId=*/2u,
+	/*,range=*/256u
 };
 
 const PwmDrv_ConfigType* PwmDrv_Cfg= &PwmDrv_Default_Config;
@@ -26,7 +28,10 @@ PwmDrvRPI_Init(){
 		return E_NOT_OK;
 	}
 	//wiringPiMode ?? WPI_MODE_PHYS, WPI_MODE_GPIO, WPI_MODE_PINS
-	
+	Pwm_StatusType status= PwmDrvRPI_GetStatus();
+	if (PWM_IDLE != status){
+		Det_ReportRuntimeError(2,0,2,1);
+	}	
 	pinMode(PwmDrv_Cfg->gpioX, PWM_OUTPUT);
 	pinMode(PwmDrv_Cfg->gpioY, PWM_OUTPUT);
 	pwmSetClock(PwmDrv_Cfg->clockId);
@@ -35,8 +40,10 @@ PwmDrvRPI_Init(){
 	pwmWrite (PwmDrv_Cfg->gpioX, PwmDrv_Cfg->initValueY);
 	//pwmSetMode(PWM_MODE_MS); //PWM_MODE_BAL
 	pwmSetMode(PWM_MODE_BAL);
-	printf("gpios:%d, %d.\nClock:%d\nRange:%d\n",
-		PwmDrv_Cfg->gpioX, PwmDrv_Cfg->gpioY, PwmDrv_Cfg->clockId, PwmDrv_Cfg->range);
+	
+	// printf("gpios:%u, %u.\nClock:%u\nRange:%u\n",
+	//	PwmDrv_Cfg->gpioX, PwmDrv_Cfg->gpioY, PwmDrv_Cfg->clockId, PwmDrv_Cfg->range);
+	
 	if (1 < 0){
 		Det_ReportRuntimeError(2,0, 2,1);
 		return E_NOT_OK;
@@ -101,10 +108,10 @@ PwmDrvRPI_WritePos(Pwm_NumberOfDataType pos){
 
 Std_ReturnType
 PwmDrvRPI_SetData(const Pwm_DataType* pd){
-	Std_ReturnType ret;
+	Std_ReturnType ret=E_OK;
 	if (!PwmDrv_Info) return E_NOT_OK;
 	//if (!PwmDrv_Info->data) return E_NOT_OK;
-	PwmDrv_Info->data = pd;
+	PwmDrv_Info->data = (Pwm_DataType*)pd;
 	//printf("len:%d.\n", pd->len);
 	
 	return ret;

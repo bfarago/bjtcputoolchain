@@ -15,6 +15,7 @@ using namespace std;
 
 int Report::numErrors = 0;
 
+#if (1==ReportAdvanced)
  
 void Report::OutputError(yyltype *loc, const string& msg) {
     numErrors++;
@@ -27,12 +28,10 @@ void Report::OutputError(yyltype *loc, const string& msg) {
 }
 
 
-
 void Report::UntermComment() {
     OutputError(NULL, "Input ends with unterminated comment");
 }
 
-#ifdef ReportAdvanced
 void Report::Formatted(yyltype *loc, const char *format, ...) {
 	va_list args;
 	char errbuf[BUFFERSIZE];

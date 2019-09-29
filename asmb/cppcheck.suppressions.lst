@@ -1,0 +1,3 @@
+*:scanner.l
+*:lex.yy.c
+*:./lex.yy.c

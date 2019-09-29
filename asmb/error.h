@@ -8,6 +8,8 @@
 #ifndef _ERROR_H_
 #define _ERROR_H_
 
+#define ReportAdvanced 0
+
 #include <string>
 #include "loc.h"
 using namespace std;
@@ -37,13 +39,13 @@ using namespace std;
 class Report {
  public:
 
-  // Errors used by scanner
-  static void UntermComment(); 
-
   // Returns number of error messages printed
   static int NumErrors() { return numErrors; }
 
-#ifdef ReportAdvanced
+#if (1==ReportAdvanced)
+  // Errors used by scanner
+  static void UntermComment(); 
+
   static void LongIdentifier(yyltype *loc, const char *ident);
 
   static void UntermString(yyltype *loc, const char *str);
@@ -53,10 +55,10 @@ class Report {
   static void Formatted(yyltype *loc, const char *format, ...);
 #endif  
  private:
-#ifdef ReportAdvanced
+#if (1==ReportAdvanced)
   static void UnderlineErrorInLine(const char *line, yyltype *pos);
-#endif
   static void OutputError(yyltype *loc, const string& msg);
+#endif
   static int numErrors;
 };
 #endif

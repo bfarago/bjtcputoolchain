@@ -7,6 +7,7 @@
 */
 #ifndef YYLTYPE
 #include <stdio.h>
+#define LOC_JOINP_ENABLED 0
 
 /* Typedef: yyltype
  * Defines the struct type that is used by the scanner to store
@@ -33,18 +34,19 @@ typedef struct yyltype
 extern struct yyltype yylloc;
 
 
+#if (1==LOC_JOINP_ENABLED)
+
 /* Function: Join
  * Takes two locations and returns a new location which represents
  * the span from first to last, inclusive.
  */
 
 yyltype Join(yyltype first, yyltype last);
-
-
 /* Function: Joinp
  * Same as above Join, except operates on pointers as a convenience 
  */
 yyltype Joinp(yyltype *firstPtr, yyltype *lastPtr);
+#endif
 
 FILE* include_fopen(const char* fname, const char* mode);
 

@@ -11,20 +11,42 @@ CFLAGSPP= $(DEBUG) $(DEFS) -Wformat=2 -Wall -Wextra -Winline $(INCLUDE) -pipe -f
 LIBS=
 SRC= 
 SRCPP= constants.cpp
+OBJ_PATH := ../obj/
+TARGET_PATH := ../lib/
 
-OBJ= $(SRC:.c=.o) $(SRCPP:.cpp=.o)
+TARGET1=libbjtcpu.a
+OBJ1= $(SRC:.c=.o) $(SRCPP:.cpp=.o)
 
-all:	libbjtcpu.a
 
-libbjtcpu.a: $(OBJ)
-		ar rcs libbjtcpu.a $(OBJ)
+TARGET=$(patsubst %,$(TARGET_PATH)%,$(TARGET1))
+OBJ=$(patsubst %,$(OBJ_PATH)%,$(OBJ1))
+
+all: $(OBJ_PATH) $(TARGET_PATH) $(TARGET)
+
+$(OBJ_PATH):
+	@echo [INFO] Creating Directory [$(OBJ_PATH)]
+	@mkdir $(OBJ_PATH)
+
+$(TARGET_PATH):
+	@mkdir $(TARGET_PATH)
+
+$(TARGET): $(OBJ)
+		@echo [INFO] Creating Static Library [$(TARGET)]
+		@ar rcs $@ $(OBJ)
 		
-.c.o:
-		$(CC) -c $(CFLAGS) $< -o $@
+# .c.o:
+#$(OBJ_PATH)%.o: $(SRC_PATH)%.c
+#		$(CC) -c $(CFLAGS) $< -o $@
 
-.cpp.o:
-		$(CPP) -c $(CFLAGSPP) $< -o $@
+$(OBJ_PATH)%.o: $(SRC_PATH)%.cpp
+		@echo [CPP] $<
+		@$(CPP) -c $(CFLAGSPP) $< -o $@
 
 .PHONY: clean
 clean:
 	rm -f $(OBJ)
+	rm -f $(TARGET)
+check:
+	@echo [INFO] Check libbjtcpu
+	@#cppcheck --quiet --enable=all --xml-version=2 . 1>/dev/null 2>$(OBJ_PATH)libbjtcpu.checkcpp.xml
+	@cppcheck --quiet --enable=all .

@@ -25,7 +25,7 @@ OBJ= $(SRC:.c=.o)
 all:	playb
 
 playb:	$(OBJ)
-		$(CC) -o playb $(LIBS) $(OBJ)
+		$(CC) -o playb $(OBJ) $(LIBS)
 
 .c.o:
 		$(CC) -c $(CFLAGS) $< -o $@
@@ -33,3 +33,9 @@ playb:	$(OBJ)
 .PHONY: clean
 clean:
 	rm -f $(OBJ)
+
+check:
+	@#cppcheck --quiet --enable=all --xml-version=2 . 1>/dev/null 2>check.xml.log
+	cppcheck --quiet --enable=all --suppressions-list=cppcheck.suppressions.lst .
+installprereq:
+	sudo apt-get install wiringpi

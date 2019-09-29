@@ -56,9 +56,9 @@ Std_ReturnType gen_bin(asmb_config_t *asmb_config, int maxaddress, char* memory)
 Std_ReturnType gen_map(asmb_config_t *asmb_config)
 {
 	Std_ReturnType ret = E_OK;
-	unsigned int i;
 	if (!asmb_config->enable_map) return ret;
 	if (asmb_config->name_o) {
+		unsigned int i;
 		FILE *f;
 		size_t len;
 		char b[MAXFNAMELEN];
@@ -99,7 +99,6 @@ Std_ReturnType gen_map(asmb_config_t *asmb_config)
 	return ret;
 }
 
-
 Std_ReturnType dbgfile_wr(FILE*f, tDbgFileBlockId id, const void* b, size_t len) {
 	size_t v;
 	v = id;
@@ -109,6 +108,7 @@ Std_ReturnType dbgfile_wr(FILE*f, tDbgFileBlockId id, const void* b, size_t len)
 	fwrite(b, len, 1, f);
 	return E_OK;
 }
+
 Std_ReturnType gen_dbg(asmb_config_t *asmb_config)
 {
 	Std_ReturnType ret = E_OK;
@@ -181,6 +181,7 @@ Std_ReturnType gen_dbg(asmb_config_t *asmb_config)
 
 		}
 		dbgfile_wr(f, DF_MEMORYMETA, memoryMeta, MAXMEMORY * sizeof(memoryMetaData_t));
+		fclose(f);
 	}
 	return ret;
 }

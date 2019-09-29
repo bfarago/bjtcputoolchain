@@ -26,3 +26,6 @@ asmb:	$(OBJ)
 .PHONY: clean
 clean:
 	rm -f $(OBJ)
+
+check:
+	cppcheck --quiet --enable=all --xml-version=2 . 1>/dev/null 2>check.xml.log

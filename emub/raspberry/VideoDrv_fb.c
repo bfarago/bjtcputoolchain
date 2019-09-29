@@ -15,7 +15,7 @@
 #endif
 
 #include "Det.h"
-
+#define VIDEODRV_UNUSED_ENABLE 0
 #define UNUSED(x) x=x
 
 #define FBDEF_PATH ("/dev/fb0")
@@ -201,6 +201,8 @@ VideDrv_Bmp_t VideoDrv_BmpAbc;
 
 uint8 VideoDrv_ScreenBuf[16][16];
 
+#if (1==VIDEODRV_UNUSED_ENABLE)
+
 void VideoDrv_Fb_PutChar_8(int ch, int x, int y, int c){
 	ch &=0x7F;
 	for (int cy=0; cy<8; cy++)
@@ -242,6 +244,7 @@ void VideoDrv_Fb_DrawVectors_8(char ch, int x, int y, int m, int c)
 		lx = px; ly = py;
 	}
 }
+
 void VideoDrv_Fb_DrawVectorStr_8(const char* str, int x, int y, int c) {
 	int len = strlen(str);
 	for (int i = 0; i<len; i++) {
@@ -258,6 +261,7 @@ void VideoDrv_Fb_DrawVectorScreen_8(const char* screen, int x, int y, int lc) {
 		}
 	}
 }
+#endif
 
 #define DET_MODULE_VIDEODRV_FB 2
 #define DET_API_VIDEODRV_FB_LOADBMP 2
@@ -284,32 +288,41 @@ Std_ReturnType VideoDrv_Fb_LoadBmp(const char*fname, VideDrv_Bmp_t* bmp) {
 	}
 	uint8 v8;
 	uint32 FileSize, reserved1, DataOffset;
-	if (1 != fread(&v8, 1, 1, f)) return ret;
-	if ('B' != v8) return ret;
-	if (1 != fread(&v8, 1, 1, f)) return ret;
-	if ('M' != v8) return ret;
-	if (1 != fread(&FileSize, 4, 1, f)) return ret;
-	if (1 != fread(&reserved1, 4, 1, f)) return ret;
-	if (1 != fread(&DataOffset, 4, 1, f)) return ret;
+	if (1 != fread(&v8, 1, 1, f)) goto return_ret;
+	if ('B' != v8) goto return_ret;
+	if (1 != fread(&v8, 1, 1, f)) goto return_ret;
+	if ('M' != v8) goto return_ret;
+	if (1 != fread(&FileSize, 4, 1, f)) goto return_ret;
+	if (1 != fread(&reserved1, 4, 1, f)) goto return_ret;
+	if (1 != fread(&DataOffset, 4, 1, f)) goto return_ret;
 	VideDrv_Bmp_t* pBmp = bmp;
-
-	if (1 != fread(pBmp, 40, 1, f)) return ret;
-	if (pBmp->info.biSize < 40) return ret;
+	
+	if (1 != fread(pBmp, 40, 1, f)) goto return_ret;
+	if (pBmp->info.biSize < 40) goto return_ret;
 	if (pBmp->info.biSize > 40) {
 		fseek(f, pBmp->info.biSize - 40, SEEK_CUR);
 	}
+	//todo: unused members:
+	(void)pBmp->info.biPlanes;
+	(void)pBmp->info.biCompression;
+	(void)pBmp->info.biXPelsPerMeter;
+	(void)pBmp->info.biYPelsPerMeter;
+	(void)pBmp->info.biClrImportant;
 
 	uint32* pClr = malloc(4* pBmp->info.biClrUsed);
 	pBmp->pal = pClr;
-	if (1 != fread(pClr, 4 * pBmp->info.biClrUsed, 1, f)) return ret;
+	if (1 != fread(pClr, 4 * pBmp->info.biClrUsed, 1, f)) goto return_ret;
 	if (DataOffset > 54) {
 		fseek(f, DataOffset, SEEK_SET);
 	}
 	pBmp->info.biSizeImage = pBmp->info.biHeight*pBmp->info.biWidth*pBmp->info.biBitCount / 8;
 	pBmp->buf = malloc(pBmp->info.biSizeImage);
-	if (1 != fread(pBmp->buf, pBmp->info.biSizeImage, 1, f)) return ret;
+	if (1 != fread(pBmp->buf, pBmp->info.biSizeImage, 1, f)) goto return_ret;
 	VideoDrv_Fb_FlipBmp(pBmp);
-	return E_OK;
+	ret= E_OK;
+return_ret:
+	fclose(f);
+	return ret;
 }
 Std_ReturnType VideoDrv_Fb_FreeBmp(VideDrv_Bmp_t* bmp) {
 	if (bmp->buf) free(bmp->buf);
@@ -320,10 +333,14 @@ Std_ReturnType VideoDrv_Fb_DrawBmp(VideDrv_Bmp_t* bmp,int x, int y) {
 	VideoDrv_Fb_Copy_8(bmp->buf, 0, 0, bmp->info.biWidth, bmp->info.biHeight, bmp->info.biWidth, x, y);
 	return E_OK;
 }
+
+#if (1==VIDEODRV_UNUSED_ENABLE)
 Std_ReturnType VideoDrv_Fb_CopyFromBmp(VideDrv_Bmp_t* bmp, int sx, int sy, int w, int h, int dx, int dy) {
 	VideoDrv_Fb_Copy_8(bmp->buf, sx, sy, w, h, bmp->info.biWidth, dx, dy);
 	return E_OK;
 }
+#endif
+
 Std_ReturnType VideoDrv_Fb_BltFromBmp(VideDrv_Bmp_t* bmp, int sx, int sy, int w, int h, int dx, int dy, uint8 transp) {
 	for (int y = 0; y < h; y++) {
 		for (int x = 0; x < w; x++) {
@@ -349,6 +366,8 @@ void VideoDrv_Fb_DrawBmpScreen_8(const char* screen, int x, int y) {
 		}
 	}
 }
+
+#if (1==VIDEODRV_UNUSED_ENABLE)
 
 void VideoDrv_Fb_PutPixel_8(int x, int y, int c)
 {
@@ -519,6 +538,7 @@ void VideoDrv_Fb_FillCircle_8(int x0, int y0, int r, int c) {
     }
   }
 }
+#endif
 
 void VideoDrv_Fb_Copy_8(char* src, int sx, int sy, int sw, int sh, int sl, int dx, int dy){
 	for (int y=0; y<sh; y++){
@@ -565,6 +585,8 @@ static unsigned VideoDrv_Fb_SetFbVoffs(unsigned *x, unsigned *y)
    return p[1];
 }
 #endif
+
+#if (1==VIDEODRV_UNUSED_ENABLE)
 void VideoDrv_Fb_TestScreen(void){
 	uint16 x, y;
     //unsigned int pix_offset;
@@ -589,6 +611,8 @@ void VideoDrv_Fb_TestScreen(void){
     }
 	VideoDrv_Fb_PutStr_8("TEST screen", 100,100, 15);
 }
+#endif
+
 Std_ReturnType VideoDrv_Fb_SetPalette() {
 	VideDrv_Bmp_t* pBmp = &VideoDrv_BmpBkg;
 	memset(fb_palnew_r, 0, 256 * sizeof(unsigned short));
@@ -719,7 +743,7 @@ Std_ReturnType VideoDrv_Fb_Init(void* p) {
 	return ret;
 }
 
-Std_ReturnType VideoDrv_Fb_DeInit()
+Std_ReturnType VideoDrv_Fb_DeInit(void)
 {
 	VideoDrv_Fb_FreeBmp(&VideoDrv_BmpAbc);
 	VideoDrv_Fb_FreeBmp(&VideoDrv_BmpBkg);

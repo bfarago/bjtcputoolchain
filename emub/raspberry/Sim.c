@@ -1,9 +1,10 @@
 #include "Sim.h"
 #include "Keyboard.h"
 #include "VideoDrv_fb.h"
+#include <stdlib.h>
 
 typedef struct {
-	char x, y;
+	unsigned char x, y;
 	char ch0, ch1;
 	unsigned char buf[16][16];
 	//TCHAR fakeChar;
@@ -37,12 +38,12 @@ typedef enum {
 	ka_max
 } keyArrow_t;
 
-uint32 Sim_ClockCount=0;
+uint32 Sim_ClockCount=0u;
 double Sim_Time;
-uint32 Sim_CpuHz = 1500000;
-uint16 Sim_Pc = 0;
-uint8 Sim_Acc = 0;
-uint8 Sim_Carry = 0;
+uint32 Sim_CpuHz = 1500000u;
+uint16 Sim_Pc = 0u;
+uint8 Sim_Acc = 0u;
+uint8 Sim_Carry = 0u;
 SimAddress_t Sim_Address=0;
 SimData_t Sim_Memory[SIM_MAXMEMORYSIZE];
 
@@ -91,8 +92,8 @@ inline Std_ReturnType Sim_OnPerifLoadStore(SimAddress_t addr, busDirection_t dir
 	//	return OnUartLoadStore(addr, dir, data);
 	}
 	else {
-		Std_ReturnType processed = E_OK;
 		if (bd_Read == dir) {
+			Std_ReturnType processed = E_OK;
 			switch (addr) {
 			case ADDR_RND: *mem = *data = rand() & 0x0f; break;
 			case ADDR_ARR: *data = Sim_Memory[ADDR_ARR]; *mem = 0; break;
@@ -163,12 +164,12 @@ Std_ReturnType Sim_Step(void)
 		ProcessHeatMaps();
 	}
 	*/
-
-	if (Sim_Pc < 0) {
+	/*
+	if (Sim_Pc < 0) { //Not possible, only for development.
 		Sim_Pc = 0; //Invalid address in PC
 		return E_NOT_OK;
 	}
-
+	*/
 	if (Sim_Pc >= SIM_MAXMEMORYSIZE) {
 		Sim_Pc = 0; //Invalid address in PC
 		return E_NOT_OK;

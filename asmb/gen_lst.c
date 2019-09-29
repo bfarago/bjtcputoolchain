@@ -42,6 +42,8 @@ Std_ReturnType gen_lst(asmb_config_t *asmb_config, int maxaddress, char* memory)
 		fprintf(f, ";Generated list file\n");
 		if (asmb_config->fname_in) {
 			fin = fopen(asmb_config->fname_in, "r");
+		}else{
+			fin = 0;
 		}
 		int fin_line = 2;
 		int cols = 0;
@@ -123,6 +125,7 @@ Std_ReturnType gen_lst(asmb_config_t *asmb_config, int maxaddress, char* memory)
 		}
 		fprintf(f, "end\n");
 		fclose(f);
+		fclose(fin);
 	}
 
 	return ret;

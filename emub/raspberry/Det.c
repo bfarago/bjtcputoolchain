@@ -1,6 +1,8 @@
 
 #include "Det.h"
+#include <stdio.h>
 
+#if (1==DET_ENABLE)
 void Det_ReportRuntimeError(
 	uint8 ModulId,
 	uint8 InstanceId,
@@ -10,7 +12,9 @@ void Det_ReportRuntimeError(
 {
 	printf("Det(0x%02x, 0x%02x, 0x%02x, 0x%02x)\n",ModulId, InstanceId, ApiId, ErrorId);
 }
+#endif
 
+#if (1==DEM_ENABLE)
 void Dem_ReportEvent(
 	uint8 EventId,
 	uint8 EventStatus
@@ -18,3 +22,4 @@ void Dem_ReportEvent(
 {
 	printf("Dem(0x%02x, 0x%02x)\n",EventId, EventStatus);
 }
+#endif

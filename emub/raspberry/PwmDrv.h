@@ -42,4 +42,8 @@ PwmDrvRPI_SetData(const Pwm_DataType* pd);
 
 Std_ReturnType
 PwmDrvRPI_WriteOfs(uint8 x, uint8 y);
+
+Pwm_StatusType
+PwmDrvRPI_GetStatus(void);
+
 #endif

@@ -23,6 +23,7 @@
 //Filename buffer length
 #define MAXFNAMELEN 255
 
+#define INTREP_UNUSED_ENABLED 0
 
 #ifndef _WIN32
 #define _strdup strdup

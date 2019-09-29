@@ -7,9 +7,9 @@ Pwm_HwInfoType Pwm_Default_HwInfo;  //={ };
 const Pwm_ConfigType Pwm_Default_Config =
 {
 	/*.hwInfo=(void*) */ &Pwm_Default_HwInfo,
-	0, //data
-	0, //x
-	0  //y
+	0u, //data
+//	0, //x
+//	0  //y
 };
 
 const Pwm_ConfigType* Pwm_Config=0;

@@ -51,6 +51,9 @@ void addMemory(int data) {
 	chkAddress(address);
 }
 
+
+#if (1==INTREP_UNUSED_ENABLED)
+
 int getMemoryType(int address) {
 	return memoryMeta[address].sectionType;
 }
@@ -61,6 +64,8 @@ int getMemorySectionId(int address) {
 int getMemoryLineNo(int address) {
 	return memoryMeta[address].line;
 }
+#endif
+
 memoryMetaData_t* getMemoryMeta(int address) {
 	return &memoryMeta[address];
 }

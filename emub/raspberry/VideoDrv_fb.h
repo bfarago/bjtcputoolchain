@@ -3,6 +3,8 @@
 #include "Std_Types.h"
 
 Std_ReturnType VideoDrv_Fb_Init(void*);
+Std_ReturnType VideoDrv_Fb_DeInit(void);
+
 void VideoDrv_Fb_MainFunctionDiagnostics(void);
 void VideoDrv_Fb_MainFunctionTest(void);
 void VideoDrv_Fb_MainFunction(void);

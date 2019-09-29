@@ -85,6 +85,7 @@ init screen memory, chargen table, call pwm hal.
 Std_ReturnType VideoDrv_BjtCpu_Init(void* p) {
 	int ch = 0;
 	int y,x;
+	(void)p;
 	for (y = 0; y < 16; y++) {
 		for (x = 0; x < 16; x++) {
 			unsigned char code = 0xff;
@@ -93,11 +94,11 @@ Std_ReturnType VideoDrv_BjtCpu_Init(void* p) {
 	}
 
 	SimChargen[ch] = 0;
-	for (int i = 0; i < 256; i++)
+	for (unsigned int i = 0; i < 256u; i++)
 	{
 		SimChargen[i] = 0;
 	}
-	for (int i = 0; i < SAMPLE_LEN; i++) {
+	for (unsigned int i = 0; i < SAMPLE_LEN; i++) {
 		if (g_buf[i].time & END_OF_DATABUFFER) {
 			ch++;
 			SimChargen[ch] = i + 1;

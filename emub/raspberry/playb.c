@@ -40,8 +40,12 @@ int main(int argc, char** argv)
 	Std_ReturnType ret;
 	if (argc > 1) {
 		FILE *f = fopen(argv[1], "rb");
-		fread(Sim_Memory, 1 << 12, 1, f);
+		size_t rs=fread(Sim_Memory, 1 << 12, 1, f);
 		fclose(f);
+		if (rs != (1<<12)){
+		    printf("memory file length mismatch.\n");
+		}
+		
 		run = 1;
 	}
 	if (signal(SIGINT, sig_handler) == SIG_ERR) {
@@ -59,6 +63,10 @@ int main(int argc, char** argv)
 			printf("PWM init error\n");
 			return 1;
 		}
+		Pwm_StatusType status=Pwm_GetStatus();
+		if (PWM_IDLE!=status){
+			printf("PWM is not idle.\n");
+		}
 	}
 	ret= VideoDrv_Init(0);
 	if (ret){
@@ -66,6 +74,10 @@ int main(int argc, char** argv)
 		return 1;
 	}
 	ret = Keyboard_Init();
+	if (ret){
+		printf("Keyboard init error\n");
+		return 1;
+	}
 	for(; g_KeepRunning;){
 		if ((counter%5000) ==0)
 		{

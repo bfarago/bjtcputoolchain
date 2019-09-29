@@ -7,6 +7,8 @@
 */
 #include "loc.h"
 
+#if (1==LOC_JOINP_ENABLED)
+
 yyltype Join(yyltype first, yyltype last)
 {
   yyltype combined;
@@ -17,9 +19,9 @@ yyltype Join(yyltype first, yyltype last)
   return combined;
 }
 
-
 yyltype Joinp(yyltype *firstPtr, yyltype *lastPtr)
 {
   return Join(*firstPtr, *lastPtr);
 }
+#endif
 
