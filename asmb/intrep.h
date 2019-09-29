@@ -10,6 +10,7 @@
 
 #include "config.h"
 #include "libbjtcpu.h"
+#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {

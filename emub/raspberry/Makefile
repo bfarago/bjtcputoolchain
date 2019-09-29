@@ -25,9 +25,11 @@ OBJ= $(SRC:.c=.o)
 all:	playb
 
 playb:	$(OBJ)
+		@echo [INFO] Link playb
 		$(CC) -o playb $(OBJ) $(LIBS)
 
 .c.o:
+		@echo [CC] $@
 		$(CC) -c $(CFLAGS) $< -o $@
 
 .PHONY: clean
@@ -35,6 +37,7 @@ clean:
 	rm -f $(OBJ)
 
 check:
+	@echo [INFO] Check playb
 	@#cppcheck --quiet --enable=all --xml-version=2 . 1>/dev/null 2>check.xml.log
 	cppcheck --quiet --enable=all --suppressions-list=cppcheck.suppressions.lst .
 installprereq:

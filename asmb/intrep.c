@@ -8,6 +8,11 @@
 #include "intrep.h"
 #include "util.h"
 
+#ifndef MAXSHORT
+#include <limits.h>
+#define MAXSHORT SHRT_MAX
+#endif
+
 //Actual section type
 memoryType_t sectionType = MT_code;
 

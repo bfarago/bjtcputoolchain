@@ -5,6 +5,7 @@ CC=gcc
 INCLUDE=-I. -I../libbjtcpu
 DEFS=-DDEBUG
 CFLAGS= $(DEBUG) $(DEFS) -Wformat=2 -Wall -Wextra -Winline $(INCLUDE) -pipe -fPIC -std=c99
+CPPFLAGS= $(DEBUG) $(DEFS) -Wformat=2 -Wall -Wextra -Winline $(INCLUDE) -pipe -fPIC
 LIBS=-lstdc++ -L../lib -lbjtcpu
 
 SRC= lex.yy.c  main.c  scanner.c  grammar.c version.c  loc.c  intrep.c \
@@ -24,7 +25,7 @@ asmb:	$(OBJ)
 		$(CC) -c $(CFLAGS) $< -o $@
 
 .cpp.o:
-		$(CC) -c $(CFLAGS) $< -o $@
+		$(CC) -c $(CPPFLAGS) $< -o $@
 
 .PHONY: clean
 clean:
