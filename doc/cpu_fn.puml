@@ -27,12 +27,25 @@ partition Running {
      elseif (opcode == 2) then (lda)
         :bus drive address= operand;
         :bus read operand1=data;
+	:acc=operand1;
         :carry=0;
         :pc+=4;
      elseif (opcode ==3) then (ad0)
         :bus drive address= operand;
         :bus read operand1=data;
         :acc+=operand1;
+        :carry=0;
+        :pc+=4;
+     elseif (opcode ==4) then (ad1)
+        :bus drive address= operand;
+        :bus read operand1=data;
+        :acc+=operand1 +1;
+        :carry=0;
+        :pc+=4;
+     elseif (opcode ==5) then (adc)
+        :bus drive address= operand;
+        :bus read operand1=data;
+        :acc+=operand1 + carry;
         :carry=0;
         :pc+=4;
      endif
