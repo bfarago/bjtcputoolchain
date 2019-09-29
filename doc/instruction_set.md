@@ -49,7 +49,7 @@ Examples, description:
   
   jnz 0x123
   
-![CPU functional diagram](http://www.plantuml.com/plantuml/proxy?src=https://raw.github.com/bfarago/bjtcputoolchain/master/doc/cpu_fn.puml)
+![CPU functional diagram](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.github.com/bfarago/bjtcputoolchain/master/doc/cpu_fn.puml)
 
   etc...
   See the test files in sample folder.
