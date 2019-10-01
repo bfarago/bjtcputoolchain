@@ -24,9 +24,6 @@
     <ClCompile Include="util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="lex.yy.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="scanner.c">
       <Filter>Source Files</Filter>
     </ClCompile>

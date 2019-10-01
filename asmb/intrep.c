@@ -30,7 +30,13 @@ char memory[MAXMEMORY];
 
 FILE* include_fopen(const char* fname, const char* mode) {
 	include_add(fname);
+#ifndef _WIN32
 	return fopen(fname, mode);
+#else
+	FILE* f = NULL;
+	fopen_s(&f, fname, mode);
+	return f;
+#endif
 }
 
 //actual address setter, keep the max value for later use

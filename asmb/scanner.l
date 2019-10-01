@@ -5,6 +5,7 @@
 %top{
 #ifdef _WIN32
 #define _CRT_SECURE_NO_WARNINGS
+#define YY_NO_UNISTD_H
 #else
 
 #ifndef _BSD_SOURCE
@@ -74,7 +75,7 @@ int include_stack_ptr = 0;
 
 %}
 
-%option yylineno nounput noinput
+%option yylineno nounput noinput caseless
 
  /* The section before the first %% is the Definitions section of the lex
   * input file. Here is where you set options for the scanner, define lex

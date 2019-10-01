@@ -154,7 +154,6 @@
     <ClCompile Include="gen_lst.c" />
     <ClCompile Include="grammar.c" />
     <ClCompile Include="intrep.c" />
-    <ClCompile Include="lex.yy.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="scanner.c" />
     <ClCompile Include="util.cpp" />
