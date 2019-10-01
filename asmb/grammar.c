@@ -5,7 +5,11 @@
 * @par
 * COPYRIGHT NOTICE: (c) 2018 Barna Farago.  All rights reserved.
 */
+
 #define _CRT_SECURE_NO_WARNINGS
+
+// for linux, add -D_BSD_SOURCE
+
 #include <stdio.h>
 #include <string.h>
 

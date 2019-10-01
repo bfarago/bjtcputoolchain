@@ -2,6 +2,30 @@
  * ----------------
  * Lex input file to generate the scanner for the compiler.
  */
+%top{
+#ifdef _WIN32
+#define _CRT_SECURE_NO_WARNINGS
+#else
+
+#ifndef _BSD_SOURCE
+#warning On linux, please add -D_BSD_SOURCE to the compiler flags!
+#endif
+
+#ifndef _POSIX_SOURCE
+#define _POSIX_SOURCE 1
+#endif
+
+#include <unistd.h>
+int isatty(int fd);
+
+/*
+One compiler warning comes from flex issue, no problem in our usecase:
+https://github.com/westes/flex/issues/61
+*/
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsign-compare"
+#endif
+}
 %x incl
 %{
 
@@ -11,12 +35,8 @@
  * or C++ variable declarations/prototypes that are needed by your code here.
  */
 
- #define _CRT_SECURE_NO_WARNINGS
-#include <stdio.h>
-#include <string.h>
 #include "scanner.h"
 #include "util.h" // for PrintDebug()
-//#include "error.h"
 
 /* Global variable: yylval
  * -----------------------
@@ -54,7 +74,7 @@ int include_stack_ptr = 0;
 
 %}
 
-%option yylineno
+%option yylineno nounput noinput
 
  /* The section before the first %% is the Definitions section of the lex
   * input file. Here is where you set options for the scanner, define lex
@@ -197,6 +217,10 @@ include             BEGIN(incl);
  * This section is where you put definitions of helper functions.
  */
 
+#ifndef _WIN32
+//see prolog, flex related warnings reactivated...
+#pragma GCC diagnostic pop
+#endif
 
 /* Function: InitScanner
  * ---------------------

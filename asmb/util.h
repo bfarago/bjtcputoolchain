@@ -8,6 +8,10 @@
 #ifndef _UTIL_H
 #define _UTIL_H
 
+#ifndef _POSIX_SOURCE
+#define _POSIX_SOURCE 1
+#endif
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -19,9 +23,9 @@
 
 //Eliminate warning in VisualStudio
 #if defined(_WIN32) || defined(WIN32)
-#define UTIL_STRDUP(x) _strdup(x)
+#define UTIL_STRDUP(x) util_strdup((char*)(x))
 #else
-#define UTIL_STRDUP(x) strdup(x)
+#define UTIL_STRDUP(x) util_strdup((char*)(x))
 #define _fileno fileno
 #endif
 
@@ -195,7 +199,8 @@ void include_eof();
 
 int include_get_max();
 const char* include_get(int index);
-
+//standard strdup wrapper
+char* util_strdup(const char * s);
 #ifdef __cplusplus
 }
 #endif

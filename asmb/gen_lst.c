@@ -18,6 +18,15 @@
 #define FORMAT_PCHAR "S"
 #endif
 
+//x offset of the input asm in the lst file
+#define COLUMN_ASM (35)
+
+//max row number, to prevent endless loop for any reason.
+#define ROWMAX_PREVENT_ENDLESS (100000)
+
+//first line index
+#define FIRSTLINE_FIN (2)
+
 Std_ReturnType gen_lst(asmb_config_t *asmb_config, int maxaddress, char* memory)
 {
 	char bfname[MAXFNAMELEN];
@@ -45,7 +54,7 @@ Std_ReturnType gen_lst(asmb_config_t *asmb_config, int maxaddress, char* memory)
 		}else{
 			fin = 0;
 		}
-		int fin_line = 2;
+		int fin_line = FIRSTLINE_FIN;
 		unsigned int cols = 0;
 		char buflst[BUFLEN];
 		char bufcom[BUFLEN];
@@ -101,21 +110,23 @@ Std_ReturnType gen_lst(asmb_config_t *asmb_config, int maxaddress, char* memory)
 						colscom = cols;
 						cols = 0;
 					}
-					while (colscom < 35) {
+					while (colscom < COLUMN_ASM) {
 						bufcom[colscom++] = ' ';
 					}
 					bufcom[colscom++] = ';';
-					fgets(bufcom + colscom, BUFLEN - colscom, fin);
-					if (strlen(bufcom)) {
-						fprintf(f, "%s", bufcom);
-						colscom = 0;
-					}
+					char* p= fgets(bufcom + colscom, BUFLEN - colscom, fin);
+					if (p)
+					    if (strlen(bufcom))
+						{
+							fprintf(f, "%s", bufcom);
+							colscom = 0;
+						}
 				}
 				else {
 					break;
 				}
 				fin_line++;
-				if (fin_line > 100000) break; //prevent endless
+				if (fin_line > ROWMAX_PREVENT_ENDLESS) break; //prevent endless
 			}
 			if (cols) {
 				if (cols < BUFLEN) {
@@ -129,6 +140,5 @@ Std_ReturnType gen_lst(asmb_config_t *asmb_config, int maxaddress, char* memory)
 		fclose(f);
 		fclose(fin);
 	}
-
 	return ret;
 }

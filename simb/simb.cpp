@@ -35,7 +35,7 @@ char getch_(int echo) {
 char getch(void){ return getch_(0);}
 
 /* Read 1 character with echo */
-char getche(void){ return getch_(1);}
+//char getche(void){ return getch_(1);}
 
 #define FOPEN(f, n, m) f=fopen((n),(m))
 #endif /////////////////////////////////////////////////
@@ -62,7 +62,7 @@ typedef struct {
 	int addr;
 	char alu;
 	char carry;
-	char op;
+	unsigned char op;
 	char state;
 	int data;
 	char ilen;
@@ -83,21 +83,26 @@ void dumpmem(int addr) {
 #undef TOK
 #define TOK(x, opc) #x
 
-static const char *gMnemonics[16] = 
+#define MAXNUMOFMNEMONICS (16u)
+static const char *gMnemonics[MAXNUMOFMNEMONICS] = 
 { "mvi a,","sta","lda","ad0","ad1","adc","nand","nor","rrm","jmp","jc","jnc","jz","jnz","jm","jp"};
 
 void dump() {
 	printf("0x%03x %x %c | ", bus.address, bus.data, "XRW"[bus.dir]);
 	printf("%c 0x%03x ", cpu.state, cpu.pc);
-	if (cpu.op>=0) printf("%x", cpu.op);
-	else printf("x");
+
+	if (cpu.op < MAXNUMOFMNEMONICS){
+	    printf("%x", cpu.op);
+	} else {
+	    printf("x");
+	}
 	if (cpu.data >= 0) {
 		printf(" %03x", cpu.data);
 	} else {
 		printf(" xxx");
 	}
 	printf(" |  %x  %c%c%c", cpu.alu &0x1f,
-		cpu.carry ? 'C' : ' ', cpu.alu & 8 ? 'M' : 'P', !cpu.alu?'Z':' ');
+		cpu.carry ? 'C' : ' ', (cpu.alu & 8) ? 'M' : 'P', (!cpu.alu)?'Z':' ');
 	printf("  |");
 	
 	dumpmem(0xc00);
@@ -110,8 +115,9 @@ void dump() {
 
 	printf(" | ");
 	if ('D'==cpu.state)
-	if (cpu.op>=0) printf("%s %03x", gMnemonics[cpu.op], cpu.data);
-
+	if (cpu.op < MAXNUMOFMNEMONICS){
+		printf("%s %03x", gMnemonics[cpu.op], cpu.data);
+	}
 	printf("\n");
 }
 
@@ -131,6 +137,7 @@ char perif_Read(int addr) {
 }
 
 void perif_Write(int addr, char data) {
+	(void)data;
 	switch (addr) {
 	case 0xc00: break;
 	case 0xc01: break;
@@ -175,12 +182,10 @@ void cpu_busWrite(int addr, char data) {
 void fetch() {
 	cpu.ilen = 2;
 	cpu.state = 'F';
-	//cpu.op = -1;
 	cpu.data = -1;
 	cpu.op = cpu_busRead(cpu.pc);
 	cpu.data = cpu_busRead(cpu.pc + 1);
 	if (cpu.op > 0) {
-		// cpu.data <<= 8;
 		cpu.data |= cpu_busRead(cpu.pc + 2) << 4;
 		cpu.data |= cpu_busRead(cpu.pc + 3) << 8;
 		cpu.ilen = 4;
@@ -219,11 +224,11 @@ void fetch() {
 
 int main(int ac, char** av) {
 	int r = 0;
-	FILE* fi = NULL;
-	int fi_size = 0;
 	int run = 1;
 	int maxsteplen = -1;
 	if (ac > 1) {
+		size_t fi_size = 0;
+		FILE* fi = NULL;
 		FOPEN(fi, av[1], "rb");
 		if (!fi) {
 			printf("Unable to open file?\n");
