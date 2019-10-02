@@ -15,7 +15,7 @@ start
    :report error;
  endif
  :get literal value from the expression;
- :add memory opcode, value;
+ :add memory opcode, value1, value2, value3;
  :return token;
 stop
 }
