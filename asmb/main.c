@@ -27,7 +27,7 @@ void relocation() {
 	size_t n = getRelocs();
 	for (i = 0; i < n; i++) {
 		const char* name;
-		int addr;
+		SimAddress_t addr;
 		int line;
 		relocType_en relocType;
 		SType_e context = ST_Unknown;

@@ -30,19 +30,15 @@ char memory[MAXMEMORY];
 //actual address setter, keep the max value for later use
 void setAddress(SimAddress_t a) {
 	if (a < MAXMEMORY) {
-		if (a >= 0) {
 			address = a;
 			if (a > maxaddress) maxaddress = a;
-		}
 	}
 }
 
 //checks the earlier maximum for addresses
 void chkAddress(SimAddress_t a) {
 	if (a < MAXMEMORY) {
-		if (a >= 0) {
 			if (a > maxaddress) maxaddress = a;
-		}
 	}
 }
 
