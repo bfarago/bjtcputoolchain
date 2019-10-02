@@ -1,0 +1,22 @@
+@startuml
+partition "parse_Op4_12" {
+start
+ :setRelocType(RT_OP4_12);
+ if (token==T_lda) then (load data to acc)
+   :symContext=ST_LOAD;
+ elseif(token==T_sta) then (store data to acc)
+   :symContect=ST_STORE;
+ elseif(other mnemonics) then (etc)
+   :symContect=depending on mnemonic;
+ endif
+ :token=get next token from lexer;
+ :token=parse_exp(token,symContext);
+ if(is it not an expression) then (failure)
+   :report error;
+ endif
+ :get literal value from the expression;
+ :add memory opcode, value;
+ :return token;
+stop
+}
+@enduml
