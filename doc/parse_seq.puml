@@ -1,0 +1,21 @@
+@startuml
+loop while not eof
+toplevel -> lexer : get next token
+ toplevel <- lexer: return token
+ toplevel -> grammar1: call specific grammar
+ loop depending on syntax
+  grammar1 -> lexer: get next token
+  grammar1 <- lexer: return token
+ end
+ grammar1 -> symbols: search or save a symbol
+ grammar1 <- symbols: resolve a symbol to literal
+ grammar1 -> memory: store nibbles in memory
+ grammar1 -> relocation: if expression contains unknown symbol, store a refference.
+end
+toplevel ->relocation: iterate through all relocations
+loop while relocations 
+symbols <- relocation: search for symbol
+symbols -> relocation: resolve simbol or failure
+memory <- relocation: store the calculated literal
+end
+@enduml
