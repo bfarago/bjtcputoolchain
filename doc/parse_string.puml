@@ -1,0 +1,24 @@
+@startuml
+partition "parse_string" {
+ start
+ :store lexer string;
+ :t= get new token from lexer;
+ if (t == ':') then (label)
+   :remember as label;
+ elseif (t=='+') then (asci high)
+  :t= get new token from lexer;
+  while (loop on string characters)
+    ->interate;
+    :add high nibble to memory;
+  endwhile
+ elseif (t=='-') then (asci low)
+  :t= get new token from lexer;
+  while (loop on string characters)
+    ->interate;
+    :add low nibble to memory;
+  endwhile
+ endif
+ :return t;
+ stop
+}
+@enduml

@@ -1,0 +1,26 @@
+@startuml
+start
+  while (is not eof?)
+   ->yes;
+   if (is token null?) then (yes)
+    partition "Top level Lexer" {
+     :get next token from lexer;
+    }
+   endif;
+partition "End term token processor on top level" {
+    if (is Token a NewLine) then (eat up nl, comments)
+     :token=null;
+    elseif (token == T_StringConstant) then (label,asci)
+        :token= parse_string(token);
+    elseif (token == T_mvi) then (simple operand)
+        :token= parse_Op4_4(token);
+    elseif (token == all other mnemonic) then (long operands)
+        :token = parse_Op4_12(token);
+    elseif (is token unknown) then (failure)
+        :report error;
+        :token= null;
+    endif;
+}
+  endwhile
+stop
+@enduml
