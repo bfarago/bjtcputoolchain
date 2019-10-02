@@ -1,12 +1,11 @@
 @startuml
 start
-  while (is token not null, and not eof?)
+  while (is not eof?)
    ->yes;
    if (is token null?) then (yes)
-
-partition "Top level Lexer" {
-    :get next token from lexer;
-}
+    partition "Top level Lexer" {
+     :get next token from lexer;
+    }
    endif;
 partition "End term token processor on top level" {
     if (is Token a NewLine) then (eat up nl, comments)
@@ -24,6 +23,7 @@ partition "End term token processor on top level" {
 }
   endwhile
 stop
+
 partition "parse_string" {
  :store lexer string;
  :t= get new token from lexer;
@@ -42,7 +42,10 @@ partition "parse_string" {
     :add low nibble to memory;
   endwhile
  endif
-
  :return t;
+}
+
+partition "parse_Op4_4" {
+ :parse 4bits operands;
 }
 @enduml
