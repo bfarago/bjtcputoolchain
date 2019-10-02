@@ -3,24 +3,46 @@ start
   while (is token not null, and not eof?)
    ->yes;
    if (is token null?) then (yes)
+
+partition "Top level Lexer" {
     :get next token from lexer;
-   endif
-partition End term token processor {
-    if (token == T_NewLine) then (eat up nl)
+}
+   endif;
+partition "End term token processor on top level" {
+    if (is Token a NewLine) then (eat up nl, comments)
      :token=null;
-    else (token == T_StringConstant)
-     :t= parse_string();
+    elseif (token == T_StringConstant) then (label,asci)
+        :token= parse_string(token);
     elseif (token == T_mvi) then (simple operand)
-        :token = parse_Op4_4(token);
+        :token= parse_Op4_4(token);
     elseif (token == all other mnemonic) then (long operands)
-        :token = parse_Op4_4(token);
+        :token = parse_Op4_12(token);
     elseif (is token unknown) then (failure)
         :report error;
-        :token=null;
+        :token= null;
     endif;
 }
-   endif
   endwhile
-
 stop
+partition "parse_string" {
+ :store lexer string;
+ :t= get new token from lexer;
+ if (t == ':') then (label)
+   :remember as label;
+ elseif (t=='+') then (asci high)
+  :t= get new token from lexer;
+  while (loop on string characters)
+    ->interate;
+    :add high nibble to memory;
+  endwhile
+ elseif (t=='-') then (asci low)
+  :t= get new token from lexer;
+  while (loop on string characters)
+    ->interate;
+    :add low nibble to memory;
+  endwhile
+ endif
+
+ :return t;
+}
 @enduml
