@@ -1,6 +1,6 @@
 @startuml
-start
 partition "parse_string" {
+ start
  :store lexer string;
  :t= get new token from lexer;
  if (t == ':') then (label)
@@ -19,6 +19,6 @@ partition "parse_string" {
   endwhile
  endif
  :return t;
+ stop
 }
-stop
 @enduml
