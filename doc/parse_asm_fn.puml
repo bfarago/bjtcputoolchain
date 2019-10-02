@@ -25,6 +25,7 @@ partition "End term token processor on top level" {
 stop
 
 partition "parse_string" {
+start
  :store lexer string;
  :t= get new token from lexer;
  if (t == ':') then (label)
@@ -43,9 +44,12 @@ partition "parse_string" {
   endwhile
  endif
  :return t;
+stop
 }
 
 partition "parse_Op4_4" {
+start
  :parse 4bits operands;
+stop
 }
 @enduml
