@@ -3,7 +3,7 @@
 #define MAX_ERROR_LEN (255)
 #define MAXSYMBOLENAME (255)
 
-typedef int SimAddress_t;
+typedef unsigned int SimAddress_t;
 typedef unsigned char SimData_t;
 
 

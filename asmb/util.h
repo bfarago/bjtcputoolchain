@@ -39,8 +39,8 @@ extern "C" {
 #endif
 #include "scanner.h"
 
-extern int address;
-extern int maxaddress;
+extern SimAddress_t address;
+extern SimAddress_t maxaddress;
 
 /*Typedef: relocType_en
 *Grammar relocation enum.
@@ -73,7 +73,12 @@ typedef unsigned char SContexts_t;*/
 
 void stackPush(int t, const YYSTYPE* s);
 
+/** Function: parser_exp()
+* Usage: token=parse_exp(token, &res, pContext);
+* Grammar of the expressions. 
+*/
 int parse_exp(int t, GType_s* res, SType_e* context);
+
 /**
  * Function: Failure()
  * Usage: Failure("Out of memory!");
@@ -83,10 +88,18 @@ int parse_exp(int t, GType_s* res, SType_e* context);
  * this in unrecoverable error situations (cannot allocate memory, etc.)
  * Failure accepts printf-style arguments in the message to be printed.
  */
-
 void Failure(const char *format, ...);
+
+/**
+* Function: AddError()
+*/
 void AddError(int errCode, short fileId, int line, char* errbuf, const char* quote);
+
+/**
+* Function: WrongToken()
+*/
 void WrongToken(int t, const char *format, ...);
+
 /**
  * Macro: Assert()
  * Usage: Assert(num > 0);
@@ -98,7 +111,6 @@ void WrongToken(int t, const char *format, ...);
  *   *** Failure: Assertion failed: hashtable.cc, line 55:
  *       ptr != NULL
  */ 
-
 #define Assert(expr)  \
   ((expr) ? (void)0 : Failure("Assertion failed: %s, line %d:\n    %s", __FILE__, __LINE__, #expr))
 
@@ -111,7 +123,6 @@ void WrongToken(int t, const char *format, ...);
  * The function accepts printf arguments.  The provided main.cc parses
  * the command line to turn on debug flags. 
  */
-
 void Debug(const char *key, const char *format, ...);
 
 /**
@@ -183,7 +194,7 @@ void setSymbol(const char* name, int value, SType_e symbolType);
 int getSymbol(const char* name, SType_e* pContext, int line);
 SType_e getSymbolType(int index);
 SContexts_t getSymbolContexts(int index);
-int getReloc(int index, const char**name, int* adr, relocType_en* rt, SType_e* context, int* line);
+int getReloc(int index, const char**name, SimAddress_t* adr, relocType_en* rt, SType_e* context, int* line);
 size_t getRelocs();
 
 void setRelocType(relocType_en rt);
@@ -195,12 +206,15 @@ void checkSection(char* secName);
 
 int include_actual_get();
 void include_add(const char* fname);
+FILE* include_fopen(const char* fname, const char* mode);
+
 void include_eof();
 
 int include_get_max();
 const char* include_get(int index);
 //standard strdup wrapper
 char* util_strdup(const char * s);
+
 #ifdef __cplusplus
 }
 #endif

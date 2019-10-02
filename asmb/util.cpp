@@ -30,12 +30,12 @@ static vector<const char*> sections;
 static vector<const char*> includes;
 static const int UTIL_BUFFERSIZE = 2048;
 
-int address = 0;
-int maxaddress = 0;
+SimAddress_t address = 0;
+SimAddress_t maxaddress = 0;
 relocType_en actualRelocType = RT_OP4_12;
 
 static vector<const char*> reloc;
-static vector<int> relocAddress;
+static vector<SimAddress_t> relocAddress;
 static vector<relocType_en> relocType;
 static vector<SType_e> relocContext;
 static vector<int> relocLine;
@@ -50,11 +50,11 @@ void stackPush(int t, const YYSTYPE* s) {
 	p.t = t;
 	p.s = *s;
 	gStack.push_back(p);
-
 }
 void stackClear() {
 	gStack.clear();
 }
+
 int ruleExp[] = 
 {
 	T_IntConstant, '+', T_IntConstant, T_Void, 
@@ -436,7 +436,7 @@ int searchSymbol(const char *key) {
 
 	return -1;
 }
-void addReloc(const char* name, int addr, relocType_en rt, SType_e* pContext, int line) {
+void addReloc(const char* name, SimAddress_t addr, relocType_en rt, SType_e* pContext, int line) {
 	reloc.push_back(UTIL_STRDUP(name));
 	relocAddress.push_back(addr);
 	relocType.push_back(rt);
@@ -446,7 +446,7 @@ void addReloc(const char* name, int addr, relocType_en rt, SType_e* pContext, in
 size_t getRelocs() {
 	return reloc.size();
 }
-int getReloc(int index, const char**name, int* adr, relocType_en* rt, SType_e* pContext, int *line) {
+int getReloc(int index, const char**name, SimAddress_t* adr, relocType_en* rt, SType_e* pContext, int *line) {
 	*name = reloc[index];
 	*adr = relocAddress[index];
 	*rt = relocType[index];
@@ -528,7 +528,6 @@ int include_search(const char* fname) {
 	return -2;
 }
 
-
 void include_add(const char* fname) {
 	int index = include_search(fname);
 	if (index < 0) {
@@ -541,6 +540,17 @@ void include_add(const char* fname) {
 	g_include_stack_line.push_back(yylineno);
 	yylineno = 1;
 	g_include_actual = index;//g_include_stack.back();
+}
+
+FILE* include_fopen(const char* fname, const char* mode) {
+	include_add(fname);
+#ifndef _WIN32
+	return fopen(fname, mode);
+#else
+	FILE* f = NULL;
+	fopen_s(&f, fname, mode);
+	return f;
+#endif
 }
 
 void include_eof() {
