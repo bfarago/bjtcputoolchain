@@ -1,0 +1,18 @@
+@startuml
+partition "parse_Op4_4" {
+start
+ :setRelocType(RT_OP4_4);
+ if (token==T_mvi) then (only mvi,a case)
+   :symContext=ST_LOAD;
+ endif
+ :token=get next token from lexer;
+ :token=parse_exp(token,symContext);
+ if(is it not an expression) then (failure)
+   :report error;
+ endif
+ :get literal value from the expression;
+ :add memory opcode, value;
+ :return token;
+stop
+}
+@enduml
