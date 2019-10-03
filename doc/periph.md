@@ -50,7 +50,7 @@ Four individual buttons (joystick) are connected to the registers bits. The regi
 
 Random number:
 --------------
-True random generated is built in analog component level design, the register produce a new number for every bus read operation.
+True random generator is built in analog component level design, the register produce a new number for every bus read operation.
 
 Keypad matrix:
 --------------
