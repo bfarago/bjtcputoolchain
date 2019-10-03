@@ -9,7 +9,7 @@ I just collected several things here, to get some progress... :)
 Missing infos from Hw/Sw interface:
 -----------------------------------
 
-Exact list of the keypad matrix codes, including the arrow peripherial.
+Exact list of the keypad matrix codes, including the arrow peripherial. See actual [HSI](periph.md).
 
 Downloader design.
 
@@ -19,7 +19,7 @@ Half-implemented, therefore limited Sw features:
 Expressions can only handle one operator +, when at least one symbol is not yet
 definied. So, pass 2 compilation can only add one precalculated constant, and one symbol.
 
-Symbole operations are syntactically correct (/, >>, <<, *), but only plus sign will work correctly. (same as previous)
+Symbol operations are syntactically correct (/, >>, <<, *), but only plus sign will work correctly. (same as previous)
 
 There is the plan, to handle kind of extras like: multiple asm files, with external and globl symbols, memory ranges for sections, etc. But not yet fully
 implemented. 
