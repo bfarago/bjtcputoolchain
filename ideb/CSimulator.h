@@ -99,10 +99,11 @@ private:
 	BOOL OnUartLoadStore(SimAddress_t addr, busDirection_t dir, SimData_t * data);
 	BOOL OnPerifLoadStore(SimAddress_t addr, busDirection_t dir, SimData_t * data, SimData_t* mem);
 
-	void DataBusDrive(SimData_t data);
-	void AluSetAccumulator(SimData_t data);
 	
-	SimData_t DataBusRead();
+	void AluSetAccumulator(SimData_t data);
+	inline bool isPeriphAccess();
+	inline SimData_t DataBusRead();
+	inline void DataBusDrive(SimData_t data);
 	int OnDrawHexDump(CDC * pDC, SimAddress_t aBegin, SimAddress_t aEnd, int sx, int sy);
 	
 	HICON hIconBreak;

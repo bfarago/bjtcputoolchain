@@ -11,6 +11,14 @@
 
 #include "Resource.h"
 
+//reset, init state values
+#define RESET_STATE_ARR  (0x0fu)
+#define RESET_STATE_KEY0 (0x00u)
+#define RESET_STATE_KEY1 (0x00u)
+
+#define ADDR_MASK_PERIPH (0xf00)
+#define ADDR_COMP_PERIPH (0xc00)
+
 //this defines used by OnDraw related codes
 #define DISTANCEY 16
 #define HEXDISTANCEX 8
@@ -139,7 +147,7 @@ int CSimulator::OnDrawHexDump(CDC* pDC, SimAddress_t aBegin, SimAddress_t aEnd, 
 	int y = sy;
 	TCHAR b[2];
 	b[1] = 0;
-	for (int i = aBegin; i < aEnd; i++) {
+	for (SimAddress_t i = aBegin; i < aEnd; i++) {
 		int offs = i - aBegin;
 		int x = offs & 0x3f;
 		y = (offs >> 6) + sy;
@@ -665,9 +673,9 @@ inline BOOL CSimulator::OnPerifLoadStore(SimAddress_t addr, busDirection_t dir, 
 		if (bd_Read == dir) {
 			switch (addr) {
 			case ADDR_RND: *mem= *data = rand() & 0x0f; break;
-			case ADDR_ARR: *data = m_Memory[ADDR_ARR]; *mem = 0; break;
-			case ADDR_KEY0: *data = m_Memory[ADDR_KEY0];  *mem = 0; break;
-			case ADDR_KEY1: *data = m_Memory[ADDR_KEY1];  *mem = 0; break;
+			case ADDR_ARR: *data = m_Memory[ADDR_ARR]; *mem = RESET_STATE_ARR; break;
+			case ADDR_KEY0: *data = m_Memory[ADDR_KEY0];  *mem = RESET_STATE_KEY0; break;
+			case ADDR_KEY1: *data = m_Memory[ADDR_KEY1];  *mem = RESET_STATE_KEY1; break;
 			default:processed = FALSE;	break;
 			}
 			if (processed) return TRUE;
@@ -772,16 +780,20 @@ BOOL CSimulator::GetDisAsm(SimAddress_t addr, CString & s)
 	else return FALSE;
 	return TRUE;
 }
-
+inline bool CSimulator::isPeriphAccess() {
+	if (!m_CpuSnapshot_p) return 0;
+	return (m_CpuSnapshot_p->addr & ADDR_MASK_PERIPH) == ADDR_COMP_PERIPH;
+}
 //DataBusRead: simulation of the cpu's data bus read.
 inline SimData_t CSimulator::DataBusRead()
 {
 	if (!m_CpuSnapshot_p) return 0;
 	if (m_CpuSnapshot_p->addr > SIM_MAXMEMORYSIZE) {
+		//todo: error handling
 		m_CpuSnapshot_p->addr = SIM_MAXMEMORYSIZE; //Invalid address
 	}
 	m_HeatRead[m_CpuSnapshot_p->addr] = 0xff;
-	if (m_CpuSnapshot_p->addr >= 0xc00) {
+	if (isPeriphAccess()) {
 		SimData_t data = 0;
 		if (OnPerifLoadStore(m_CpuSnapshot_p->addr, bd_Read, &data, &m_Memory[m_CpuSnapshot_p->addr])) {
 			return data;
@@ -797,7 +809,7 @@ inline void CSimulator::DataBusDrive(SimData_t data)
 		m_CpuSnapshot_p->addr = SIM_MAXMEMORYSIZE; //Invalid address
 	}
 	m_HeatWrite[m_CpuSnapshot_p->addr] = 0xff;
-	if (m_CpuSnapshot_p->addr >= 0xc00) {
+	if (isPeriphAccess()) {
 		if (OnPerifLoadStore(m_CpuSnapshot_p->addr, bd_Write, &data, &m_Memory[m_CpuSnapshot_p->addr])) {
 			 return;
 		}
@@ -1033,9 +1045,9 @@ BOOL CSimulator::RunQuick() {
 
 void CSimulator::ResetPeriph() {
 	//these are needed beacuase of the simulation doesn't release the keyboard...
-	m_Memory[ADDR_ARR] = 0;
-	m_Memory[ADDR_KEY1] = 0;
-	m_Memory[ADDR_KEY0] = 0;
+	m_Memory[ADDR_ARR] = RESET_STATE_ARR;
+	m_Memory[ADDR_KEY1] = RESET_STATE_KEY1;
+	m_Memory[ADDR_KEY0] = RESET_STATE_KEY0;
 	//screen maybe also requres a reset, but it is not documented how the reset
 	//takes effect on the video card... So, we dont reset the screen now. 
 	//We reset only the simulator...
