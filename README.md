@@ -8,7 +8,7 @@ There is also a video card for this CPU. It has two (X,Y) analog outputs, which 
 
 IDE
 ---
-This is a Windows MFC application, it is under development. It simulates the BJT CPU, and i/o periferals like UART, Video card right now. Asm editor part is read only at this moment, and compiler is running externally. To see more detailed description, read [ide documentation](doc/ide.md)
+This is a Windows MFC application, it is under development. It simulates the BJT CPU, and i/o peripherals like UART, Video card, keypad, joystick. Asm editor part is read only at this moment, and compiler is running externally. To see more detailed description, read [ide documentation](doc/ide.md)
 
 ![ide screenshot](doc/sside1.png?raw=true "ide")
 
