@@ -65,12 +65,16 @@ At paused CPU state we can resume running operation by pressing RUN button, or w
 one instruction's execution for as many cpu clock, as needed for the related instruction. This one is good for understanding the CPU
 internal operations, because the bus and cpu states are displayed in this way. While instruction step was pressed, it will exectute a
 complete operation chain, namely one instruction will be executed only. (this one is the usual "step debug" operation when
-code level debugging is on progress.) Good ide, to add multiple breakpoints rather than step by step debuging...
+code level debugging is on progress.) Good idea, to add multiple breakpoints rather than step by step debuging...
 
 ![brakepoints](/doc/idebreak.png?raw=true "ide brakepoints")
 
 Also very informative, to watch red heat-map lines where the cpu is running. We can figure out which conditional jump was made by cpu
 earlier, which part of the code was skipped.
+
+Blue lines means the memory location was written earlier. Notice: code is running from RAM, so operands can be rewritten by code.
+
+Green lines means the cpu was read the memory location.
 
 ![trace](/doc/idetrace.png?raw=true "ide timeline trace")
 
