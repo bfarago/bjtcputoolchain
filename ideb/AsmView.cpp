@@ -293,7 +293,7 @@ void CAsmView::OnDraw(CDC* pDC)
 			}
 		}
 		if (WarningAreaVisible) {
-			if (!pDC->IsPrinting()) {
+			if (!pDC->IsPrinting() && pSimulator) {
 				int ne = (int)pSimulator->m_Errors.GetCount();
 				for (int ie = 0; ie < ne; ie++) {
 					const tErrorRecord& rErr = pSimulator->m_Errors.GetAt(ie);
