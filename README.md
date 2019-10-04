@@ -4,14 +4,21 @@ This project was formed on that goal, to have a toolchain for a really existed, 
 See this short vieo: [Bipolar cpu running at 61Hz](https://www.youtube.com/watch?v=iL6OvX4frJs) 
 The processor made out of BC182 (~450 piece), 1N4148 and resistors. The data path is 4-bit, address space is 12-bit. Known max speed is more than 1MHz. There are 3 flags: Sign, Carry and Zero
 
-There is also a video card for this CPU. It has two (X,Y) analog outputs, which can be connected to an ordinary oscilloscope to show the screen. The videocard has its own character generator, based on lists of vector graphic steps. Keypad matrix and joystick inputs also implemented.
+There is also a video card for this CPU. It has two (X,Y) analog outputs, which can be connected to an ordinary oscilloscope to show the screen. The videocard has its own character generator, based on lists of vector graphic steps. Keypad matrix and joystick inputs also implemented. See [details of the peripherals](doc/periph.md)
 
 IDE
 ---
-This is a Windows MFC application, under development. It simulates the BJT CPU, UART, Video card right now. Asm editor and compiler will
-be added later. Notepad++ custom syntax highlight config also added to the project.
+This is a Windows MFC application, it is under development. It simulates the BJT CPU, and i/o periferals like UART, Video card right now. Asm editor part is read only at this moment, and compiler is running externally. To see more detailed description, read [ide documentation](doc/ide.md)
+
 ![ide screenshot](doc/sside1.png?raw=true "ide")
-The asm software was made by one of my colleague Denes Suhayda. It was presented running on the original cpu earlier, now running on the simulator as well. This is a simple side-scrolling game, players can jump to keep the little guy alive, while the scrolling impulses are aproaching faster and faster.
+
+The following screenshot also contains some descriptions, we can see how the actual Program Counter shown numerically, and asm view modul also shows by coloring the source line of the actual CPU positions. To analize a longer period of runtime, the ide stores a history for the bus states of every memory cell. This so called heat-map, displayed as colored lines, where blue is for write, green for read, and red for execution cpu-bus states. Jump instructions also triggers the simulator to store locations to a history, this helps to understand the sw behaviour in time domain.  
+
+![ide screenshot](doc/sside2.jpg?raw=true "ide and descriptions")
+
+Furthermore a Notepad++ custom syntax highlight config also added to the project.
+
+We can see a running game on the picture of the simulator. This asm software above was made by one of my colleague Denes Suhayda. It was presented running on the original cpu earlier, now running on the simulator as well. This is a simple side-scrolling game, players can jump to keep the little guy alive, while the scrolling impulses are aproaching faster and faster.
 
 ASSEMBLER
 ---------
