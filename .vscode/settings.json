@@ -1,0 +1,9 @@
+{
+    "makefile.launchConfigurations": [
+        {
+            "cwd": "/Users/bfarago/Local/git/bjtcputoolchain/asmb",
+            "binaryPath": "/Users/bfarago/Local/git/bjtcputoolchain/asmb/asmb",
+            "binaryArgs": []
+        }
+    ]
+}
