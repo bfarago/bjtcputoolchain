@@ -22,7 +22,7 @@
 #include "gen_lst.h"
 
 
-void relocation() {
+void relocation(void) {
 	size_t i;
 	size_t n = getRelocs();
 	for (i = 0; i < n; i++) {

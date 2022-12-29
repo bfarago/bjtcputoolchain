@@ -225,7 +225,7 @@ void fetch() {
 int main(int ac, char** av) {
 	int r = 0;
 	int run = 1;
-	int maxsteplen = -1;
+	long maxsteplen = -1;
 	if (ac > 1) {
 		size_t fi_size = 0;
 		FILE* fi = NULL;

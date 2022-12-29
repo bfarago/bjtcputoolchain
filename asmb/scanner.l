@@ -66,7 +66,7 @@ struct yyltype yylloc; // manually dclared for pp1, later Yacc provides
  * be called once for each pattern scanned from the file, before
  * executing its action.
  */
-static void Do_User_Action(); 
+static void Do_User_Action(void); 
 #define YY_USER_ACTION Do_User_Action();
 
 #define MAX_INCLUDE_DEPTH 10

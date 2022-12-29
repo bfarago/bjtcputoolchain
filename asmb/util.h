@@ -168,7 +168,7 @@ typedef struct {
 	char errorText[MAX_ERROR_LEN];
 }tErrorRecord;*/
 
-int getErrorListLength();
+int getErrorListLength(void);
 const tErrorRecord* getErrorListItem(int index);
 
 /**
@@ -185,7 +185,7 @@ void InitConfig(asmb_config_t* cfg);
  */
 Std_ReturnType ParseCommandLine(int argc, char *argv[], asmb_config_t* cfg);
 
-size_t SymbolLength();
+size_t SymbolLength(void);
 const char* SymbolByIndex(size_t index);
 int SymbolValueByIndex(size_t index);
 
@@ -195,22 +195,22 @@ int getSymbol(const char* name, SType_e* pContext, int line);
 SType_e getSymbolType(int index);
 SContexts_t getSymbolContexts(int index);
 int getReloc(int index, const char**name, SimAddress_t* adr, relocType_en* rt, SType_e* context, int* line);
-size_t getRelocs();
+size_t getRelocs(void);
 
 void setRelocType(relocType_en rt);
-int yywrap();
+int yywrap(void);
 
-int getMemorySectionNumbers();
+int getMemorySectionNumbers(void);
 const char* getMemorySectionName(int index);
 void checkSection(char* secName);
 
-int include_actual_get();
+int include_actual_get(void);
 void include_add(const char* fname);
 FILE* include_fopen(const char* fname, const char* mode);
 
-void include_eof();
+void include_eof(void);
 
-int include_get_max();
+int include_get_max(void);
 const char* include_get(int index);
 //standard strdup wrapper
 char* util_strdup(const char * s);
