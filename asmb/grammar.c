@@ -22,21 +22,21 @@
 #include "grammar.h"
 
 //grammar of the org syntax
-int parse_org();
+int parse_org(void);
 //grammer for the section syntax
-int parse_section();
+int parse_section(void);
 //grammar for the global syntax
-int parse_global();
+int parse_global(void);
 //grammar for nibble, or nibble list syntax
-int parse_nibles();
+int parse_nibles(void);
 //grammar for db syntax
-int parse_db();
+int parse_db(void);
 //grammar for identifiers
-int parse_identifier();
+int parse_identifier(void);
 
 
 //grammar of the org syntax
-int parse_org() {
+int parse_org(void) {
 	int t = yylex();
 	GType_s grm;
 	SType_e context = ST_Label; // theres no org in contexts, and no rewriter is possible
@@ -62,7 +62,7 @@ int parse_org() {
 }
 
 //grammer for the section syntax
-int parse_section() {
+int parse_section(void) {
 	int t = yylex();
 	switch (t) {
 	case T_Identifier:
@@ -81,7 +81,7 @@ int parse_section() {
 }
 
 //grammar for the global syntax
-int parse_global() {
+int parse_global(void) {
 	int t = yylex();
 	switch (t) {
 	case T_Identifier:
@@ -95,7 +95,7 @@ int parse_global() {
 }
 
 //grammar for nibble, or nibble list syntax
-int parse_nibles() {
+int parse_nibles(void) {
 	addMemory(yylval.integerConstant);
 	int t = yylex();
 	bool inside = 1;
@@ -138,7 +138,7 @@ int convertAscii2BJTChar(int c) {
 		case  ')': c = 0x32; break;
 		case  '#': c = 0x33; break;
 		case  '@': c = 0x34; break;
-		case  'Å': c = 0x35; break;
+		//case  'ÔøΩ': c = 0x35; break; //mac warning
 		case  '$': c = 0x36; break;
 		case  '"': c = 0x37; break; //use "": instead of \"
 		case  '|': c = 0x38; break;
@@ -146,11 +146,11 @@ int convertAscii2BJTChar(int c) {
 		case  '[': c = 0x3A; break;
 		
 		#ifdef _WIN32
-		case L'⁄': c = 0x3B; break;
-		case L'ø': c = 0x3C; break;
-		case L'Ÿ': c = 0x3D; break;
-		case L'¿': c = 0x3E; break;
-		case  L'»': c = 0x40; break;
+		case L'ÔøΩ': c = 0x3B; break;
+		case L'ÔøΩ': c = 0x3C; break;
+		case L'ÔøΩ': c = 0x3D; break;
+		case L'ÔøΩ': c = 0x3E; break;
+		case  L'ÔøΩ': c = 0x40; break;
 		#endif
 		
 		case  'l': c = 0x3F; break;
@@ -162,7 +162,7 @@ int convertAscii2BJTChar(int c) {
 	}
 	return c;
 }
-int parse_string() {
+int parse_string(void) {
 	char * str = _strdup(yylval.stringConstant); //assume T_StringConstant
 
 	int t = yylex();
@@ -215,7 +215,7 @@ int parse_db() {
 extern char* yy_c_buf_p;
 
 //grammar for identifiers
-int parse_identifier() {
+int parse_identifier(void) {
 	char* name = UTIL_STRDUP(yylval.identifier);
 	SType_e context = ST_Unknown;
 	int t = yylex();
