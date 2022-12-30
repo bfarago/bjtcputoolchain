@@ -1,7 +1,8 @@
 # bjtcputoolchain
 Toolchain for a BJT cpu.
 This project was formed on that goal, to have a toolchain for a really existed, hand-made built Bipolar junction Transistors based CPU.
-See this short vieo: [Bipolar cpu running at 61Hz](https://www.youtube.com/watch?v=iL6OvX4frJs) 
+See this short vieos: [Bipolar cpu running at 61Hz](https://www.youtube.com/watch?v=iL6OvX4frJs) 
+[Scope runner](https://www.youtube.com/shorts/DjAvME9jMiA)
 The processor made out of BC182 (~450 piece), 1N4148 and resistors. The data path is 4-bit, address space is 12-bit. Known max speed is more than 1MHz. There are 3 flags: Sign, Carry and Zero
 
 There is also a video card for this CPU. It has two (X,Y) analog outputs, which can be connected to an ordinary oscilloscope to show the screen. The videocard has its own character generator, based on lists of vector graphic steps. Keypad matrix and joystick inputs also implemented. See [details of the peripherals](doc/periph.md)
