@@ -36,13 +36,14 @@ Registers description:
 | 0xc00  | 3    | R   | 1    | 0: Cursor left arrow pressed  |
 | 0xc01  | 0-3  | R   | xxxx | Random number 0-15            |
 | 0xc02  | 0-3  | R   | 0000 | Keypad row                    |
+| 0xc02  | 0-1  | W   | 0000 | Beep 1kHz                    |
 | 0xc03  | 0-3  | R   | 0000 | Keypad column                 |
 | 0xc04  | 0-3  | W   | 0000 | Screen pos X                  |
 | 0xc05  | 0-3  | W   | 0000 | Screen pos Y                  |
 | 0xc06  | 0-3  | W   | 0000 | Character High.               |
 | 0xc07  | 0-3  | W   | 0000 | Character Low, update.        |
-| 0xc08  | 0-3  | R/W | 0000 | Uart data High                |
-| 0xc09  | 0-3  | R/W | 0000 | Uart data Low                 |
+| 0xc08  | 0-3  | R/W | 0000 | Uart data High (obsolate)     |
+| 0xc09  | 0-3  | R/W | 0000 | Uart data Low  (obsolate)     |
 
 Cursor arrows:
 --------------
@@ -57,6 +58,10 @@ Keypad matrix:
 CPU have a read-only access for two registers. It contains the pressed key code, recognised by keypad row and column. The keypad
 matrix scanned by the hw. The registers should be polled by Sw periodically.
 
+Beep output:
+--------------
+There is an audible frequency oscillator, and it is gated by the regiter values. The lsb bit 0 is the loudest, and bit 1 is a bit quieter volume of the sound. 
+
 Video card:
 -----------
 The video card could drive an oscilloscope in XY mode. It is clocked from system clock, and refresh the screen autonomously from its own
@@ -66,43 +71,10 @@ indexed by Screen X and Y registers, and holds Character High and Low.
 
 Uart:
 -----
-The uart peripherial in the sw was written from scratch. The original hw implementation is unknown. Actual sw implementation can Tx
-and Rx one byte.
-The load and store bus cycles can reach two different uart registers. Reading of the register gets Rx data, while writing the register
-will set Tx data. Unreaded Rx data register will be overwritten by the bus when new data arrives. Writing of Tx data low, will trigger
-shift register to send out the buffer. The actual simulator can trace the tx traffic, but doesn't stimulate the Rx direction yet.
+The latest hw doesn't contains uart capability. The previous SW simulation is documented here
+[here](periph_uart.md)
 
 Downloader (plan)
 ----------------------
-
-IDEA1. Using FTDI chip:
-
-FTDI chips can work in BitBang mode, when 8 pins can be driven by 8 data bits. (Not in uart mode!)
-
-```c
-#define PIN_TX  0x01
-#define PIX_RX  0x02
-#define PIN_RTS 0x04
-#define PIN_CTS 0x08
-#define PIN_DTR 0x10
-#define PIN_DSR 0x20
-#define PIN_DCD 0x40
-#define PIN_RI  0x80
-```
-
-The idea is here to drive bus from an usb ftdi module, to write the SRAM from the developers PC. For this goal, we need:
-4 bits data, at least mimimum one bit to control bus, one bit to cpu state.
-Functions:
-
-| pin | function                             |
-|-----|--------------------------------------|
-| 1   | State. 0: Running/disconnected. 1: hold cpu in reset while programming. Rising edge resets the address counter? |
-| 4   | drive data bus, when writing to SRAM |
-| 1   | Increment address and/or             |
-| 1   | Store/write bus cycle |
-
-IDEA2:
-
-Use an usb or wifi/bluetooth capable micro, write a downloader first, then a bus tracer for debug purposes...
-
+The actual and planned [downloader](periph_download.md) are documented, but the hw implementation have no debug or download interfaces specificly.
 
