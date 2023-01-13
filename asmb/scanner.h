@@ -115,9 +115,9 @@ extern char *yytext;      //!< Text of lexeme just scanned
 extern "C" {
 #endif
 
-int yylex();              //!< Defined in the generated lex.yy.c file
+int yylex(void);              //!< Defined in the generated lex.yy.c file
 
-void InitScanner();       //!< Defined in scanner.l user subroutines
+void InitScanner(void);       //!< Defined in scanner.l user subroutines
 
 extern int yylineno;	  //!< Defined in the generated lex.yy.c file
 

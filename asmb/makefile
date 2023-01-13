@@ -1,11 +1,11 @@
 
-#DEBUG=-g -O0
-DEBUG=-O2
+DEBUG=-g -O0
+#DEBUG=-O2
 CC=gcc
 INCLUDE=-I. -I../libbjtcpu
 DEFS=-DDEBUG
 CFLAGS= $(DEBUG) $(DEFS) -Wformat=2 -Wall -Wextra -Winline $(INCLUDE) -pipe -fPIC -std=c99 -D_BSD_SOURCE
-CPPFLAGS= $(DEBUG) $(DEFS) -Wformat=2 -Wall -Wextra -Winline $(INCLUDE) -pipe -fPIC
+CPPFLAGS= $(DEBUG) $(DEFS) -Wall -Wextra -Winline $(INCLUDE) -pipe -fPIC
 LIBS=-lstdc++ -L../lib -lbjtcpu
 
 SRC= main.c grammar.c version.c  loc.c  intrep.c \

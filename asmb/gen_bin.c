@@ -14,7 +14,11 @@
 #include <sys/stat.h>
 
 #ifndef _WIN32
+#ifdef __APPLE__
+typedef time_t __time64_t;
+#else
 typedef __time_t __time64_t;
+#endif
 #define fprintf_s fprintf
 #include <string.h>
 #endif

@@ -1,7 +1,8 @@
 # bjtcputoolchain
 Toolchain for a BJT cpu.
 This project was formed on that goal, to have a toolchain for a really existed, hand-made built Bipolar junction Transistors based CPU.
-See this short vieo: [Bipolar cpu running at 61Hz](https://www.youtube.com/watch?v=iL6OvX4frJs) 
+See this short vieos: [Bipolar cpu running at 61Hz](https://www.youtube.com/watch?v=iL6OvX4frJs) ,
+[Scope runner](https://www.youtube.com/shorts/DjAvME9jMiA) game running on the hardware.
 The processor made out of BC182 (~450 piece), 1N4148 and resistors. The data path is 4-bit, address space is 12-bit. Known max speed is more than 1MHz. There are 3 flags: Sign, Carry and Zero
 
 There is also a video card for this CPU. It has two (X,Y) analog outputs, which can be connected to an ordinary oscilloscope to show the screen. The videocard has its own character generator, based on lists of vector graphic steps. Keypad matrix and joystick inputs also implemented. See [details of the peripherals](doc/periph.md)
@@ -66,7 +67,12 @@ Planned...  The goal is to be able to download the binary to real hw, and able t
 
 3) raspberry
 
+4) a Mac variant is also compilable by xcode or CLI toolchain. Now it is tested on M2 MacBook.
+
 On progress... Actually the video card simulator is under development. Two PWMs are used for x/y output. The following screenshot shows how the real rpi pins was measured by Analog Discovery2 card, when the playb ran on raspberry...
 ![raspberry measurement](doc/ssrpi1.png?raw=true "simulator1")
 And bitmap mode graphics is also ported to raspberry:
 ![raspberry screenshot](doc/ssrpi2.jpg?raw=true "simulator2")
+
+
+

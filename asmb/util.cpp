@@ -390,7 +390,8 @@ Std_ReturnType ParseCommandLine(int argc, char *argv[], asmb_config_t* cfg) {
 	}
 	if (cfg->enable_err) {
 		static char s[255];
-		sprintf_s(s, "%s.log", cfg->name_o);
+		// sprintf_s(s, "%s.log", cfg->name_o);
+		snprintf(s, 255, "%s.log", cfg->name_o);
 		cfg->fname_err = s; // todo: check if this is needed  really
 		// g_err_file = fopen(s, "w+");
 		fopen_s(&g_err_file, s, "w+");

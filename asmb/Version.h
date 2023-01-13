@@ -1,5 +1,5 @@
 #ifndef _VERSION_H_
 #define _VERSION_H_
-const char* VersionName;
-const char* VersionNumber;
+extern const char* VersionName;
+extern const char* VersionNumber;
 #endif

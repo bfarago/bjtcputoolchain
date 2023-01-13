@@ -2,7 +2,8 @@
 TOPTARGETS := all clean check
 
 #these subdirs have a makefile
-SUBDIRS := libbjtcpu asmb simb emub/raspberry
+SUBDIRS := libbjtcpu asmb simb
+#emub/raspberry
 #SUBDIRS := $(wildcard */.)
 
 $(TOPTARGETS): $(SUBDIRS)
@@ -13,7 +14,7 @@ build:
 	$(MAKE) all
 	cp asmb/asmb build/
 	cp simb/simb build/
-	cp emub/raspberry/playb build/
+#	cp emub/raspberry/playb build/
 
 $(SUBDIRS):
 	@echo "--- MAKE SUBFOLDER:" $@
