@@ -7,6 +7,12 @@
 
 #include "App.hpp"
 
+#ifdef _MSC_VER
+#include <stdio.h>
+#include <stdlib.h>
+//#include <math.h>
+#endif
+
 #define DEFAULT_LOOP_PERIOD (20)
 #define DEFAULT_CPU_SPEED (500000)
 #define LETTER_WIDTH (13)

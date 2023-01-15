@@ -9,6 +9,10 @@
 #include "App.hpp"
 #include "Version.h"
 
+#ifdef _MSC_VER
+#undef main
+#endif
+
 int main(int argc, const char * argv[]) {
     App app;
     const char* fname=NULL; 

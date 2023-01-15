@@ -8,6 +8,10 @@
 #include "CpuIr.hpp"
 #include <SDL2/SDL_log.h>
 
+#ifdef _MSC_VER
+#include <stdio.h>
+#endif
+
 CpuIr::CpuIr(Periph_if& abus)
 :bus(abus)
 {
@@ -44,7 +48,12 @@ void CpuIr::statisticsElapseTime(){
 }
 void CpuIr::load(const char *fname){
     if (!fname) return;
-    FILE *f = fopen(fname, "rb");
+#ifdef _MSC_VER
+    FILE* f=NULL;
+    fopen_s(&f, fname, "rb");
+#else
+    FILE* f = fopen(fname, "rb");
+#endif
     if (!f){
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "File open error:%s", fname);
     }else{
@@ -101,8 +110,9 @@ void CpuIr::step(){
     // Store
     switch (op) {
         TOK(T_sta, 1) {
-            if (bus.busStore(imm, acc)){
-                buserror(imm, acc, true);
+            uint8_t a8 = (uint8_t)acc;
+            if (bus.busStore(imm, a8)){
+                buserror(imm, a8, true);
             }
         }
         break;
@@ -126,7 +136,7 @@ void CpuIr::poke(uint16_t addr, uint8_t data){
 }
 
 uint8_t CpuIr::read(uint16_t addr){
-    wasread[addr>>6]|=1<<(addr&63);
+    wasread[addr>>6]|=1ULL<<(addr&63);
     if (tracemode[addr].f.brakeOnRead) stop();
     return peek(addr);
 }
@@ -137,11 +147,11 @@ void CpuIr::write(uint16_t addr, uint8_t data){
     //Question: HW, display subsystem access the operative mem how and when ?
     poke(addr,data);
     if (tracemode[addr].f.brakeOnWrite) stop();
-    waswritten[addr>>6]|=1<<(addr&63);
+    waswritten[addr>>6]|=1ULL<<(addr&63);
 }
 void CpuIr::buserror(uint16_t addr, uint8_t data, bool store){
     if (1){
-        printf("buserror  addr:%03x data:%x %s", addr,data,store?"store":"load");
+        SDL_Log("buserror  addr:%03x data:%x %s", addr,data,store?"store":"load");
         stop();
     }
 }
@@ -150,11 +160,11 @@ void CpuIr::stop(){
     dump();
 }
 void CpuIr::dump(){
-    printf("PC:%03x ACC:%x FLAGS:%c%c%s EMU:%c\n", pc, acc, carry?'C':' ',acc&8?'M':' ', acc?"N ":" Z", halt?'H':'R' );
+    SDL_Log("PC:%03x ACC:%x FLAGS:%c%c%s EMU:%c\n", pc, acc, carry?'C':' ',acc&8?'M':' ', acc?"N ":" Z", halt?'H':'R' );
 }
 uint8_t CpuIr::fetchop(){
     if (pc >= MAXMEMORYSIZE) pc=0;
-    wasexecuted[pc>>6]|=1<<(pc&63);
+    wasexecuted[pc>>6]|=1ULL<<(pc&63);
     if (tracemode[pc].f.brakeOnExecute) stop();
     return mem[pc] & 0xf;
 }
