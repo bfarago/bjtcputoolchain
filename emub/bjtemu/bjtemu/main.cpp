@@ -10,15 +10,26 @@
 #include "Version.h"
 
 #ifdef _MSC_VER
+#include <windows.h>
 #undef main
+#else
+#include <unistd.h>
 #endif
-
+App app;
 int main(int argc, const char * argv[]) {
-    App app;
+
     const char* fname=NULL; 
     if (argc>1){
         fname= argv[1];
     }else{
+
+#ifdef _MSC_VER
+        TCHAR buf[255];
+        if (GetCurrentDirectory(255, buf)) {
+            printf("cwd: %S\n", buf);
+        }
+#endif
+        printf("%s\n\n", argv[0]);
         printf("bjtemu version %d.%d (build:%03d)\n", VERSION_MAJOR, VERSION_MINOR, VERSION_BUILD);
         printf("Usage:\n bjtemu runnable.bin\n\n");
         printf("Keyboard:\n\t ESC: exit\n");
