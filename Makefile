@@ -2,7 +2,7 @@
 TOPTARGETS := all clean check
 
 #these subdirs have a makefile
-SUBDIRS := libbjtcpu asmb simb 
+SUBDIRS := libbjtcpu asmb simb
 #emub/raspberry
 #SUBDIRS := $(wildcard */.)
 

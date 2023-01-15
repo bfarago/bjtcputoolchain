@@ -1,0 +1,11 @@
+out1	equ 3072
+out2	equ 3073
+beep	equ 3074
+arr		equ 3072
+rnd		equ 3073
+key0	equ 3074
+key1	equ 3075
+cord_x	equ 3076
+cord_y	equ 3077
+ch_h	equ 3078
+ch_l	equ 3079
