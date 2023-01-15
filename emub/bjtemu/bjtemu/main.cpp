@@ -8,7 +8,7 @@
 #include <iostream>
 #include "App.hpp"
 #include "Version.h"
-
+#define MAXPATHLENGTH (1023)
 #ifdef _MSC_VER
 #include <windows.h>
 #undef main
@@ -24,10 +24,14 @@ int main(int argc, const char * argv[]) {
     }else{
 
 #ifdef _MSC_VER
-        TCHAR buf[255];
-        if (GetCurrentDirectory(255, buf)) {
+        TCHAR buf[MAXPATHLENGTH];
+        if (GetCurrentDirectory(MAXPATHLENGTH, buf)) {
             printf("cwd: %S\n", buf);
         }
+#else
+        char buf[MAXPATHLENGTH];
+        getcwd(buf,MAXPATHLENGTH);
+        printf("cwd: %s",buf);
 #endif
         printf("%s\n\n", argv[0]);
         printf("bjtemu version %d.%d (build:%03d)\n", VERSION_MAJOR, VERSION_MINOR, VERSION_BUILD);
