@@ -14,18 +14,25 @@
 #endif
 
 #define DEFAULT_LOOP_PERIOD (20)
-#define DEFAULT_CPU_SPEED (500000)
+#define DEFAULT_CPU_SPEED (200000)
+#define LETTER_LEFTOFFSET (0)
+#define LETTER_TOPOFFSET (0)
 #define LETTER_WIDTH (13)
-#define LETTER_HEIGHT (13)
-#define TEXTSCREEN_OFFSET_LEFT (40)
-#define TEXTSCREEN_OFFSET_TOP (40)
+#define LETTER_HEIGHT (16)
+#define LETTER_BKG_KEY_R (0)
+#define LETTER_BKG_KEY_G (0)
+#define LETTER_BKG_KEY_B (0)
+#define TEXTSCREEN_OFFSET_LEFT (45)
+#define TEXTSCREEN_OFFSET_TOP (29)
+#define TEXTLETTER_WIDTH (12)
+#define TEXTLETTER_HEIGHT (12)
 #define TEXTSCREEN_INITVALUE (0xffu)
 #define WINDOWINITWIDTH (640)
 #define WINDOWINITHEIGHT (480)
 
 App* App::singleton=NULL;
 App::App()
-:cpuir(*this),quit(false), window(NULL), winSurface(NULL), image1(NULL), image2(NULL), scrNeedToRefresh(true)
+:cpuir(*this),quit(false), window(NULL), winSurface(NULL), image1(NULL), image2(NULL), scrNeedToRefresh(true), arrows(15)
 {
     singleton=this;
     init();
@@ -75,7 +82,8 @@ int App::load(const char * fname){
     // Load images
     temp1 = SDL_LoadBMP("scopebg.bmp");
     temp2 = SDL_LoadBMP("abc.bmp");
-    SDL_SetColorKey( temp2 , SDL_TRUE, SDL_MapRGB( winSurface->format, 0, 0, 0) );
+    SDL_SetColorKey( temp2 , SDL_TRUE, SDL_MapRGB( winSurface->format,
+        LETTER_BKG_KEY_R, LETTER_BKG_KEY_G, LETTER_BKG_KEY_B) );
 
     // Make sure loads succeeded
     if ( !temp1 || !temp2 ) {
@@ -140,10 +148,10 @@ void App::update(){
             if (TEXTSCREEN_INITVALUE == code) continue; //space or empty content
             int cx=code & 0x0Fu;
             int cy=code >> 4;
-            src.x = wx*cx;
-            src.y = wy*cy;
-            dest.x =(px*wx+ox)*mx;
-            dest.y = (py*wy+oy)*my;
+            src.x = wx*cx + LETTER_LEFTOFFSET;
+            src.y = wy*cy + LETTER_TOPOFFSET;
+            dest.x =(px*TEXTLETTER_WIDTH+ox)*mx;
+            dest.y = (py*TEXTLETTER_HEIGHT+oy)*my;
             ret=SDL_BlitScaled( image2, &src, winSurface, &dest );
             if (ret){
                 SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,"app.update Scale error: %s", SDL_GetError());
@@ -167,8 +175,10 @@ bool App::busLoad(uint16_t addr, uint8_t &adata){
     switch (addr){
         case ADDR_RND: data= rand() & 0x0f;  break;
         case ADDR_KEY0:
-        case ADDR_KEY1:
-        case ADDR_ARR: cpuir.poke(addr,0); break;
+        case ADDR_KEY1:cpuir.poke(addr,0); break;
+        case ADDR_ARR: data=arrows; break;
+        case ADDR_SCREEN_X:
+        case ADDR_SCREEN_Y: break;
         default:
             // other peripherals like screen and sound is not implementing
             // a load bus cycle, so CPU can not access the content from
@@ -184,7 +194,14 @@ bool App::busLoad(uint16_t addr, uint8_t &adata){
 
 bool App::busStore(uint16_t addr, uint8_t data){
     bool bError=false;
-    cpuir.write(addr, data); // memory implemented now in cpu ir class
+    switch (addr){
+        case ADDR_BEEP:
+        case ADDR_OUT1:
+            break;
+        default:
+            cpuir.write(addr, data); // memory implemented now in cpu ir class
+            break;
+    };
     // system level peripheral access, like screen, sound dev, etc
     switch (addr){
         case ADDR_SCREEN_X:
@@ -200,6 +217,11 @@ bool App::busStore(uint16_t addr, uint8_t data){
             ch1=cpuir.peek(ADDR_SCREEN_CH1);
             scrbuf[x][y]= ch0 | (ch1<<4);
             scrNeedToRefresh=true;
+            }
+            break;
+        case ADDR_OUT2: break;
+        case ADDR_OUT1:{
+                SDL_Log("Out:%02x", (cpuir.peek(ADDR_OUT2)<<4) | data);
             }
             break;
         case ADDR_BEEP:
@@ -227,6 +249,15 @@ void App::handleEvent(SDL_Event& event){
             break;
         /* Keyboard event */
         case SDL_KEYDOWN:
+            switch (event.key.keysym.sym) {
+                case SDLK_DOWN: arrows&= ~(1<<0); break;
+                case SDLK_LEFT: arrows&= ~(1<<1); break;
+                case SDLK_UP: arrows&= ~(1<<2); break;
+                case SDLK_RIGHT: arrows&= ~(1<<3); break;
+                default:
+                    break;
+            }
+            break;
         case SDL_KEYUP:
             switch (event.key.keysym.sym){
                 case SDLK_ESCAPE: quit=1; break;
@@ -239,8 +270,13 @@ void App::handleEvent(SDL_Event& event){
                     }else{
                         cpuir.load(filenameBin);
                     }
+                    arrows=15;
                     break;
-                case SDLK_UP: cpuir.poke(ADDR_ARR, ka_Fire); break;
+                case SDLK_DOWN: arrows|= (1<<0); break;
+                case SDLK_LEFT: arrows|= (1<<1); break;
+               case SDLK_UP: arrows|= (1<<2); break;
+                case SDLK_RIGHT: arrows|= (1<<3); break;
+                
                 case SDLK_SPACE:
                     cpuir.poke(ADDR_KEY0, 1);
                     cpuir.poke(ADDR_KEY1, 1);

@@ -22,18 +22,20 @@ enum {
     ADDR_SCREEN_CH0, //Low
     ADDR_UART_H,   // mask:0xc08
     ADDR_UART_L,
-    ADDR_BEEP,
+    ADDR_OUT1=0xc00,
+    ADDR_OUT2=0xc01,
+    ADDR_BEEP=0xc02,
     ADDR_PERIPH_MAX
 };
 
 //Key arrow type: simulated arrow keys can be in state of the directions and fire, it is like a retro joystick.
 typedef enum {
     ka_Nothing,
-    ka_Left,
-    ka_Right,
-    ka_Up,
-    ka_Down,
-    ka_Fire = 11, //todo: document arr periph, how it is works, meaning of the values, etc...
+    ka_Right=7,
+    ka_Up = 11,
+    ka_Left =13,
+    ka_Down = 14,
+    //ka_Fire = 15, //todo: document arr periph, how it is works, meaning of the values, etc...
     ka_max
 } keyArrow_t;
 

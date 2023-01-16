@@ -10,7 +10,6 @@
 		A61A3EF82972102D00E65D51 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A61A3EF72972102D00E65D51 /* main.cpp */; };
 		A61A3F0029721AFD00E65D51 /* libSDL2-2.0.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = A61A3EFF29721AFD00E65D51 /* libSDL2-2.0.0.dylib */; };
 		A61A3F022972267400E65D51 /* scopebg.bmp in CopyFiles */ = {isa = PBXBuildFile; fileRef = A61A3F012972267400E65D51 /* scopebg.bmp */; };
-		A61A3F042972269E00E65D51 /* abc.bmp in CopyFiles */ = {isa = PBXBuildFile; fileRef = A61A3F032972269D00E65D51 /* abc.bmp */; };
 		A6A445C329725CDB00511456 /* ScopeRunner_7.bin in CopyFiles */ = {isa = PBXBuildFile; fileRef = A6A445C229725CDA00511456 /* ScopeRunner_7.bin */; };
 		A6A445C62973FEED00511456 /* Audio.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A6A445C42973FEED00511456 /* Audio.cpp */; };
 		A6A445C92974008B00511456 /* App.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A6A445C72974008B00511456 /* App.cpp */; };
@@ -25,7 +24,6 @@
 			dstSubfolderSpec = 16;
 			files = (
 				A6A445C329725CDB00511456 /* ScopeRunner_7.bin in CopyFiles */,
-				A61A3F042972269E00E65D51 /* abc.bmp in CopyFiles */,
 				A61A3F022972267400E65D51 /* scopebg.bmp in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -48,6 +48,7 @@ protected:
     void _audio_callback(AudioBuf_if *userdata, Uint8 *stream, int len);
     const char* filenameBin;
     AudioBuf_osc audioBeep;
+    uint8_t arrows;
 };
 
 #endif /* App_hpp */
