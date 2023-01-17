@@ -250,16 +250,20 @@ void App::handleEvent(SDL_Event& event){
         /* Keyboard event */
         case SDL_KEYDOWN:
             switch (event.key.keysym.sym) {
-                case SDLK_DOWN: arrows&= ~(1<<0); break;
-                case SDLK_LEFT: arrows&= ~(1<<1); break;
-                case SDLK_UP: arrows&= ~(1<<2); break;
-                case SDLK_RIGHT: arrows&= ~(1<<3); break;
+                case SDLK_DOWN: arrows&= ~(1 << ArrowBit_Down); break;
+                case SDLK_LEFT: arrows&= ~(1 << ArrowBit_Left); break;
+                case SDLK_UP: arrows&= ~(1 << ArrowBit_Up); break;
+                case SDLK_RIGHT: arrows&= ~(1 << ArrowBit_Right); break;
                 default:
                     break;
             }
             break;
         case SDL_KEYUP:
             switch (event.key.keysym.sym){
+                case SDLK_DOWN: arrows |= (1 << ArrowBit_Down); break;
+                case SDLK_LEFT: arrows |= (1 << ArrowBit_Left); break;
+                case SDLK_UP: arrows |= (1 << ArrowBit_Up); break;
+                case SDLK_RIGHT: arrows |= (1 << ArrowBit_Right); break;
                 case SDLK_ESCAPE: quit=1; break;
                 case SDLK_KP_MULTIPLY: cpuir.halt=false; break;
                 case SDLK_KP_DIVIDE: cpuir.halt=true; break;
@@ -272,10 +276,6 @@ void App::handleEvent(SDL_Event& event){
                     }
                     arrows=15;
                     break;
-                case SDLK_DOWN: arrows|= (1<<0); break;
-                case SDLK_LEFT: arrows|= (1<<1); break;
-               case SDLK_UP: arrows|= (1<<2); break;
-                case SDLK_RIGHT: arrows|= (1<<3); break;
                 
                 case SDLK_SPACE:
                     cpuir.poke(ADDR_KEY0, 1);

@@ -39,6 +39,13 @@ typedef enum {
     ka_max
 } keyArrow_t;
 
+typedef enum {
+    ArrowBit_Down,
+    ArrowBit_Left,
+    ArrowBit_Up,
+    ArrowBit_Right
+}ArrowBits_t;
+
 typedef struct {
     uint8_t brakeOnExecute:1;
     uint8_t brakeOnWrite:1;

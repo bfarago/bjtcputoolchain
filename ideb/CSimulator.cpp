@@ -559,10 +559,13 @@ void CSimulator::OnDraw(CDC* pDC, int mode) {
 
 void CSimulator::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
-	BOOL hit = FALSE;
-	if (nChar == VK_UP) {
-		hit = TRUE;
-		m_Memory[ADDR_ARR] = ka_Fire;
+	BOOL hit = TRUE;
+	switch (nChar){
+		case VK_DOWN:  m_Memory[ADDR_ARR] &= ~(1 << ArrowBit_Down); break;
+		case VK_LEFT:  m_Memory[ADDR_ARR] &= ~(1 << ArrowBit_Left); break;
+		case VK_UP:	   m_Memory[ADDR_ARR] &= ~(1 << ArrowBit_Up); break;
+		case VK_RIGHT: m_Memory[ADDR_ARR] &= ~(1 << ArrowBit_Right); break;
+		default: hit = FALSE; break;
 	}
 	if (hit) return;
 	if (nChar == VK_SPACE) {
@@ -573,6 +576,12 @@ void CSimulator::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 }
 void CSimulator::OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
+	switch (nChar) {
+		case VK_DOWN:  m_Memory[ADDR_ARR] |= (1 << ArrowBit_Down); break;
+		case VK_LEFT:  m_Memory[ADDR_ARR] |= (1 << ArrowBit_Left); break;
+		case VK_UP:    m_Memory[ADDR_ARR] |= (1 << ArrowBit_Up); break;
+		case VK_RIGHT: m_Memory[ADDR_ARR] |= (1 << ArrowBit_Right); break;
+	}
 	/*
 	//not used, better to acknowladge the keycode from cpu bus read operation, 
 	//rather than windows keyboard up event.
@@ -680,6 +689,13 @@ inline BOOL CSimulator::OnPerifLoadStore(SimAddress_t addr, busDirection_t dir, 
 			}
 			if (processed) return TRUE;
 		}else if (bd_Write ==dir){
+			switch(addr) {
+			case ADDR_BEEP: 
+				break;
+			case ADDR_OUT1:
+			case ADDR_OUT2:
+				break;
+			}
 			// not writable
 		}
 	}
