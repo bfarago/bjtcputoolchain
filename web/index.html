@@ -1,0 +1,1963 @@
+<HTML>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BjtCpu Demo page</title>
+    <!-- CodeMirror -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.63.0/codemirror.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.63.0/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.63.0/mode/sql/sql.min.js"></script>
+    <style>
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+}
+
+#result {
+    margin-top: 20px;
+    width: 100%;
+    height: 100;
+    overflow: auto;
+}
+#symbolTable {
+    margin-top: 20px;
+    width: 100%;
+    height: 600;
+    overflow: auto;
+}
+.wait-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    z-index: 9999;
+}
+
+.loading-spinner {
+    border: 4px solid rgba(0, 0, 0, 0.1);
+    border-radius: 50%;
+    border-top: 4px solid #f39c12; /* A sárga szín */
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin-bottom: 10px;
+}
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+.active {
+    background-color: #3498db; /* Példa szín: kék */
+    color: white;
+}
+#dropArea1 {
+    border: 2px dashed #ccc;
+    padding: 20px;
+    text-align: center;
+}
+#dropArea {
+    border: 2px dashed #ccc;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 30vh; /* Teljes ablakmagasság */
+}
+#progressContainer {
+    width: 300px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+#progressBar {
+    height: 20px;
+    width: 0;
+    background-color: #4caf50;
+}
+
+#progressContainer:not(.initialized) #progressBar {
+    transition: none;
+}
+
+#progressContainer.initialized #progressBar {
+    transition: width 0.1s ease-in-out;
+}
+
+#progressText {
+    text-align: center;
+    padding: 10px;
+}
+#asmSuggestions {
+    position: absolute;
+    background-color: #fff3cd; /* Sötétebb sárgás szín */
+    color: #ff0000; /* Világos szöveg */
+    border: 3px solid #ffeeba;
+    max-height: 150px;
+    overflow-y: auto;
+    z-index: 1000; /* Adhatsz egy magas z-index értéket, hogy biztosan a többi elem felett legyen */
+    margin-top: -5px; /* Állítsd be a megfelelő margin értéket az elrendezéshez */
+    margin-left: 0px; /* Állítsd be a megfelelő margin értéket az elrendezéshez */
+}
+.error-icon { display: inline-block; width: 24px; height: 24px; background: url('upload/error.png') no-repeat;
+    background-size: 24px; 
+    cursor: pointer; }
+.error-line { background-color: #FFEBE5 !important; 
+    canvas {
+    border: 1px solid black;
+}
+#cpuRegisters {
+    font-family: monospace, monospace;
+}
+#simulatorScreenMemory {
+    width: 300px;
+    font-size: 8px;
+}
+    </style>
+</head>
+<BODY>
+<div id="waitPopup" class="wait-popup">
+    <div class="loading-spinner"></div>
+    <p>Please wait...</p>
+</div>
+<div id="loggedInContent">
+    <p>Assember and Simulator for a 4bits Bipolar Junction Transistor based CPU</p>
+    <table border=1 cellpadding=0 cellspacing=0><tr><td>
+    <form id="asmForm">
+    <label for="asmSource">ASM source editor:</label>
+    <br>
+    <textarea id="asmSource" name="asmSource">
+; This is a test asm file
+; for BJT CPU.
+section code
+cord_x	equ 3076
+cord_y	equ 3077
+ch_h	equ 3078
+ch_l	equ 3079
+start:
+l_print:
+    mvi a,0
+    sta cord_y
+l_outer_loop:
+    sta l_read_lower4bit+2
+    ad0 l_read_lower4bit+2
+    sta l_read_lower4bit+2
+    ad0 v_plus+1
+    sta l_read_higher4bit+2
+    mvi a,0
+l_printonerow:
+    sta l_read_higher4bit+1
+    sta l_read_lower4bit+1
+    sta cord_x
+l_read_higher4bit:	
+    lda v_text+16
+    sta ch_h
+l_read_lower4bit:	
+    lda v_text
+    sta ch_l
+    lda l_read_higher4bit+1
+    ad0 v_plus+1
+    jnz l_printonerow
+    
+    rrm l_read_lower4bit+2 
+    ad0 v_plus+2
+    jm halt ;if greater than 8
+    rrm l_read_lower4bit+2
+    ad0 v_plus+1 
+    sta cord_y
+    jmp l_outer_loop
+halt:
+    jmp halt
+section data
+v_plus:
+ "0123456789ABCDEF"-
+ org 0x100 ;aligned
+v_text:
+ "HELLO WORLD!    "
+ "HAPPY NEW YEAR! "
+ "   _  _  _  _   "
+ "  | [| [| [ _[  "
+ "   / | [ /   [  "
+ "  |_ |_[|_  _[  "
+ "                "
+end
+    </textarea>
+    <br> <div id="asmSuggestions"></div>
+    <button type="button" onclick="asmCompile()">Compile</button>
+    </form></td><td valign=top>
+    <label for="symbolTable">Symbols:</label>
+    <div id="symbolTable"></div></td><td>
+    <form id="hexdumpForm">
+    <label for="hexdumpSource">Hexdump view:</label>
+    <br>
+    <textarea id="hexdumpSource" name="hexdumpSource"></textarea>
+    <br>
+    <button type="button" onclick="hexdumpDownload()">Download</button>
+    <button type="button" onclick="simulator.runSim()">Run</button>
+    <button type="button" onclick="stepCpu()">Step</button>
+    <button type="button" onclick="simulator.haltSim()">Halt</button>
+    <button type="button" onclick="simulator.update()">Update</button>
+    <button type="button" onclick="resetCpu()">Reset</button>
+    </form></div></td><td align="top">
+    CPU:<div id="cpuRegisters"></div>
+    Screen Memory:<div id="simulatorScreenMemory"></div>
+    <button type="button" onclick="screenClear()">Clear</button>
+    <button type="button" onclick="screenAbc()">ABC</button>
+    <br>
+    Screen Visual:<br>
+    <canvas id="simulatorScreenVisual" width="256" height="256"></canvas>
+    </td></tr></table>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.0.4/pako.min.js"></script>
+<SCRIPT >
+/*
+BjtCPU assembler, linker, simulator
+Written by Barna Farago in 2023.
+
+The project is a developer environment for a 4bit CPU and a simple computer.
+The HW was made by a person earlier (so there is a real hw).
+There are 15 opcodes, data bus is 4bit wide, address bus is 12bit wide.
+There is an accumulator (4bit) and one immediate register (12bit). So core can fetch
+2 nibbles or 4 nibbles, depending on opcode. The system have some peripherals.
+-random number generator
+-key/joystick inputs
+-video subsystem
+The video subsystem was connected to an oscilloscope, where the 16x16 characters screen can be observed.
+It has its own character memory, which is not directly addressable, but through 4 bus address, aka
+peripheral registers. These are character code Low, High nibles, screenpos Low, High nibles.
+This simulator simulates these necessary registers on the address space, and it could execute the same
+code, which was developed onto the real hw.
+
+The first implementaion was written in C earlier, which was using flex, bison in assember code.
+The bison code actually was not used, and a simple grammar (lexical stack) implementation was made
+for the expression grammar. (Which is the only grammar in the asm language reallz)
+Therefore these implementation was taken, and rewritten to javascript quickly. 
+
+How it's works?
+ Assemblers works in a a multi-pass compilation way. Due to this languages is simple, actually one parser
+ step used only, and in this pass the code gather all of the necessary information. On the second step,
+ a relocation pass happen, when the half informations are completed. (we can name as linker)
+ Due to the expression syntax may contains not only literals (constants) but symbol references, there are
+ two cases: 1) when the symbole was earlier declared, the value/address is known. 2) if the symbol is used
+ earlier than declared, a relocation entry is collected. The expression will be processed by the quasi grammar.
+ and one variable plus a const value will be the result. The const value is added in the first pass, the end
+ result will be calculated at the relocation phase.
+*/
+
+// note: login will be here
+
+function displayInfo(message){
+    const logElement = document.getElementById('result');
+    if (logElement) {
+        const currentContent = logElement.innerHTML;
+        logElement.innerHTML = `<li>${message}</li>${currentContent}`;
+    }
+}
+function displayError(message){
+    const logElement = document.getElementById('result');
+    if (logElement) {
+        const currentContent = logElement.innerHTML;
+        logElement.innerHTML = `<li>Error: ${message}</li>${currentContent}`;
+    }
+}
+function displayWaitPopup(show) {
+    const waitPopup = document.getElementById('waitPopup');
+    if (show) {
+        waitPopup.style.display = 'block';
+        const rect = waitPopup.getBoundingClientRect();
+        const windowHeight = window.innerHeight;
+        const windowWidth = window.innerWidth;
+        if (rect.bottom > windowHeight) {
+            waitPopup.style.top = `${windowHeight - rect.height}px`;
+        }
+
+        if (rect.right > windowWidth) {
+            waitPopup.style.left = `${windowWidth - rect.width}px`;
+        }
+    } else {
+        waitPopup.style.display = 'none';
+    }
+}
+
+var dictionaryKeyword = [".org", "equ",
+    "lda", "sta", "ad0", "ad1", "adc", "nand", "nor", "rrm",
+    "jnz", "jm", "jp", "jc", "jnc", "jmp", "db", "enf"
+];
+var dictionarySymbols = ["label1", "label2"];
+var dictionaryDb = [];
+function asmTokenizer(stream, state) {
+    // Az alapértelmezett tokenizálás megőrzése, amíg el nem érjük a '.' karaktert
+    while (stream.match(/^[\w\$_-]+/)) {
+    // Tokenek kezelése, például kiemelés vagy más stílus alkalmazása
+    }
+
+    // '.' karakter kezelése
+    if (stream.match(/^\./)) {
+    // Itt lehet további műveleteket végezni a '.' karakter esetén
+    return "matching"; // Példa: más stílus alkalmazása a '.' karakterre
+    }
+
+    // Egyéb esetekben visszatérünk null-lal, hogy az alapértelmezett tokenizálás folytatódjon
+    return null;
+}
+// Define assembly mode with styles
+CodeMirror.defineMode("bjtcpu4-assembly", function () {
+    return {
+        token: function (stream) {
+            // Ignore whitespace
+            if (stream.eatSpace()) return null;
+
+            // Match assembly mnemonics
+            if (stream.match(/^(sta|lda|mvi|ad0|ad1|adc|nand|nor|rrm|jmp|jz|jnz|jm|jp|jc|jnc|db|equ|org|end)$/)) {
+                return "assembly-mnemonic"; // Token type is "assembly-mnemonic"
+            }
+
+            // Match identifiers
+            if (stream.match(/^[a-zA-Z_][a-zA-Z0-9_\.]*/)) {
+                return "identifier"; // Token type is "identifier"
+            }
+
+            // Match hexadecimal constants
+            if (stream.match(/^0[xX][0-9a-fA-F]+/)) {
+                return "hex-constant"; // Token type is "hex-constant"
+            }
+
+            // Match decimal constants
+            if (stream.match(/^\d+/)) {
+                return "decimal-constant"; // Token type is "decimal-constant"
+            }
+
+            // Match comments
+            if (stream.match(/^;.*/)) {
+                return "comment"; // Token type is "comment"
+            }
+
+            // Move to the next character if not matched
+            stream.next();
+            return null;
+        },
+        // Define styles for tokens
+        style: {
+            "assembly-mnemonic": "color: #0077cc; font-weight: bold;", // Assembly mnemonic style
+            "identifier": "color: #009900;", // Identifier style
+            "hex-constant": "color: #ffcc00;", // Hex constant style
+            "decimal-constant": "color: #ffcc00;", // Decimal constant style
+            "comment": "color: #808080; font-style: italic;" // Comment style
+            // Add more styles as needed
+        }
+    };
+});
+
+function hexTokenizer(stream, state) {
+    // Üres karaktereket ignoráljuk
+    if (stream.eatSpace()) return null;
+
+    // Hexa karaktereket keresünk
+    if (stream.match(/^[\da-fA-F]+/)) {
+        return "hex"; // Token típusa "hex"
+    }else{
+        return "comment";
+    }
+
+    // Egyéb esetben lépés a következő karakterre
+    stream.next();
+    return null;
+}
+function addAsmSuggestion(cm, suggestion){
+    var suggestionsContainer = document.getElementById("asmSuggestions");
+    var suggestionDiv = document.createElement("div");
+    suggestionDiv.textContent = suggestion;
+    suggestionDiv.addEventListener("click", function() {
+        replaceSuggested(cm, suggestion);
+        suggestionsContainer.innerHTML="";
+        suggestionsContainer.style.display = 'none';
+    });
+    suggestionsContainer.style.display = 'block';
+    suggestionsContainer.appendChild(suggestionDiv);
+}
+function replaceSuggested(cm, suggestion){
+    var cursor = cm.getCursor();
+    var pcur= {line: cursor.line, ch: cursor.ch-1};
+    var token2 = cm.getTokenAt(pcur);
+    var tokenCannonical = getPreviousToken(cm, pcur);
+    cm.replaceRange(suggestion + " ", {line: cursor.line, ch:tokenCannonical.start}, {line: cursor.line, ch:token2.end+1});
+}
+function getPreviousToken(cm, cursor) {
+    var line = cm.getLine(cursor.line);
+    var i = cursor.ch - 1;
+    var e = i;
+    while ( e >= 0 && /[\.\s]+/.test(line.charAt(e))) {
+        e--;
+    }
+    while (i >= 0 && /[\w\.]+/.test(line.charAt(i))) {
+    i--;
+    }
+    var previousToken = {
+    string:cm.getRange({ line: cursor.line, ch: i + 1 }, {line: cursor.line, ch: e}),
+    start: i+1,
+    end: e
+    };
+    return previousToken;
+}
+function asmKeyup(cm, event, dict1, dict2){
+    var cursor = cm.getCursor();
+    var token = cm.getTokenAt(cursor);
+    var tokenCannonical = getPreviousToken(cm, cursor);
+    var suggestionsContainer = document.getElementById("asmSuggestions");
+    if (event.key === " "){
+        var firstSuggestion = document.querySelector("#asmSuggestions div");
+        if (firstSuggestion){
+            replaceSuggested(cm, firstSuggestion.textContent);
+        }
+    }
+    if (token.string.length > 1){
+        suggestionsContainer.innerHTML="";
+        var matchingSuggestions1 = dict1.filter( function(word){
+            return word.toLowerCase().includes(token.string.toLowerCase());
+        });
+        matchingSuggestions1.forEach((elem)=>{addAsmSuggestion(cm, elem);});
+        var matchingSuggestions2 = dict2.filter( function(word){
+            return word.toLowerCase().includes(token.string.toLowerCase());
+        });
+        matchingSuggestions2.forEach((elem)=>{addAsmSuggestion(cm, elem);});
+        var cursorCoords = cm.cursorCoords(cursor);
+        suggestionsContainer.style.left = cursorCoords.left + "px";
+        suggestionsContainer.style.top = cursorCoords.bottom + "px";
+    }else{
+        suggestionsContainer.innerHTML="";
+    }
+}
+// Asm input mező kezelése a CodeMirror segítségével
+var asmSource = document.getElementById("asmSource");
+var hexdumpSource = document.getElementById("hexdumpSource");
+var asmSourceEditor = CodeMirror.fromTextArea(asmSource, {
+    mode: "bjtcpu4-assembly", // Use assembly mode
+    lineNumbers: true,   // Sorok számozása
+    theme: "default",    // CodeMirror téma
+});
+var hexdumpSourceEditor = CodeMirror.fromTextArea(hexdumpSource, {
+    mode: {
+        name: "hexdump",
+        token: "hexTokenizer",
+        style: {
+            hex: "color: #ffcc00; font-weight: bold;", // Hex token style
+            comment: "color: #00cc00;",
+            address: "color: #00ccff;"
+        }
+    },
+    lineNumbers: true,   // Sorok számozása
+    theme: "default",    // CodeMirror téma
+});
+asmSourceEditor.setSize(600,600);
+asmSourceEditor.on("keyup", (cm,event)=>{asmKeyup(cm,event, dictionaryKeyword, dictionarySymbols);});
+hexdumpSourceEditor.setSize(200,600);
+//hexdumpSourceEditor.on("keyup",  (cm,event)=>{sqlKeyup(cm,event, dictionaryStmt, dictionaryDb);});
+var symbolNames =["label1", "label2"];
+var symbolSizes =[1, 1];
+var symbolTypes =[1, 1];
+var symbolValues =[1, 1];
+var symbolAddress =[1, 2];
+const maxmemory=4095;
+var cpuMemory=Array(maxmemory);
+var cpuMemorySrc=[];
+var maxaddress=0;
+var actaddress=0;
+
+function generateSymbolTable(data) {
+    const table = document.createElement('table');
+    const thead = document.createElement('thead');
+    const tbody = document.createElement('tbody');
+    table.style.borderCollapse = 'collapse';
+    table.style.border = '2px solid black'; // Ez beállítja a data cellák peremeit
+    table.style.borderSpacing = '5px'; // cellspacing
+    table.style.padding = '10px'; // cellpadding
+    // Create header row
+    const headerRow = document.createElement('tr');
+    var headers=["name", "size", "type","value","address"];
+    for (const field of headers) {
+        const th = document.createElement('th');
+        th.textContent = field;
+        th.style.border = '1px solid black'; // Ez beállítja a fejléc cellák peremeit
+        headerRow.appendChild(th);
+    }
+    thead.appendChild(headerRow);
+
+    for (let i = 0; i < symbolNames.length; i++) {
+        const tr = document.createElement('tr');
+        const tdName = document.createElement('td');
+        tdName.textContent = symbolNames[i];
+        tdName.style.border = '1px solid black'; // Ez beállítja a data cellák peremeit
+        tr.appendChild(tdName);
+        const tdSize = document.createElement('td');
+        tdSize.textContent = symbolSizes[i];
+        tdSize.style.border = '1px solid black'; // Ez beállítja a data cellák peremeit
+        tr.appendChild(tdSize);
+        const tdType= document.createElement('td');
+        tdType.textContent = symbolTypes[i];
+        tdType.style.border = '1px solid black'; // Ez beállítja a data cellák peremeit
+        tr.appendChild(tdType);
+        const tdValue = document.createElement('td');
+        tdValue.textContent = symbolValues[i].toString(16);
+        tdValue.style.border = '1px solid black'; // Ez beállítja a data cellák peremeit
+        tr.appendChild(tdValue);
+        const tdAddr = document.createElement('td');
+        tdAddr.textContent = symbolAddress[i].toString(16);
+        tdAddr.style.border = '1px solid black'; // Ez beállítja a data cellák peremeit
+        tr.appendChild(tdAddr);
+        tr.addEventListener('click', function() {
+            this.classList.add('active');
+        });
+        tbody.appendChild(tr);
+    }
+    table.appendChild(thead);
+    table.appendChild(tbody);
+    return table;
+}
+function intToHex(num, length) {
+    var hexString = num.toString(16);
+    while (hexString.length < length) {
+        hexString = '0' + hexString;
+    }
+    return hexString;
+}
+
+function asmCompile() {
+    const asmSource =asmSourceEditor.getValue();
+    const symbolTable = document.getElementById('symbolTable');
+    symbolTable.innerHTML = ''; // Clear previous content
+    displayInfo("Compilation started");
+    simulator.haltSim();
+    simulator.resetSim();
+    //simulator.pc=0; // reset, or no? cpu state is not changing durung halt/upload.
+    symbolNames=[];
+    symbolTypes=[];
+    symbolAddress=[];
+    symbolValues=[];
+    symbolSizes=[];
+    relocs=[];
+    actaddress=0;
+    maxaddress=0;
+    var asm= new AsmLexer(asmSource);
+    asm.parse();
+    relocationPass();
+
+    symbolTable.appendChild(generateSymbolTable());
+    
+    var hd="";
+    for (let i=0; i<maxaddress; i++){
+        if (0== (i&15)){
+            if (i) hd+='\n';
+            hd+=intToHex(i,3);
+            hd+=':';
+        }
+        var num = +cpuMemory[i] || 0;
+        var hexString = num.toString(16);
+        hd += hexString;
+    }
+    hexdumpSourceEditor.setValue(hd);
+    displayInfo("Compilation finished");
+}
+function hexdumpDownload() {
+    //const hexdumpVal =hexdumpSourceEditor.getValue();
+    var hd="";
+    for (let i=0; i<maxaddress; i++){
+        if (0== (i&15)){
+            if (i) hd+='\n';
+            hd+=intToHex(i,3);
+            hd+=':';
+        }
+        var num = +cpuMemory[i]|| 0;
+        var hexString = num.toString(16);
+        hd += hexString;
+    }
+    hexdumpSourceEditor.setValue(hd);
+}
+
+// Constants, quasi enums
+
+//Token id
+const T_Nil = 0;
+const T_WSpace = 32;
+const T_Void = 256;
+const T_NewLine = 257;
+const T_LessEqual = 258;
+const T_GreaterEqual = 259;
+const T_Equal = 260;
+const T_NotEqual = 261;
+const T_And = 262;
+const T_Or = 263;
+const T_While = 264;
+const T_For = 265;
+const T_If = 266;
+const T_Else = 267;
+const T_Identifier = 268;
+const T_StringConstant = 269;
+const T_IntConstant = 270;
+const T_BoolConstant = 271;
+const T_Section = 272;
+const T_Global = 273;
+const T_DataByte = 274;
+const T_Equ = 275;
+const T_Dollar = 276;
+const T_Comment = 277;
+const T_Org = 278;
+const T_At = 279;
+const T_Rol = 280;
+const T_Ror = 281;
+const T_mvi = 282;
+const T_sta = 283;
+const T_lda = 284;
+const T_ad0 = 285;
+const T_ad1 = 286;
+const T_adc = 287;
+const T_nand = 288;
+const T_nor = 289;
+const T_rrm = 290;
+const T_jmp = 291;
+const T_jc = 292;
+const T_jnc = 293;
+const T_jz = 294;
+const T_jnz = 295;
+const T_jm = 296;
+const T_jp = 297;
+const T_End = 298;
+const S_Exp = 299;
+const T_NumTokenTypes = 300;
+
+//Opcode
+const OC_mvi = 0x0;
+const OC_sta = 0x1;
+const OC_lda = 0x2;
+const OC_ad0 = 0x3;
+const OC_ad1 = 0x4;
+const OC_adc = 0x5;
+const OC_nand= 0x6;
+const OC_nor = 0x7;
+const OC_rrm = 0x8;
+const OC_jmp = 0x9;
+const OC_jc  = 0xa;
+const OC_jnc = 0xb;
+const OC_jz  = 0xc;
+const OC_jnz = 0xd;
+const OC_jm  = 0xe;
+const OC_jp  = 0xf;
+
+//to get Opcode name from Opcode value
+const ocToOpcodeMap = {
+0x0: "OC_mvi",
+0x1: "OC_sta",
+0x2: "OC_lda",
+0x3: "OC_ad0",
+0x4: "OC_ad1",
+0x5: "OC_adc",
+0x6: "OC_nand",
+0x7: "OC_nor",
+0x8: "OC_rrm",
+0x9: "OC_jmp",
+0xa: "OC_jc",
+0xb: "OC_jnc",
+0xc: "OC_jz",
+0xd: "OC_jnz",
+0xe: "OC_jm",
+0xf: "OC_jp",
+};
+
+//get human readable Token Name from Token id
+function getIdName(id) {
+    if (id === undefined || id === null) {
+        return "uninit";
+    }
+    const idToNameMap = {
+        0:   "T_Nil",
+        32:  "T_WSpace",
+        256: "T_Void",
+        257: "T_NewLine",
+        258: "T_LessEqual",
+        259: "T_GreaterEqual",
+        260: "T_Equal",
+        261: "T_NotEqual",
+        262: "T_And",
+        263: "T_Or",
+        264: "T_While",
+        265: "T_For",
+        266: "T_If",
+        267: "T_Else",
+        268: "T_Identifier",
+        269: "T_StringConstant",
+        270: "T_IntConstant",
+        271: "T_BoolConstant",
+        272: "T_Section",
+        273: "T_Global",
+        274: "T_DataByte",
+        275: "T_Equ",
+        276: "T_Dollar",
+        277: "T_Comment",
+        278: "T_Org",
+        279: "T_At",
+        280: "T_Rol",
+        281: "T_Ror",
+        282: "T_mvi",
+        283: "T_sta",
+        284: "T_lda",
+        285: "T_ad0",
+        286: "T_ad1",
+        287: "T_adc",
+        288: "T_nand",
+        289: "T_nor",
+        290: "T_rrm",
+        291: "T_jmp",
+        292: "T_jc",
+        293: "T_jnc",
+        294: "T_jz",
+        295: "T_jnz",
+        296: "T_jm",
+        297: "T_jp",
+        298: "T_End",
+        299: "S_Exp",
+        300: "T_NumTokenTypes",
+    };
+
+    if (idToNameMap.hasOwnProperty(id)){
+        return idToNameMap[id];
+    }
+    if (
+        (id >= 48 && id <= 57) ||
+        (id >= 64 && id <= 90) ||
+        (id >= 97 && id <= 122) ||
+        id === 64
+        )
+    {
+        return String.fromCharCode(id);
+    }  
+    return intToHex(id,3);
+}
+
+//Relocation Types
+const RT_OP4_12 = 0;
+const RT_OP4_4 = 1;
+const RT_MAX = 2;
+
+// Symbol types
+const ST_Unknown = 0;
+const ST_Label = 1;
+const ST_EQU = 2;
+const ST_DB = 3;
+const ST_JMP = 4;
+const ST_LOAD = 5;
+const ST_STORE = 6;
+
+// Simulator constants (HW System related addresses)
+const ADDR_ARR		= 0xc00;
+const ADDR_RND		= 0xc01;
+const ADDR_KEY0		= 0xc02;
+const ADDR_KEY1		= 0xc03;
+const ADDR_SCREEN_X = 0xc04;
+const ADDR_SCREEN_Y = 0xc05;
+const ADDR_SCREEN_CH1 = 0xc06; //High
+const ADDR_SCREEN_CH0 = 0xc07; //Low
+const ADDR_UART_H = 0xc08;
+const ADDR_UART_L = 0xc09;
+const ADDR_BEEP = 0xc0a;
+const ADDR_PERIPH_MAX = 0xc0b;
+
+
+
+// Globals, will be moved into a class later
+
+var section = "";
+var relocs =[];
+var actualRelocType=RT_OP4_4;
+var errorLines=[];
+
+// Functions, will be moved into a class later
+
+function WrongToken(t,msg){
+    var lineNumber = t.lineno;
+    var message= msg + " Token:"+getIdName(t.id);
+    var index = errorLines.indexOf(lineNumber);
+    if (index<0){
+        errorLines.push(lineNumber);
+        var errorIcon = document.createElement("div");
+        errorIcon.className = "error-icon";
+        errorIcon.title = message;
+        //asmSourceEditor.addLineWidget(lineNumber - 1, errorIcon, { coverGutter: false, noHScroll: true });
+        asmSourceEditor.addLineClass(lineNumber - 1, "background", "error-line");
+    }
+    displayError(message+ " line:"+t.lineno);
+}
+
+function Debug(tok, msg){
+    var message= msg + " Token:"+ getIdName(tok.id);
+    displayError(message);
+}
+function clearErrorWidgets() {
+    //  asmSourceEditor.clearGutter("error-line"); // "gutter-id" helyére tedd a saját használt sávazonosítódat
+    for (const line of errorLines) {
+        asmSourceEditor.removeLineClass(line - 1, "background", "error-line");
+    }
+    errorLines=[];
+}
+function addReloc(name, addr, relocType, context, line) {
+    var r={name, addr, context, relocType, line};
+    relocs.push(r);
+}
+function relocationPass() {
+	let nRelocs = relocs.length;
+	for (let i = 0; i < nRelocs; i++) {
+		let areloc= relocs[i];
+        let addr= areloc.addr; // this relocation was used in this location
+		let context = areloc.context;
+        if (context == ST_EQU){
+            displayError("Symbol was used in EQU, before it was declared. It is not possible. Change the declaration orders! line:"+ areloc.line)
+        }
+        var index= symbolNames.indexOf( areloc.name ); //that was the referred symbol
+		if (index >= 0) {
+            let addrSymb=symbolAddress[index];
+            let v=symbolValues[index];
+            let c=0; // the const part size depends on operand
+            //context = symbolContext[ix];
+			//todo: feature: reloctype can encode operation too
+			switch (areloc.relocType) {
+			case RT_OP4_12:
+				c = (cpuMemory[addr + 3] << 8) | (cpuMemory[addr + 2]) << 4 | (cpuMemory[addr + 1]);
+				v += c; //operation (only additive one implemented)
+				cpuMemory[addr + 3] = (v >> 8) & 0xf;
+				cpuMemory[addr + 2] = (v >> 4) & 0xf;
+				cpuMemory[addr + 1] = v & 0xf;
+				break;
+			case RT_OP4_4:
+				c = cpuMemory[addr + 1] & 0x0f;
+				v += c;
+				cpuMemory[addr + 1] = v & 0xf;
+				break;
+			default:
+				break;
+			}
+		} else {
+            displayError("The referenced symbol '"+areloc.name+"' can not be found. Check the symbol table. Line:"+areloc.line);
+		}
+	}
+}
+function setAddress(address) {
+    if (address<maxmemory){
+        actaddress=address;
+        if (address>maxaddress) maxaddress=address;
+    }else{
+//		console.log("Setting address to:", address);
+    }
+    //console.log("Setting address to:", address);
+}
+function chkAddress(address) {
+    if (address<maxmemory){
+        if (address>maxaddress) maxaddress=address;
+    }else{
+        console.log("Checking address to:", address);
+    }
+}
+function checkSection(section) {
+    //console.log("Checking section:", section);
+}
+
+function addMemory(value) {
+    //console.log("Adding to memory:", value);
+    cpuMemory[actaddress] = value & 15;
+    setAddress(actaddress+1);
+}
+
+function setRelocType(relocType) {
+    //console.log("Setting relocation type:", relocType);
+    actualRelocType = relocType;
+}
+//this is a preliminary converter, C implementation need to convert to JS.
+function convertAscii2BJTChar(c){ 
+    if ((c >= '0') && (c <= '9')) {c=(c - '0'); }
+	else if ((c >= 'A') && (c <= 'Z')) { c= c.charCodeAt(0) - 55; }
+	else {
+		switch (c) {
+		case  '.': c = 0x24; break;
+		case  ',': c = 0x25; break;
+		case  ':': c = 0x26; break;
+		case  ';': c = 0x27; break;
+		case  '!': c = 0x28; break;
+		case  '?': c = 0x29; break;
+		case  '>': c = 0x2A; break;
+		case  '<': c = 0x2B; break;
+		case  '=': c = 0x2C; break;
+		case  '+': c = 0x2D; break;
+		case  '-': c = 0x2E; break;
+		case  '/': c = 0x2F; break;
+		case  '\\': c = 0x30; break;
+		case  '(': c = 0x31; break;
+		case  ')': c = 0x32; break;
+		case  '#': c = 0x33; break;
+		case  '@': c = 0x34; break;
+		case  '$': c = 0x36; break;
+		case  '"': c = 0x37; break; //use "": instead of \"
+		case  '|': c = 0x38; break;
+		case  '_': c = 0x39; break;
+        case  'l': c = 0x40; break;
+		case  '[': c = 0x3A; break;
+		case  'l': c = 0x3F; break;
+		case  '{': c = 0x41; break;
+		case  '}': c = 0x42; break;
+		case  'o': c = 0x43; break;
+		case  ' ': c = 0xFF; break;
+		}
+	}
+	return c; 
+}
+
+// Token class implementation
+class Token {
+    constructor(position) {
+        this.id = T_Nil;
+        this.first_position= position;
+        this.last_position= position;
+        this.len=0;
+        this.lineno=0; // todo: need to know
+        /*this.first_column = 0;
+        this.last_column = 0;
+        this.first_line = 0;
+        this.last_line = 0;*/
+        this.integerConstant=0;
+        this.stringConstant='';
+        this.identifier='';
+        this.context=ST_Unknown;
+    }
+    setId(id){
+        this.id = id;
+        return this;
+    }
+    setLine(lineno){
+        this.lineno=lineno;
+        return this;
+    }
+    setLen(len){
+        this.len=len;
+        this.last_position = this.first_position+len;
+        return this;
+    }
+    setEnd(endpos){
+        this.len=endpos-this.first_position;
+        this.last_position = endpos;
+        return this;
+    }
+    setIdentifier(identifier){
+        this.identifier = identifier;
+        return this;
+    }
+    setStringConstant(str){
+        this.stringConstant= str;
+        return this;
+    }
+    setIntegerConstant(i){
+        this.integerConstant=i;
+        return this;
+    }
+    setContext(ctx){
+        this.context=ctx;
+        return this;
+    }
+    getShortHumanName(){
+        
+    }
+}
+
+// Grammar stack
+//note: implement other grammar fetures, right now, only a token held informations are stackable.
+class GType_s {
+    constructor(t) {
+    this.t = t;
+    }
+}
+
+//lexer parser
+class AsmLexer {
+    constructor(source) {
+        this.source = source;
+        this.position = 0;
+        this.lineno =1;
+        this.gStack = [];
+        clearErrorWidgets();
+    }
+    stackPush(t) {
+        const p = new GType_s(t);
+        this.gStack.push(p);
+    }
+    stackClear() {
+        this.gStack = [];
+    }
+    accept(pos){
+        this.position=pos;
+    }
+    setSymbol(name, value, typ, ctx){
+        symbolNames.push(name);
+        symbolTypes.push(typ);
+        symbolAddress.push(actaddress);
+        symbolValues.push(value);
+        symbolSizes.push(1);
+        //symbolAlloc.push(1);
+        //symbolRef.push(1);
+    }
+    getSymbolValue(identifier, pContext, lineno) {
+        var index= symbolNames.indexOf(identifier);
+        let relocNeeded=false;
+        if (index>=0){
+            var value= symbolValues[index];
+            if (value === undefined || value === null) {
+                relocNeeded=true;
+            }
+        }else{
+            relocNeeded=true;
+        }
+        if (relocNeeded){
+            value=0;
+            //the symbol declaration is not yet parsed up.
+            addReloc(identifier, actaddress, actualRelocType, pContext, lineno);
+        }
+        return value;
+    }
+
+    setSymbolValue(identifier, value, lineno) {
+        var index= symbolNames.indexOf(identifier);
+        symbolValues[index]=value;
+    }
+    parse_exp(t) {
+        const ruleExp = [ 
+            T_IntConstant, '+', T_IntConstant, T_Void, 
+            T_IntConstant, '-', T_IntConstant, T_Void, 
+            T_IntConstant, '*', T_IntConstant, T_Void,
+            T_IntConstant, '/', T_IntConstant, T_Void,
+            T_IntConstant, T_Ror, T_IntConstant, T_Void,
+            T_IntConstant, T_Rol, T_IntConstant, T_Void,
+            T_IntConstant, T_At, T_IntConstant, T_Void,
+            // T_IntConstant, '&', T_IntConstant, T_Void,	//TODO: Lexer doesn't forwards the and sign
+            T_IntConstant, T_Void ];
+        let r = 0;
+        let top = this.gStack.length;
+        const res = new Token(this.position);
+        res.setLine(this.lineno).setId(S_Exp);
+        while (r === 0) {
+            switch (t.id) {
+            case '/':
+            case '*':
+            case '-':
+            case '+':
+            case T_At:
+            case T_Ror:
+            case T_Rol:
+                this.accept(t.last_position);
+                this.stackPush(t);
+                break;
+            case T_Identifier:
+                t.setId(T_IntConstant); //rewrire
+                t.setLine(this.lineno);
+                t.integerConstant = this.getSymbolValue(t.identifier, t.context, t.lineno);
+                this.accept(t.last_position);
+                this.stackPush(t);
+                break;
+            case T_IntConstant:
+                this.accept(t.last_position);
+                this.stackPush(t);
+                break;
+            case T_Dollar:
+                t.setId(T_IntConstant); //rewrire
+                t.integerConstant = actaddress;
+                this.accept(t.last_position);
+                this.stackPush(t);
+                break;
+            case T_WSpace:
+                this.accept(t.last_position);
+                // t = this.getNextToken();
+                break;
+            default:
+                r = t.id;
+                break;
+            }
+
+            if (!r) t = this.getNextToken();
+            if (T_Nil == t.id) break; // invalid token?
+        }
+
+        const len = this.gStack.length;
+        
+        do {
+            let sp = 0;
+            let rule = 0;
+            let ruleNr = 0;
+
+            for (let i = 0; i < ruleExp.length; i++) {
+            if (T_Void === ruleExp[i]) break;
+
+            if (i - rule < len - top) {
+                const s = this.gStack[top + sp];
+
+                if (s.t.id === ruleExp[i]) {
+                // accept next
+                sp++;
+                continue;
+                }
+            }
+
+            // search next rule
+            sp = 0;
+
+            while (T_Void !== ruleExp[i]) i++;
+            rule = i + 1;
+            ruleNr++;
+            }
+
+            switch (ruleNr) {
+            case 0: // exp = exp + exp
+                res.setIntegerConstant( this.gStack[top + 0].t.integerConstant + this.gStack[top + 2].t.integerConstant );
+                res.last_position=this.gStack[top + 2].t.last_position;
+                top += 2;
+                this.gStack[top].t = res;
+                break;
+            case 1: // exp = exp - exp
+                res.setIntegerConstant( this.gStack[top + 0].t.integerConstant - this.gStack[top + 2].t.integerConstant);
+                res.last_position=this.gStack[top + 2].t.last_position;
+                top += 2;
+                this.gStack[top].t = res;
+                break;
+            case 2: // exp= exp * exp
+                res.setIntegerConstant( this.gStack[top + 0].t.integerConstant * this.gStack[top + 2].t.integerConstant);
+                res.last_position=this.gStack[top + 2].t.last_position;
+                top += 2;
+                this.gStack[top].t = res;
+                break;
+            case 3: // exp= exp / exp
+                res.setIntegerConstant( this.gStack[top + 0].t.integerConstant / this.gStack[top + 2].t.integerConstant);
+                res.last_position=this.gStack[top + 2].t.last_position;
+                top += 2;
+                this.gStack[top].t = res;
+                break;
+            case 4: // exp= exp >> exp
+                res.setIntegerConstant( this.gStack[top + 0].t.integerConstant >> this.gStack[top + 2].t.integerConstant);
+                res.last_position=this.gStack[top + 2].t.last_position;
+                top += 2;
+                this.gStack[top].t = res;
+                break;
+            case 5: // exp= exp << exp
+                res.setIntegerConstant( this.gStack[top + 0].t.integerConstant << this.gStack[top + 2].t.integerConstant);
+                res.last_position=this.gStack[top + 2].t.last_position;
+                top += 2;
+                this.gStack[top].t = res;
+                break;
+            case 6: // exp= exp @ exp
+                res.setIntegerConstant( this.gStack[top + 0].t.integerConstant >> (4 * this.gStack[top + 2].t.integerConstant));
+                res.last_position=this.gStack[top + 2].t.last_position;
+                top += 2;
+                this.gStack[top].t = res;
+                break;
+            //case 7: // exp= exp & exp
+            //	res->s.integerConstant = gStack[top + 0].t.integerConstant & (4 * this.gStack[top + 2].t.integerConstant));
+            //	top += 2;
+            //	this.gStack[top].t = res;
+            //	break;
+            case 7: // exp = i
+                res.setIntegerConstant( this.gStack[top + 0].t.integerConstant);
+                res.last_position=this.gStack[top + 0].t.last_position;
+                top++;
+                break;
+            default:
+                //res.setId( T_Void );
+                top++;
+                break;
+            }
+        } while (top < len);
+
+        this.stackClear();
+        return res;
+    }
+    
+    parse_string(t){
+        var str= t.stringConstant;
+        this.accept(t.last_position);
+        t = this.getNextToken();
+        // : , +,-
+        var bHig = 1;
+        var bLow = 1;
+        var bQuo = 0;
+        if (t.id == ':') {
+            t = this.getNextToken();
+            this.accept(t.last_position);		
+            bQuo = 1;
+        }else if (t.id == '+') {
+            this.accept(t.last_position);
+            t = this.getNextToken();
+            bLow = 0;
+        }else if (t.id == '-') {
+            this.accept(t.last_position);
+            t = this.getNextToken();
+            bHig = 0;
+        }
+        var len= str.length;
+        if (bLow)
+        for (var i = 0; i < len; i++) {
+            var c = str[i]; //yylval.stringConstant
+            c = convertAscii2BJTChar(c);
+            if (bQuo) if (c == 0x26) c = 0x37;
+            addMemory(c);
+        }
+        if (bHig)
+        for (var i = 0; i < len; i++) {
+            var c = str[i]; //yylval.stringConstant
+            c = convertAscii2BJTChar(c);
+            if (bQuo) if (c == 0x26) c = 0x37;
+            addMemory(c >> 4);
+        }
+        return t;
+    }
+    parse_db(){
+        var t = new Token(this.position);
+        t.setContext(ST_DB).setLine(this.lineno);  // theres no org in contexts, and no rewriter is possible
+        t = this.parse_exp(t);
+        if (t.id != S_Exp) {
+            Debug("grm", "Expression not found: db expr");
+            WrongToken(t, "Should be an expression. Expression not found in db syntax.");
+        } else {
+            addMemory(t.integerConstant);
+        }
+        this.accept(t.last_position);
+        t.setId(T_Nil);
+        return t;
+    }
+    parse_identifier(t){
+        var name = t.identifier;
+        t.setContext(ST_Unknown);
+        do{
+            t=this.getNextToken();
+        }while(t.id== T_WSpace);
+        switch(t.id){
+            case ':':
+                this.setSymbol(name, actaddress, "Label", ST_Label);
+                break;
+            case T_Equ:
+                t=this.getNextToken();
+                t.setContext(ST_EQU);
+                t=this.parse_exp(t);
+                if(t.id != S_Exp){
+                    WrongToken(t, "Expression not found");
+                }else{
+                    this.setSymbol(name, actaddress, "Equ", ST_LOAD);
+                    this.setSymbolValue(name, t.integerConstant, t.line);
+                }
+        }
+        this.accept(t.last_position);
+        t.setId(T_Nil);
+        return t;
+    }
+    parse_nibles(t){
+        addMemory(t.integerConstant);
+        this.accept(t.last_position);
+        t = this.getNextToken();
+        var inside = 1;
+        while (inside) {
+            if (!t.id) t = t = this.getNextToken();
+            switch (t.id) {
+            case ',':
+                t.setId(T_Nil);
+                break;
+            case T_IntConstant:
+                t.setId(T_Nil);
+                addMemory(t.integerConstant);
+                this.accept(t.last_position);
+                break;
+            default:
+                inside = 0;
+                break;
+            }
+        }
+        this.accept(t.last_position);
+        return t;
+    }
+    parse_Op4_4(t){
+        setRelocType(RT_OP4_4);
+        if (t.id == T_mvi) {
+            t = this.getNextToken();
+            t.setContext(ST_LOAD);
+            t = this.parse_exp(t);
+            if (t.id != S_Exp){
+                WrongToken(t, "Expression not found in mvi a, expr");
+            }else{
+                var v= t.integerConstant;
+                if (v>15){
+                    WrongToken(t, "Expression overflown in mvi a, (4bit)");
+                }
+                addMemory(0); //opc
+                addMemory(v & 15);
+            }
+        }
+        this.accept(t.last_position);
+        t.setId(T_Nil);
+        return t;
+    }
+    parse_Op4_12(t){
+        var opc= t.id - T_mvi;
+        setRelocType(RT_OP4_12);
+        var ctx = ST_Unknown;
+        switch (t.id){
+            case T_sta: ctx= ST_STORE; break;
+            case T_lda: ctx= ST_LOAD; break;
+            case T_ad0: ctx= ST_LOAD; break;
+            case T_ad1: ctx= ST_LOAD; break;
+            case T_adc: ctx= ST_LOAD; break;
+            case T_nand: ctx= ST_LOAD; break;
+            case T_nor: ctx= ST_LOAD; break;
+            case T_rrm: ctx= ST_LOAD; break;
+            case T_jmp: ctx= ST_JMP; break;
+            case T_jc: ctx= ST_JMP; break;
+            case T_jnc: ctx= ST_JMP; break;
+            case T_jz: ctx= ST_JMP; break;
+            case T_jnz: ctx= ST_JMP; break;
+            case T_jm: ctx= ST_JMP; break;
+            case T_jp: ctx= ST_JMP; break;
+        }
+        t = this.getNextToken();
+        t.setContext(ctx);
+        t = this.parse_exp(t);
+        if (t.id != S_Exp){
+            t.setStringConstant(this.source.slice(t.first_position, t.last_position));
+            WrongToken(t, "Expression not found (12bit): '"+ t.stringConstant+"'");
+        }else{
+            var v= t.integerConstant;
+            if (v>4192){
+                t.setStringConstant(this.source.slice(t.first_position, t.last_position));
+                WrongToken(t, "Expression overflown in mnemonic(12bit): '"+ t.stringConstant+"'");
+            }
+            addMemory(opc);
+            addMemory(v );
+            addMemory(v >> 4);
+            addMemory(v >> 8);
+        }
+        this.accept(t.last_position);
+        t.setId(T_Nil);
+        return t;
+    }
+    parse_global(){
+        var t;
+        do{
+            t=this.getNextToken();
+        }while(t.id== T_WSpace);
+        switch (t.id) {
+        case T_Identifier:
+            //todo: set symbol global?
+            this.accept(t.last_position);
+            t.setId(T_Nil);
+            break;
+        default:
+            WrongToken(t, "section .code");
+            return t;
+            break;
+        }
+        t.setId(T_Nil);
+        return t;
+    }
+    //grammar of the org syntax
+    parse_org() {
+        var t = new Token(this.position);
+        t.setContext(ST_Label).setLine(this.lineno);  // theres no org in contexts, and no rewriter is possible
+        t = this.parse_exp(t);
+        if (t.id != S_Exp) {
+            Debug("grm", "Expression not found: org");
+            WrongToken(t, "Should be an expression. Expression not found in org syntax.");
+        } else {
+            setAddress(t.integerConstant);
+        }
+        t.setId(T_Nil);
+        return t;
+    }
+    parse_section(token){
+        var t;
+        do{
+            t=this.getNextToken();
+        }while(t.id== T_WSpace);
+        switch (t.id) {
+        case T_Identifier:
+            section= t.identifier;
+            this.accept(t.last_position);
+            t.setId(T_Nil);
+            this.setSymbol(section, actaddress, "section", ST_Unknown);
+            break;
+        case T_StringConstant:
+            section= t.stringConstant;
+            this.accept(t.last_position);
+            this.setSymbol(section, actaddress, "section", ST_Unknown);
+            t.setId(T_Nil);
+            break;
+        default:
+            WrongToken(t, "section .code");
+            return t;
+            break;
+        }
+        checkSection(section);
+        return t;
+    }
+    parse(){
+        var inside=1;
+        var t=new Token(this.position);
+        t.setLine(this.lineno);
+        while (inside){
+            if (T_Nil==t.id) t=this.getNextToken();
+            if (T_Void>=t.id) {
+                console.log("End term...");
+            }
+            switch (t.id){
+                case T_WSpace:
+                case T_End:
+                case T_Comment:
+                    t.setId(T_Nil); // Skip
+                    break;
+                case T_NewLine: 
+                    this.lineno++;
+                    t.setLine(this.lineno);
+                    t.setId(T_Nil); // Skip
+                    break;
+                case T_StringConstant:  t = this.parse_string(t); break;
+                case T_Org: 			t = this.parse_org(t); break;
+                case T_Section: 		t = this.parse_section(t); break;
+                case T_Global: 			t = this.parse_global(t); break;
+                    //		case T_Include: t = parse_include(); break;
+                case T_DataByte: 		t = this.parse_db(t); break;
+                case T_Identifier: 		t = this.parse_identifier(t); break;
+                case T_IntConstant: 	t = this.parse_nibles(t); break;
+                case T_mvi:				t = this.parse_Op4_4(t); break;
+
+                case T_lda:
+                case T_sta:
+                case T_ad0:
+                case T_ad1:
+                case T_adc:
+                case T_nand:
+                case T_nor:
+                case T_rrm:
+                case T_jmp:
+                case T_jc:
+                case T_jnc:
+                case T_jz:
+                case T_jnz:
+                case T_jm:
+                case T_jp:
+                    t = this.parse_Op4_12(t); break;
+                case T_Nil: // lexer sent this, eof...
+                    inside = 0;
+                    break;
+                default:
+                    inside = 0;
+                    WrongToken(t, ", unknown token?");
+                    t.setId(T_Nil);
+                    break;
+            }
+        }
+    }
+    findTokenAtPosition(position) {
+        const keywords = [
+            { keyword: "section ",	token: T_Section },
+            { keyword: "global ",	token: T_Global },
+            { keyword: "sta ", 		token: T_sta },
+            { keyword: "lda ", 		token: T_lda },
+            { keyword: "mvi a,", 	token: T_mvi },
+            { keyword: "ad0 ", 		token: T_ad0 },
+            { keyword: "ad1 ", 		token: T_ad1 },
+            { keyword: "adc ", 		token: T_adc },
+            { keyword: "nand ", 	token: T_nand },
+            { keyword: "nor ", 		token: T_nor },
+            { keyword: "rrm ", 		token: T_rrm },
+            { keyword: "jmp ", 		token: T_jmp },
+            { keyword: "jz ", 		token: T_jz },
+            { keyword: "jnz ",		token: T_jnz },
+            { keyword: "jm ", 		token: T_jm },
+            { keyword: "jp ", 		token: T_jp },
+            { keyword: "jc ", 		token: T_jc },
+            { keyword: "jnc ", 		token: T_jnc },
+            { keyword: "db ",  		token: T_DataByte },
+            { keyword: "equ ", 		token: T_Equ },
+            { keyword: "org ", 		token: T_Org },
+            { keyword: "end ", 		token: T_End }
+        ];
+
+        // Iterate through keywords and find the first match
+        for (const { keyword, token } of keywords) {
+            const keywordLength = keyword.length;
+            const textSlice = this.source.slice(position, position + keywordLength);
+            if (textSlice.toLowerCase() === keyword) {
+                const tokenInfo = {
+                    token,
+                    startPosition: position,
+                    endPosition: position + keywordLength
+                };
+                return tokenInfo;
+            }
+        }
+        return null;
+    }
+    getNextToken() {
+        var token= new Token(this.position);
+        token.setLine(this.lineno);
+        if (this.position >= this.source.length) return token; // eof
+        var ch = this.source[this.position];
+        var ch2 = this.source[this.position+1];
+        let endposition = this.position;
+        switch (ch){
+            case '-':
+            case '(':
+            case ')':
+            case '=':
+            case '+':
+            case '*':
+            case '/':
+            case '{':
+            case '}':
+            case ',':
+            case ':':  // Unnamed tokens, ascii code...
+                this.position++; //accept
+                token.setId(ch).setLen(1);
+                return token;
+                break;
+            case '<':
+                if (ch2 =='<'){
+                    token.setId(T_Rol).setLen(2);
+                    this.accept(token.endposition);
+                    return token;
+                }else{
+                    this.position++; //accept
+                    token.setId(ch).setLen(1);
+                    return token;
+                }
+                break;
+            case '>':
+                if (ch2 =='>'){
+                    token.setId(T_Ror).setLen(2);
+                    this.accept(token.endposition);
+                    return token;
+                }else{
+                    this.position++; //accept
+                    token.setId(ch).setLen(1);
+                    return token;
+                }
+                break;			
+            case '$':
+                this.position++;
+                token.setId(T_Dollar).setLen(1);
+                return token;
+                break;
+            case '@':
+                this.position++;
+                token.setId(T_At).setLen(1);
+                return token;
+                break;					
+            case ' ': 
+            case '\t':
+                while( endposition<this.source.length && ((' ' == this.source[endposition]) || ('\t' == this.source[endposition] )) )  { endposition++; }
+                this.position = endposition; //accept
+                token.setId(T_WSpace).setEnd(endposition);
+                return token;
+                break;
+            case ';':
+                endposition++;
+                while( endposition<this.source.length && ('\n' != this.source[endposition] )) { endposition++; }
+                token.setStringConstant(this.source.slice(this.position, endposition));
+                this.position = endposition; //accept
+                token.setId(T_Comment).setEnd(endposition);
+                return token;
+                break;
+            case '\n':
+                this.position++;
+                token.setId(T_NewLine).setLen(1);
+                return token;
+            case '"':
+                endposition++;
+                while( endposition<this.source.length && ('"' != this.source[endposition] )) { endposition++; }
+                token.setStringConstant(this.source.slice(this.position+1, endposition));
+                this.position = endposition+1; //skip enclosoure quote
+                token.setId(T_StringConstant).setEnd(this.position);
+                return token;
+                break;
+            
+        }
+
+        const tokenInfo = this.findTokenAtPosition(this.position);
+        if (tokenInfo) {
+            this.position = tokenInfo.endPosition;
+            token.setId(tokenInfo.token).setEnd(tokenInfo.endPosition);
+            return token;
+        }
+        const textSlice = this.source.slice(this.position, this.position + 100);
+        const matchT_Identifier = textSlice.match(/^[a-z_\.]+[a-z_\.0-9]*/i);
+        if (matchT_Identifier) {
+            const matchedText = matchT_Identifier[0];
+            const matchLength = matchedText.length;
+            token.setId(T_Identifier).setLen(matchLength).setIdentifier(matchedText);
+            this.position += matchLength; //accept
+            return token;
+        }
+        const matchT_IntConstant1 = textSlice.match(/^0[x][0-9a-f]+/i);
+        if (matchT_IntConstant1){
+            const matchedText = matchT_IntConstant1[0];
+            const matchLength = matchedText.length;
+            token.setId(T_IntConstant).setLen(matchLength).setStringConstant(matchedText);
+            token.setIntegerConstant(Number(matchedText));
+            //this.position += matchLength;
+            return token;
+        }
+        const matchT_IntConstant2 = textSlice.match(/^[0-9a-f]+[h]/i);
+        if (matchT_IntConstant2){
+            const matchedText = matchT_IntConstant2[0];
+            const matchLength = matchedText.length;
+            token.setId(T_IntConstant).setLen(matchLength).setStringConstant(matchedText);
+            token.setIntegerConstant(Number('0x'+matchedText));
+            //this.position += matchLength;
+            return token;
+        }
+        const matchT_IntConstantB = textSlice.match(/^[0-1]+b/);
+        if (matchT_IntConstantB){
+            const matchedText = matchT_IntConstantB[0];
+            const matchLength = matchedText.length;
+            token.setId(T_IntConstant).setLen(matchLength).setStringConstant(matchedText);
+            token.setIntegerConstant(Number('0b'+matchedText));
+            //this.position += matchLength;
+            return token;
+        }
+        const matchT_IntConstant3 = textSlice.match(/^[0-9]+/);
+        if (matchT_IntConstant3){
+            const matchedText = matchT_IntConstant3[0];
+            const matchLength = matchedText.length;
+            token.setId(T_IntConstant).setLen(matchLength).setStringConstant(matchedText);
+            token.setIntegerConstant(Number(matchedText));
+            //this.position += matchLength;
+            return token;
+        }		
+        token.setId(T_Void);
+        return token;
+    }
+}
+
+class Simulator {
+    constructor(){
+        if (Simulator._instance) {
+            throw new Error("Singleton classes can't be instantiated more than once.")
+        }
+        Simulator._instance = this;
+        this.pc =0;
+        this.ac =0;
+        this.carry=0;
+        this.im =0;
+        this.hlt=1;
+        this.brk=0;
+        this.needToUpdate=1;
+        this.scrNeedToRefresh=1;
+        this.updateFn={};
+        this.updateScreenFn={};
+        this.scrbuf=Array(16*16)
+        for (let i =0xc00; i<ADDR_PERIPH_MAX; i++) cpuMemory[i]=0;
+    }
+    dump(){
+        var str="PC:"+intToHex(this.pc, 3);
+        str+=" AC:"+intToHex(this.ac, 1)+" FLAGS:";
+        if (this.carry){
+            str+="C";
+        }else{
+            str+=" ";
+        }
+        if (this.ac & 8){
+            str+="M";
+        }else{
+            str+=" ";
+        }
+        if (this.ac){
+            str+="N";
+        }else{
+            str+="Z";
+        }
+        if (this.hlt){
+            str+="H";
+        }else{
+            str+="R";
+        }
+        //displayInfo(str);
+        return str;
+    }
+    update(){
+        if (this.needToUpdate){
+            this.updateFn();
+            this.needToUpdate=0;
+        }
+        if (this.scrNeedToRefresh){
+            this.updateScreenFn();
+            this.scrNeedToRefresh=0;
+        }
+    }
+    setPc(p){// jump
+        if (p>4095){
+            p=4095&p;
+        }
+        this.pc=p;
+        this.needToUpdate=1;
+    }
+    setAc(data){
+        this.ac=data & 15; //without overflow and carry
+        this.carry= (data >= 16) ? 1 : 0; //calculate and store carry
+    }
+    setIm(i){
+        this.im=i;
+    }
+    resetSim(){
+        this.pc =0;
+        this.ac =0;
+        this.im =0;
+        this.hlt=1;
+        this.needToUpdate=1;
+        this.scrNeedToRefresh=1;
+    }
+    haltSim(){
+        this.hlt=1;
+        this.stopTimer();
+    }
+    runSim(){
+        this.hlt=0;
+        this.startTimer();
+    }
+    peek(address){
+        const data=cpuMemory[address];
+        return data;
+    }
+    poke(address, data){
+        const adr= address&4095;
+        const dat= data&15;
+        cpuMemory[adr]=dat;
+    }
+    fetch(){
+        const data=cpuMemory[this.pc];
+        return data;
+    }
+    load(address){
+        let bError=false;
+        const data=this.peek(address);
+        // system level peripheral access, like keyboard, joystick, rnd, etc
+        switch (address){
+            case ADDR_RND: data= Math.floor(Math.random() * 15) & 0x0f;  break;
+            case ADDR_KEY0:
+            case ADDR_KEY1:
+            case ADDR_ARR: this.poke(address,0); break;
+            default:
+                // other peripherals like screen and sound is not implementing
+                // a load bus cycle, so CPU can not access the content from
+                // the screen memory in example. (Discuss w HW guy :D needed)
+                if ((ADDR_ARR<= address) &&(address<=ADDR_ARR+0xff)){
+                    bError=true; //buserror
+                }
+                break;
+        }
+        return data;
+    }
+    store(address, data){
+        this.poke(address, data);
+        let bError=false;
+        // system level peripheral access, like screen, sound dev, etc
+        switch (address){
+            case ADDR_SCREEN_X:
+            case ADDR_SCREEN_Y:
+            case ADDR_SCREEN_CH1:
+                break;
+            case ADDR_SCREEN_CH0:{
+                //change the screen memory content when ch0 store bus cycle happened.
+                let x= this.peek(ADDR_SCREEN_X);
+                let y=this.peek(ADDR_SCREEN_Y);
+                let ch0=this.peek(ADDR_SCREEN_CH0);
+                let ch1=this.peek(ADDR_SCREEN_CH1);
+                //this.scrbuf[x][y]= ch0 | (ch1<<4);
+                this.scrbuf[y<<4|x]=ch0 | (ch1<<4);
+                this.scrNeedToRefresh=1;
+                }
+                break;
+            case ADDR_BEEP:
+                // audioBeep.play();
+                break;
+            default:
+                // there are no other peripherals accessable to store bus cycle
+                if ((ADDR_ARR<= address) &&(address<=ADDR_ARR+0xff)){
+                    bError=true; //buserror
+                }
+                break;
+        }
+        return bError;
+    }
+    stepSim(){
+        // Fetch (based on PC)
+        const opcode = this.fetch();
+        const iwidth =(opcode!=0)?4:2;
+        let data = this.peek( this.pc + 1) & 0xf; //fetching actually without stat
+        let imm = data;
+        if (iwidth>2){
+            imm |= (this.peek( this.pc + 2) & 0xf)<<4;
+            imm |= (this.peek( this.pc + 3) & 0xf)<<8;
+        }
+        this.setIm(imm); // only for debug.
+        const nextpc= (this.pc+iwidth)&4095; // can be later. But now, 
+        this.pc = nextpc; // this internal states not monitored. In case of no jmp, this will be the next pc.
+        
+        // Load (based on imm)
+        if ((OC_lda <= opcode) && (opcode <= OC_rrm))
+        {
+            data=this.load(imm) // load cycle overwrite previous data.
+        }
+        
+        // Execute
+        switch (opcode){
+            case OC_mvi:	this.ac= data; break;  // does not change the carry
+            case OC_lda:	this.setAc(data);  break;
+            case OC_ad0:	this.setAc(this.ac + data); break;
+            case OC_ad1:	this.setAc(this.ac + data + 1); break;
+            case OC_adc:	this.setAc(this.ac + data + this.carry); break;
+            case OC_nand:	this.setAc(~(this.acc & data)); break;
+            case OC_nor:	this.setAc(~(this.acc | data));    break;
+            case OC_rrm:	this.setAc(data >> 1); break;
+            case OC_jmp:	this.setPc(imm);    break;
+            case OC_jc:		if (this.carry) this.setPc(imm);    break;
+            case OC_jnc:	if (!this.carry) this.setPc(imm); break;
+            case OC_jz:		if (!this.ac) this.setPc(imm); break;
+            case OC_jnz:	if (this.ac) this.setPc(imm); break;
+            case OC_jm:		if (this.ac & 0x8) this.setPc(imm); break;
+            case OC_jp:		if (!(this.ac & 0x8)) this.setPc(imm); break;
+            default: break;
+
+        }
+            
+        // Store
+        if (opcode == OC_sta){
+            this.store(imm, this.ac & 15);
+        }
+    }
+    cyclicSlow(){
+        this.needToUpdate=1;
+        this.scrNeedToRefresh=1;
+        this.update();
+        hexdumpDownload();
+    }
+    cyclic(){
+        if (this.hlt){
+            return;
+        }else{
+            let countRun=20000;
+            while(countRun){
+                this.stepSim();
+                countRun--;
+            }
+            /*
+            if (this.slowCounter){
+                this.slowCounter--;
+            }else{
+                this.cyclicSlow();
+                this.slowCounter =2;
+            }*/
+        }
+    }
+    startTimer(){
+        clearInterval(this.timerCyclic);
+        clearInterval(this.timerCyclicSlow);
+        this.timerCyclic = setInterval( ()=>{Simulator._instance.cyclic();}, 50);
+        this.timerCyclicSlow = setInterval( ()=>{Simulator._instance.cyclicSlow();}, 190);
+    }
+    stopTimer(){
+        clearInterval(this.timerCyclic);
+        clearInterval(this.timerCyclicSlow);
+    }
+}
+
+function simCallbackUpdate(){
+    let monitorView=document.getElementById("cpuRegisters");
+    monitorView.innerHTML= Simulator._instance.dump();
+    simCallbackUpdateScreen();
+}
+function simCallbackUpdateScreen(){
+    const simulatorScreenMemory=document.getElementById("simulatorScreenMemory");
+    const simulatorScreenVisual=document.getElementById("simulatorScreenVisual");
+    let str="";
+    for (let i=0; i<16; i++){
+        for (let j=0; j<16; j++){
+            const val=simulator.scrbuf[i<<4|j];
+            str+=intToHex(val,2);
+        }
+        str+="\n<br>";
+    }
+    simulatorScreenMemory.innerHTML= str;
+
+    const ctx = simulatorScreenVisual.getContext('2d');
+    ctx.clearRect(0, 0, simulatorScreenVisual.width, simulatorScreenVisual.height);
+    const swx=13;
+    const swy=16;
+    const dwx=simulatorScreenVisual.width/16;
+    const dwy=simulatorScreenVisual.height/16;
+    for (let y = 0; y < 16; y++) {
+        for (let x = 0; x < 16; x++) {
+            const charIndex= simulator.scrbuf[y<<4|x];
+            const fx= charIndex & 15;
+            const fy= (charIndex>>4) &15;
+            ctx.drawImage(imgAbc,fx*swx, fy*swy, swx, swy, x*dwx, y*dwy, dwx, dwy);
+        }
+    }
+}
+
+const canvas = document.getElementById('simulatorScreenVisual');
+const ctx = canvas.getContext('2d');
+ctx.fillRect(50,50,500,500); // something in the background
+var bufferCanvas = document.createElement('canvas');
+//var bufferCtx = bufferCanvas.getContext('2d');
+var imgAbc = new Image();
+
+var simulator= new Simulator();
+simulator.updateFn = simCallbackUpdate;
+simulator.updateScreenFn= simCallbackUpdateScreen;
+
+function init()
+{
+    displayWaitPopup(false);
+    imgAbc.onload = function() {
+        //bufferCtx.drawImage(imgAbc, 0, 0);
+        screenClear();
+        //simulator.update();
+    }
+    imgAbc.src = "upload/abc.bmp";
+}
+init();
+function screenClear(){
+    for(let i=0; i<16; i++){
+        for(let j=0; j<16; j++){
+            simulator.scrbuf[(i<<4)+j]=255;
+        }
+    }
+    simulator.scrNeedToRefresh=1;
+    simulator.update();
+}
+function screenAbc(){
+    for(let i=0; i<16; i++){
+        for(let j=0; j<16; j++){
+            simulator.scrbuf[(i<<4)+j]=(i<<4)+j;
+        }
+    }
+    simulator.scrNeedToRefresh=1;
+    simulator.update();
+}
+function stepCpu(){
+    simulator.haltSim(); // just to ensure, cpu is not running.
+    simulator.stepSim(); // calculate one cpu core and bus cycle.
+    simulator.needToUpdate=1;
+    simulator.scrNeedToRefresh=1;
+    simulator.update();
+}
+function resetCpu(){
+    simulator.haltSim(); // just to ensure, cpu is not running.
+    simulator.pc=0;
+    simulator.needToUpdate=1;
+    simulator.scrNeedToRefresh=1;
+    simulator.update();
+}
+</SCRIPT>
+<div id="result"></div>
+</body></html>

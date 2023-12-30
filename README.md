@@ -7,6 +7,13 @@ The processor made out of BC182 (~450 piece), 1N4148 and resistors. The data pat
 
 There is also a video card for this CPU. It has two (X,Y) analog outputs, which can be connected to an ordinary oscilloscope to show the screen. The videocard has its own character generator, based on lists of vector graphic steps. Keypad matrix and joystick inputs also implemented. See [details of the peripherals](doc/periph.md)
 
+ONLINE-IDE
+----------
+
+While at the beginning of 2023 I rewrote the simulator under macOS and SDL, during the winter break (as a quick hobby project), I created the JavaScript version for both the assembler and the simulator. This embeddable solution can interpret binary at the speed of hardware and display the video output content in the usual way on the website. Here you can quickly try it (Push the Compile, and Run buttons): [Online Demo](http://myndideal.com/bjtcpu/)
+
+![ide screenshot](doc/web_javascript.png?raw=true "ide")
+
 IDE
 ---
 This is a Windows MFC application, it is under development. It simulates the BJT CPU, and i/o peripherals like UART, Video card, keypad, joystick. Asm editor part is read only at this moment, and compiler is running externally. To see more detailed description, read [ide documentation](doc/ide.md)
@@ -63,11 +70,11 @@ Planned...  The goal is to be able to download the binary to real hw, and able t
 1) as an fpga based device
 ![fpga model](doc/se1.png?raw=true "emulator")
  
-2) as a microcontroller based device.
+1) as a microcontroller based device.
 
-3) raspberry
+2) raspberry
 
-4) a Mac variant is also compilable by xcode or CLI toolchain. Now it is tested on M2 MacBook.
+3) a Mac variant is also compilable by xcode or CLI toolchain. Now it is tested on M2 MacBook.
 
 On progress... Actually the video card simulator is under development. Two PWMs are used for x/y output. The following screenshot shows how the real rpi pins was measured by Analog Discovery2 card, when the playb ran on raspberry...
 ![raspberry measurement](doc/ssrpi1.png?raw=true "simulator1")
