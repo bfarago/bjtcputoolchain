@@ -34,3 +34,32 @@ The next grammar function process mvi a,{expression} syntax. Where expression is
 The next grammar function process all other mnemonics like:  opcode {expression} syntax. Where expression value can be 12 bits wide. Therefore these operators usually address the memory by the operand.
 
 ![Parse op4 12 diagram](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.github.com/bfarago/bjtcputoolchain/master/doc/parse_op4_12.puml)
+
+
+MACRO ASSEMBLER
+---------------
+The hw doesn't have stack or subrutin (jsr/ret) instruction. But the code is running in RAM (not in Flash) therefore multiple instructions could formulate such complex process like a jump to subrutin and return from subrutin. 
+
+This is a jump to subrutin implementation:
+
+```asm
+	mvi a, $+22         ; assembler will calculate the return address using the actual address
+	sta subrut_ret0     ; and store the least significant nibble at return
+	mvi a, $+16>>4
+	sta subrut_ret0+1
+	mvi a, $+10>>8      ; assembler will calculate the return address rightmost nibble
+	sta subrut_ret0+2	; most significant nibble of the return address stored now
+	jmp subrut_label  ; the return address points after the jump instruction 
+```
+
+The previous code snippet will calculate the address of the first instruction after the jmp subrutin, due to that will be the return address. The return code consist of one jmp instruction, with 3 address nible.
+
+
+```asm
+	; return from subrut
+	subrut_ret0 equ  $+1         ; the symbol subrut_ret0 is memorizing by the assembler here, given the value from the actual address +1
+	jmp subrutin_return_address  ; this address will be replaced when call code is executed.
+```
+
+When the subrutin reach the previous code, it will jump back to the caller side onto the return address, which was filled at the time of calling the subrutin.
+Limitation: no loop is possible in call-graph, because of only one return address belongs to only one caller at a time of subrutin execution.

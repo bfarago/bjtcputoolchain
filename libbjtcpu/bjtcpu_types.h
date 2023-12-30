@@ -46,14 +46,11 @@ typedef enum {
 
 //Key arrow type: simulated arrow keys can be in state of the directions and fire, it is like a retro joystick.
 typedef enum {
-	ka_Nothing,
-	ka_Left,
-	ka_Right,
-	ka_Up,
-	ka_Down,
-	ka_Fire = 11, //todo: document arr periph, how it is works, meaning of the values, etc...
-	ka_max
-} keyArrow_t;
+	ArrowBit_Down,
+	ArrowBit_Left,
+	ArrowBit_Up,
+	ArrowBit_Right
+}ArrowBits_t;
 
 //Cpu simulator internal states: used internally, it describes every clock phase and states. Detailed than the cpuState_t.
 typedef enum {
@@ -99,28 +96,22 @@ typedef struct {
 
 //CPU peripheral addresses
 enum {
+	ADDR_OUT1 = 0xc00,
+	ADDR_OUT2,
+	ADDR_BEEP,
 	ADDR_ARR = 0xc00,
 	ADDR_RND,
 	ADDR_KEY0,
 	ADDR_KEY1,
-	ADDR_SCREEN_X,	//mask:0xc04
+	ADDR_SCREEN_X,    //mask:0xc04
 	ADDR_SCREEN_Y,
 	ADDR_SCREEN_CH1, //High
 	ADDR_SCREEN_CH0, //Low
 	ADDR_UART_H,   // mask:0xc08
 	ADDR_UART_L,
+
 	ADDR_PERIPH_MAX
 };
-/*
-arr		equ 3072
-rnd		equ 3073
-key0	equ 3074
-key1	equ 3075
-cord_x	equ 3076
-cord_y	equ 3077
-ch_h	equ 3078
-ch_l	equ 3079
-*/
 
 //tDbgFileBlockId enum. IDs for the Dbg file blocks.
 typedef enum {

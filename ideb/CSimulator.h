@@ -140,6 +140,8 @@ protected:
 	TCHAR m_UartFromCpuBuf[512];
 	int m_UartFromCpuWr;
 
+	UINT8 arrows;
+
 	runMode_t m_RunMode;
 	CBitmap m_bitmapScopeBg;
 	CBitmap m_bitmapAbc;

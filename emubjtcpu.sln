@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27130.2027
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.33214.272
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "asmb", "asmb\asmb.vcxproj", "{CE683BB3-5382-4740-A2AA-5010D78EEB6C}"
 EndProject
@@ -14,6 +14,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libbjtcpu", "libbjtcpu\libbjtcpu.vcxproj", "{5F3767FA-CAD9-4580-AB8A-F637641C318B}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "unittest", "unittest\UnitTest.vcxproj", "{C0D77BF2-AA73-4748-9D5F-E3994EA64873}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bjtemu", "emub\bjtemu\bjtemu.vcxproj", "{39E2626E-C270-4A40-999D-D48FCF223BF6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -71,6 +73,14 @@ Global
 		{C0D77BF2-AA73-4748-9D5F-E3994EA64873}.Release|x64.Build.0 = Release|x64
 		{C0D77BF2-AA73-4748-9D5F-E3994EA64873}.Release|x86.ActiveCfg = Release|Win32
 		{C0D77BF2-AA73-4748-9D5F-E3994EA64873}.Release|x86.Build.0 = Release|Win32
+		{39E2626E-C270-4A40-999D-D48FCF223BF6}.Debug|x64.ActiveCfg = Debug|x64
+		{39E2626E-C270-4A40-999D-D48FCF223BF6}.Debug|x64.Build.0 = Debug|x64
+		{39E2626E-C270-4A40-999D-D48FCF223BF6}.Debug|x86.ActiveCfg = Debug|Win32
+		{39E2626E-C270-4A40-999D-D48FCF223BF6}.Debug|x86.Build.0 = Debug|Win32
+		{39E2626E-C270-4A40-999D-D48FCF223BF6}.Release|x64.ActiveCfg = Release|x64
+		{39E2626E-C270-4A40-999D-D48FCF223BF6}.Release|x64.Build.0 = Release|x64
+		{39E2626E-C270-4A40-999D-D48FCF223BF6}.Release|x86.ActiveCfg = Release|Win32
+		{39E2626E-C270-4A40-999D-D48FCF223BF6}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
