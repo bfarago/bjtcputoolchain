@@ -59,12 +59,14 @@ assign alu_carry= alu_data[`ALU_DATA_MSB]; //most significant bit on alu data
 assign o_carry= alu_carry;
 assign o_data= i_re ? alu_data[`CPU_DATA_MSB:0] : `CPU_DATA_WIDTH'bX;
 
-reg reset_state;
+//reg reset_state;
 
-always@(negedge i_clock or posedge reset_state)
+always@(negedge i_clock or posedge i_reset)
 begin
-    if (reset_state)
+    if (i_reset) begin
      state<= `ALU_Nop;
+	 alu_data <= {`ALU_DATA_WIDTH{1'b0}}; // alu_carry=1'b0; also
+	end
     else
     if(	`ALU_Nop == state)
      state<= i_cmd;
@@ -76,8 +78,9 @@ begin
 	if(i_reset)
 		begin
 			$display("Alu reset");
-			reset_state <=1;
+			//reset_state <=1;
           	alu_data={`ALU_DATA_WIDTH{1'b0}}; // alu_carry=1'b0; also
+			state <= `ALU_Nop;
 		end
 
 	if (i_stop)
@@ -96,18 +99,18 @@ begin
 		begin
           $display("Alu clear");
           alu_data={`ALU_DATA_WIDTH{1'b0}}; // alu_carry=1'b0;
-		  reset_state <=1;
+		  state <= `ALU_Nop;
 		end		
 	`ALU_Load:	
 		begin
           $display("Alu load");
-		alu_data={1'b0, i_data}; //		alu_carry=0;
-		reset_state <=1;
+		  alu_data={1'b0, i_data}; //		alu_carry=0;
+		  state <= `ALU_Nop;
 		end
 	`ALU_Store:	
 		begin
           $display("Alu store");
-		reset_state <=1;
+		  state <= `ALU_Nop;
 		end
 	`ALU_Add:	
 		begin
@@ -115,14 +118,14 @@ begin
           alu_data[`ALU_DATA_MSB]<=1'b0;  //clear carry
           alu_data=alu_data + {1'b0,i_data} ; 
           alu_data=alu_data + {4'b0,i_operand_b} ; // +1 or +carry
-		 reset_state <=1;
+		  state <= `ALU_Nop;
 		end
 	`ALU_ShiftRight:	
 		begin
           $display("Alu shiftRight");
 		//alu_data=alu_data>>i_data; //todo: clarify how to
 		alu_data=i_data>>1; //todo: clarify how to
-		reset_state <=1;
+		state <= `ALU_Nop;
 		end
 	`ALU_LogicNOR:	
 		begin
@@ -131,7 +134,7 @@ begin
 		alu_data[1]=~(alu_data[1]||i_data[1]);
 		alu_data[2]=~(alu_data[2]||i_data[2]);
 		alu_data[3]=~(alu_data[3]||i_data[3]);
-		reset_state <=1;
+		state <= `ALU_Nop;
 		end
 	`ALU_LogicNAND:	
 		begin
@@ -140,7 +143,7 @@ begin
 		alu_data[1]=~(alu_data[1]&&i_data[1]);
 		alu_data[2]=~(alu_data[2]&&i_data[2]);
 		alu_data[3]=~(alu_data[3]&&i_data[3]);
-		reset_state <=1;
+		state <= `ALU_Nop;
 		end		
 	endcase
 	end

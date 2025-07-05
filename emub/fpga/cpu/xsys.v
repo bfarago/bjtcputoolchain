@@ -54,14 +54,14 @@
 module sys(
     input reset,    // positive edge, positive level
     input clk,
-    output [`SYS_BYTEPOSMASK_MSB:0] bram_web,    //write enables for each bytes (4 signals for 4 consecutive bytes)
-    output bram_en,     //one enebles for the bram chip = read all 4 byes.
+    output wire [`SYS_BYTEPOSMASK_MSB:0] bram_web,  //write enables for each bytes (4 signals for 4 consecutive bytes)
+    output wire bram_en,                            //one enebles for the bram chip = read all 4 byes.
     output [`SYS_ADDRESS_MSB:0] o_bram_addr, //outside world address bus (cached) here
     input [`SYS_DATA_MSB:0] i_bram_data,     //outside world data bus input direction (cached) here
     output [`SYS_DATA_MSB:0] o_bram_data,     //outside world data bus output direction (cached) here   
-    output [`CPU_ADDRESS_MSB:0] o_perif_addr, //outside world address bus (cached) here
-    input [`CPU_DATA_MSB:0] i_perif_data,     //outside world data bus input direction (cached) here
-    output [`CPU_DATA_MSB:0] o_perif_data,     //outside world data bus output direction (cached) here
+    output [`CPU_ADDRESS_MSB:0] o_perif_addr, //outside world address bus
+    input [`CPU_DATA_MSB:0] i_perif_data,     //outside world data bus input direction from peripherals
+    output [`CPU_DATA_MSB:0] o_perif_data     //outside world data bus output direction (cached) here
 `ifdef DEBUG
     output [`SYS_ADDRESSB_MSB:0] init_counter,
     output init,
@@ -74,7 +74,8 @@ module sys(
     output [`CPU_DATA_MSB:0] debug_cpu_data
 `endif    
 );
-    
+//output bram_en; //enable block ram, when read or write
+
 reg stop;   // stop the cpu = wait state
 reg init;    
 wire [`CPU_DATA_MSB:0] cpu_o_data;      //comes from cpu , 4 bits wide
@@ -87,13 +88,8 @@ wire [`SYS_CACHE_ADDR_MSB:0] cpu_addr_nibble;       //low order 3 bits of addres
 wire [`SYS_CACHE_HIT_WIDTH:0] cpu_map_addr;         //high order bits of address, which indexes 32bits in memory, and hit of the cache lookup table
 //reg  [`SYS_CACHE_HIT_WIDTH:0] mem_level_one_address; // {indexed by addr>>3 from cpu}, this is the hit key of the L1 cache.
 
-wire bram_en;                           //enable block ram, when read or write
-wire [`SYS_BYTEPOSMASK_MSB:0] bram_web; // write enable mask. Here the MSB is: sizeof(sys_data)/sizeof(byte)-1:  32/8 -1
 wire cpu_rd;                            //cpu want to read from memory/cache
 wire we;                                //cpu want to write it's data bus to memory.
-wire [`CPU_ADDRESS_MSB:0] o_perif_addr; //cpu address bus, used for periferial address (measured in nibbles, in cpu_data bit width)
-wire [`CPU_DATA_MSB:0] i_perif_data;    //cpu input data from periferials
-wire [`CPU_DATA_MSB:0] o_perif_data;    //cpu output data to periferials
 wire [`SYS_BYTEPOSMASK_MSB:0] abytepos; //address byte pos.
 
 //Internal states and registers

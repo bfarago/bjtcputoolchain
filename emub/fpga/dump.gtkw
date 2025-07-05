@@ -1,0 +1,67 @@
+[*]
+[*] GTKWave Analyzer v3.4.0 (w)1999-2022 BSI
+[*] Sat Jul  5 16:55:47 2025
+[*]
+[dumpfile] "/Users/bfarago/Local/bjtcputoolchain/emub/fpga/dump.vcd"
+[dumpfile_mtime] "Sat Jul  5 16:52:05 2025"
+[dumpfile_size] 2914
+[savefile] "/Users/bfarago/Local/bjtcputoolchain/emub/fpga/dump.gtkw"
+[timestart] 0
+[size] 1472 727
+[pos] -1 -1
+*-16.010811 90440 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+[markername] AA
+[markername] BB
+[markername] CC
+[markername] DD
+[markername] EE
+[markername] FF
+[markername] GG
+[markername] HH
+[markername] II
+[markername] JJ
+[markername] KK
+[markername] LL
+[markername] MM
+[markername] NN
+[markername] OO
+[markername] PP
+[markername] QQ
+[markername] RR
+[markername] SS
+[markername] TT
+[markername] UU
+[markername] VV
+[markername] WW
+[markername] XX
+[markername] YY
+[markername] ZZ
+[treeopen] tbench_top.
+[treeopen] tbench_top.test0.
+[sst_width] 255
+[signals_width] 152
+[sst_expanded] 1
+[sst_vpaned_height] 200
+@24
+tbench_top.test0.alu_cmd[2:0]
+@22
+tbench_top.test0.alu_data[3:0]
+tbench_top.test0.alu_o_data[3:0]
+@28
+tbench_top.test0.alu_operand_b
+tbench_top.test0.alu_re
+tbench_top.test0.alu_we
+tbench_top.test0.alu_wcarry
+tbench_top.test0.carry
+tbench_top.test0.i_clock
+tbench_top.test0.i_reset
+tbench_top.test0.sign
+tbench_top.test0.zero
+@24
+tbench_top.test0.ALU0.state[2:0]
+@22
+tbench_top.test0.ALU0.i_data[3:0]
+@23
+tbench_top.test0.ALU0.alu_data[4:0]
+[pattern_trace] 1
+[pattern_trace] 0

@@ -1,0 +1,15 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run Makefile",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "/bin/bash",
+      "args": ["-c", "make"],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    }
+  ]
+}

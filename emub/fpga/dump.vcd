@@ -1,0 +1,372 @@
+$date
+	Sat Jul  5 19:04:03 2025
+$end
+$version
+	Icarus Verilog
+$end
+$timescale
+	1ps
+$end
+$scope module tbench_top $end
+$var reg 1 ! clk $end
+$var reg 1 " reset $end
+$scope module test0 $end
+$var wire 1 ! i_clock $end
+$var wire 1 " i_reset $end
+$var wire 1 # zero $end
+$var wire 1 $ sign $end
+$var wire 1 % carry $end
+$var wire 4 & alu_o_data [3:0] $end
+$var reg 3 ' alu_cmd [2:0] $end
+$var reg 4 ( alu_data [3:0] $end
+$var reg 1 ) alu_operand_b $end
+$var reg 1 * alu_re $end
+$var reg 1 + alu_wcarry $end
+$var reg 1 , alu_we $end
+$scope module ALU0 $end
+$var wire 1 ! i_clock $end
+$var wire 3 - i_cmd [2:0] $end
+$var wire 4 . i_data [3:0] $end
+$var wire 1 ) i_operand_b $end
+$var wire 1 * i_re $end
+$var wire 1 " i_reset $end
+$var wire 1 / i_stop $end
+$var wire 1 , i_we $end
+$var wire 1 % o_carry $end
+$var wire 1 # o_zero $end
+$var wire 1 $ o_sign $end
+$var wire 4 0 o_data [3:0] $end
+$var wire 1 1 alu_carry $end
+$var reg 5 2 alu_data [4:0] $end
+$var reg 3 3 state [2:0] $end
+$upscope $end
+$scope task alu_op $end
+$var reg 4 4 acc_in [3:0] $end
+$var reg 1 5 b_in $end
+$var reg 4 6 cmd [3:0] $end
+$var reg 1 7 re_pulse $end
+$upscope $end
+$upscope $end
+$upscope $end
+$enddefinitions $end
+$comment Show the parameter values. $end
+$dumpall
+$end
+#0
+$dumpvars
+x7
+bx 6
+x5
+bx 4
+b0 3
+b0 2
+01
+bx 0
+0/
+b0 .
+b0 -
+0,
+0+
+0*
+0)
+b0 (
+b0 '
+bx &
+0%
+0$
+1#
+1"
+0!
+$end
+#5000
+0"
+1!
+#10000
+0!
+#15000
+1!
+#20000
+0!
+#25000
+b1 '
+b1 -
+1,
+07
+05
+b0 4
+b1 6
+1!
+#30000
+b1 3
+0!
+#35000
+b0 3
+0,
+b0 '
+b0 -
+1!
+#40000
+0!
+#45000
+1!
+#50000
+0!
+#55000
+b10 '
+b10 -
+1,
+b110 (
+b110 .
+17
+b110 4
+b10 6
+1!
+#60000
+b10 3
+0!
+#65000
+b0 3
+b110 &
+b110 0
+0#
+b110 2
+0,
+b0 '
+b0 -
+1*
+1!
+#70000
+0!
+#75000
+bx &
+bx 0
+0*
+1!
+#80000
+0!
+#85000
+b10 '
+b10 -
+1,
+b111 (
+b111 .
+b111 4
+1!
+#90000
+b10 3
+0!
+#95000
+b0 3
+b111 &
+b111 0
+b111 2
+0,
+b0 '
+b0 -
+1*
+1!
+#100000
+0!
+#105000
+bx &
+bx 0
+0*
+1!
+#110000
+0!
+#115000
+b10 '
+b10 -
+1,
+b1000 (
+b1000 .
+b1000 4
+1!
+#120000
+b10 3
+0!
+#125000
+b0 3
+1$
+b1000 &
+b1000 0
+b1000 2
+0,
+b0 '
+b0 -
+1*
+1!
+#130000
+0!
+#135000
+bx &
+bx 0
+0*
+1!
+#140000
+0!
+#145000
+b11 '
+b11 -
+b11 6
+1!
+#150000
+b11 3
+0!
+#155000
+b0 3
+b1000 &
+b1000 0
+b0 '
+b0 -
+1*
+1!
+#160000
+0!
+#165000
+bx &
+bx 0
+0*
+1!
+#170000
+0!
+#175000
+b100 '
+b100 -
+1,
+b101 (
+b101 .
+07
+b101 4
+b100 6
+1!
+#180000
+b100 3
+0!
+#185000
+b0 3
+b1101 2
+0,
+b0 '
+b0 -
+1!
+#190000
+0!
+#195000
+1!
+#200000
+0!
+#205000
+b100 '
+b100 -
+1,
+b11 (
+b11 .
+b11 4
+1!
+#210000
+b100 3
+0!
+#215000
+b0 3
+1#
+0$
+0%
+01
+b0 2
+0,
+b0 '
+b0 -
+1!
+#220000
+0!
+#225000
+1!
+#230000
+0!
+#235000
+b100 '
+b100 -
+1,
+b10 (
+b10 .
+b10 4
+1!
+#240000
+b100 3
+0!
+#245000
+b0 3
+0#
+b10 2
+0,
+b0 '
+b0 -
+1!
+#250000
+0!
+#255000
+1!
+#260000
+0!
+#265000
+b110 '
+b110 -
+1,
+b1010 (
+b1010 .
+b1010 4
+b110 6
+1!
+#270000
+b110 3
+0!
+#275000
+b0 3
+b101 2
+0,
+b0 '
+b0 -
+1!
+#280000
+0!
+#285000
+1!
+#290000
+0!
+#295000
+b111 '
+b111 -
+1,
+b101 (
+b101 .
+b101 4
+b111 6
+1!
+#300000
+b111 3
+0!
+#305000
+b0 3
+1$
+b1010 2
+0,
+b0 '
+b0 -
+1!
+#310000
+0!
+#315000
+1!
+#320000
+0!
+#325000
+1!
+#330000
+0!
+#335000
+1!
+#340000
+0!
+#345000
+1!

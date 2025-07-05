@@ -1,5 +1,5 @@
 // Common defines
-`define DEBUG 1
+//`define DEBUG 1
 `define REVERSENIBBLEORDER  // rom and ram contains reversed order: dword:= byte3:nibble7,nibble6 ... byte0:nibble1,nibble0 (MSB..LSB)
 `define ALU_DATA_WIDTH 5    // carry+cpu_data
 `define ALU_STATE_WIDTH 3
